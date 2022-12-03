@@ -55,11 +55,16 @@ async function targetChooseSoloLoop() {
 
 async function manaBurstLoop() {
 	try {
-		const target = get_targeted_monster();
-		if (target) {
-			if (!is_on_cooldown("burst") && character.mp > 2000) {
-				await use_skill("burst", target);
-				reduce_cooldown("burst", Math.min(...parent.pings));
+		// Use only with ornament staff
+		let currEquippedMainWeapon = character.slots.mainhand;
+		if (currEquippedMainWeapon && currEquippedMainWeapon.name === "ornamentstaff") {
+			const target = get_targeted_monster();
+			if (target) {
+				let mpRatio = character.mp / character.max_mp;
+				if (!is_on_cooldown("burst") && mpRatio > USE_BURST_AT_MP_RATIO) {
+					await use_skill("burst", target);
+					reduce_cooldown("burst", Math.min(...parent.pings));
+				}
 			}
 		}
 	} catch (e) {
@@ -67,6 +72,37 @@ async function manaBurstLoop() {
 	}
 	
 	setTimeout(manaBurstLoop, Math.max(1, ms_to_next_skill("burst")));
+}
+
+async function changeWeaponOnBurnLoop() {
+	try {
+		const target = get_targeted_monster();
+		if (target) {
+			let targetStatus = target.s;
+			let myBurn = false;
+			if (targetStatus && targetStatus.burned) {
+				// myBurn = targetStatus.burned.f === character.name;
+				myBurn = true;
+			}
+
+			let item = character.items[39];
+			if (myBurn && item && item.name === "ornamentstaff") {
+				await equip(39)
+					.catch(
+						(reason) => game_log(`Item equip failed: ${reason.reason}`)
+					);
+			} else if (!myBurn && item && item.name === "firestaff" && character.mp > character.mp_cost) {
+				await equip(39)
+					.catch(
+						(reason) => game_log(`Item equip failed: ${reason.reason}`)
+					);
+			}
+		}
+	} catch (e) {
+		game_log(`[changeWeaponOnBurnLoop] - ${e.name}: ${e.message}`);
+	}
+
+	setTimeout(changeWeaponOnBurnLoop, 100);
 }
 
 function find_viable_targets() {

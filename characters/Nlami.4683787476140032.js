@@ -1,3 +1,11 @@
+const USE_HP_AT_RATIO = 0.75;
+const USE_MP_AT_RATIO = 0.75;
+
+const USE_HEAL_AT_RATIO = 0.8;
+const USE_MASS_HEAL_AT_RATIO = 0.5;
+
+var DRAW_DEBUG = true;
+
 const FARM_MONSTERS = [
 	"porcupine",
 	"goldenbat",
@@ -6,7 +14,8 @@ const FARM_MONSTERS = [
 	"phoenix",
 	"snowman",
 	"armadillo",
-	"grinch"
+	"grinch",
+	"croc"
 ];
 
 const DO_NOT_SEND = [
@@ -29,8 +38,8 @@ regenLoop();
 
 // Class dependent operations
 attackHealLoop();
-// targetChoosePartyLoop();
-targetChooseSoloLoop();
+targetChoosePartyLoop();
+// targetChooseSoloLoop();
 curseLoop();
 partyHealLoop();
 
@@ -39,15 +48,54 @@ sendItemsToCharacterLoop("Momental");
 // Invite members to party if they are lost
 setInterval(create_party, 5000);
 
+// function on_draw() {
+//   if (DRAW_DEBUG) {
+// 		clear_drawings();
+
+// 		draw_circle(character.real_x, character.real_y, character.range);
+
+// 		let target = get_target(character);
+// 		if (target) {
+// 			draw_line(character.real_x, character.real_y, target.x, target.y);
+// 		}
+
+// 		if (is_moving(character)) {
+// 			draw_line(character.from_x, character.from_y, character.going_x, character.going_y, 1, 0x33FF42);
+// 		}
+// 	}
+
+// 	for(let entity of Object.values(parent.entities)) {
+// 		let entity_targ = get_target_of(entity);
+// 		// if(entity_targ && entity_targ.name === character.name && entity.moving){
+// 		if(entity) {
+// 			draw_line(entity.from_x, entity.from_y, entity.going_x, entity.going_y, 1, 0xda0b04);
+// 			draw_circle(entity.x, entity.y, entity.range, 1, 0xda0b04);
+// 		}
+// 	}
+// }
+
 function create_party() {
-	let party_members = ["Shalfey", "Nlami", "MagicFotum", "Momental"];
-	let curr_party_list = parent.party_list;
-	
-	if (curr_party_list.length < 4) {
-		for (let member of party_members) {
-			if (!curr_party_list.includes(member)) {
-				send_party_invite(member);
-			}
+	let currPartyList = parent.party_list;
+	if (currPartyList >= 4) {
+		return;
+	}
+
+	const myCharacters = get_characters();
+	let selfCharacter = myCharacters.find(
+		(c) => c.name === character.name
+	);
+
+	if (!selfCharacter) {
+		return;
+	}
+
+	let onlineOnServer = myCharacters.filter(
+		(c) => c.online > 0 && c.server === selfCharacter.server
+	);
+
+	for (let char of onlineOnServer) {
+		if (!currPartyList.includes(char.name)) {
+			send_party_invite(char.name)
 		}
 	}
 }

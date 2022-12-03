@@ -4,22 +4,23 @@ const upgrade_items = [
 	{item: "iceskates", level: 5},
 	{item: "xmaspants", level: 7},
 	{item: "xmasshoes", level: 7},
-	{item: "mittens", level: 6},
-	{item: "xmashat", level: 6},
+	{item: "mittens", level: 7},
+	{item: "xmashat", level: 7},
 	{item: "sweaterhs", level: 5},
 	{item: "cape", level: 4},
-
 	// Rugged set
-	{item: "helmet1", level: 6},
-	{item: "coat1", level: 5},
-	{item: "pants1", level: 5},
-	{item: "gloves1", level: 6},
-	{item: "shoes1", level: 6},
-
+	{item: "helmet1", level: 7},
+	{item: "coat1", level: 7},
+	{item: "pants1", level: 7},
+	{item: "gloves1", level: 7},
+	{item: "shoes1", level: 7},
+	// Wanderer set
+	{item: "wattire", level: 7},
 	// Rare items
 	{item: "woodensword", level: 7},
-	{item: "firestaff", level: 5},
-	{item: "ornamentstaff", level: 5},
+	{item: "firestaff", level: 7},
+	{item: "fireblade", level: 7},
+	{item: "ornamentstaff", level: 7},
 	{item: "basher", level: 5},
 	{item: "merry", level: 5},
 	{item: "candycanesword", level: 7}
@@ -27,7 +28,7 @@ const upgrade_items = [
 
 const compound_items = [
 	{item: "ringsj", level: 3},
-	{item: "wbook0", level: 3},
+	{item: "wbook0", level: 4},
 	// Earrings
 	{item: "strearring", level: 2},
 	{item: "intearring", level: 2},
@@ -35,8 +36,10 @@ const compound_items = [
 	{item: "intamulet", level: 2},
 	{item: "stramulet", level: 3},
 	// Rings
-	{item: "strring", level: 2},
-	{item: "intring", level: 2}
+	{item: "strring", level: 3},
+	{item: "intring", level: 2},
+	// Orbs
+	{item: "orbg", level: 2}
 ];
 
 const scrolls_amount = {
@@ -48,74 +51,84 @@ const scrolls_amount = {
 	"cscroll2": 1
 };
 
-function upgradeItems() {
-	if (character.q.upgrade || upgrade_state != 1 || do_enchant_items != 1) {
-		return;
+async function upgradeItemsLoop() {
+	try {
+		if (!character.q.upgrade && upgrade_state && do_enchant_items) {
+			for (let toUpgrade of upgrade_items) {
+				let toUpgradeName = toUpgrade.item;
+				let toUpgradeLevel = toUpgrade.level;
+				
+				let [item, itemIx] = getItemAndIx(
+					(i) => (i.name === toUpgradeName && i.level < toUpgradeLevel)
+				);
+				if (!item || itemIx < 0) {
+					continue;
+				}
+				
+				let scrollName = "scroll" + getScrollNumForItem(item);		
+				let [scroll, scrollIx] = getItemAndIx(
+					(i) => (i.name === scrollName)
+				);
+				if (!scroll || scrollIx === -1) {
+					let amount = scrolls_amount[scrollName];
+					await buyScrolls(scrollName, amount);
+				}
+				
+				let npc = find_npc("newupgrade");
+				if (distance(character, npc) < 400 && locate_item(scrollName) > -1) {
+					game_log(`Upgrading: ${item.name}`);
+					await use_skill("massproduction", character);
+					await upgrade(itemIx, scrollIx)
+						.catch(
+							(reason) => game_log(`Upgrade failed: ${reason.reason}`)
+						);
+				}
+			}
+		}
+	} catch (e) {
+		game_log(`[upgradeItemsLoop] - ${e.name}: ${e.message}`);
 	}
-	
-	for (let toUpgrade of upgrade_items) {
-		let toUpgradeName = toUpgrade.item;
-		let toUpgradeLevel = toUpgrade.level;
-		
-		let [item, itemIx] = getItemAndIx(
-			(i) => (i.name === toUpgradeName && i.level < toUpgradeLevel)
-		);
-		if (!item || itemIx < 0) {
-			continue;
-		}
-		
-		let scrollName = "scroll" + getScrollNumForItem(item);		
-		let [scroll, scrollIx] = getItemAndIx(
-			(i) => (i.name === scrollName)
-		);
-		if (!scroll || scrollIx < 0) {
-			let amount = scrolls_amount[scrollName];
-			buyScrolls(scrollName, amount);
-			continue;
-		}
-		
-		let npc = find_npc("newupgrade");
-		if (distance(character, npc) < 400) {
-			use_skill("massproduction", character);
 
-			upgrade(itemIx, scrollIx);
-		}
-
-		return;
-	}
+	setTimeout(upgradeItemsLoop, 500);
 }
 
-function compoundItems() {
-	if (character.q.compound || upgrade_state != 1 || do_enchant_jewelry != 1)
-		return;
-	
-	for (let toCompound of compound_items) {
-		let toCompoundName = toCompound.item;
-		let toCompoundLevel = toCompound.level;
-		
-		let [item, itemIxs] = getItemAndIndexes(toCompoundName, 0, toCompoundLevel);
-		if (!item || itemIxs.length < 3) {
-			continue;
+async function compoundItemsLoop() {
+	try {
+		if (!character.q.compound && upgrade_state && do_enchant_jewelry) {
+			for (let toCompound of compound_items) {
+				let toCompoundName = toCompound.item;
+				let toCompoundLevel = toCompound.level;
+				
+				let [item, itemIxs] = getItemAndIndexes(toCompoundName, 0, toCompoundLevel);
+				if (!item || itemIxs.length < 3) {
+					continue;
+				}
+				
+				let scrollName = "cscroll" + getScrollNumForItem(item);
+				let [scroll, scrollIx] = getItemAndIx(
+					(i) => (i.name === scrollName)
+				);
+				if (!scroll || scrollIx === -1) {
+					let amount = scrolls_amount[scrollName];
+					await buyScrolls(scrollName, amount);
+				}
+				
+				let npc = find_npc("newupgrade");
+				if (distance(character, npc) < 400 && locate_item(scrollName) > -1) {
+					game_log(`Compounding: ${item.name}`);
+					await use_skill("massproduction", character);
+					await compound(itemIxs[0], itemIxs[1], itemIxs[2], scrollIx)
+						.catch(
+							(reason) => game_log(`Compound failed: ${reason.reason}`)
+						);
+				}
+			}
 		}
-		
-		let scrollName = "cscroll" + getScrollNumForItem(item);
-		let [scroll, scrollIx] = getItemAndIx(
-			(i) => (i.name === scrollName)
-		);
-		if (!scroll || scrollIx < 0) {
-			let amount = scrolls_amount[scrollName];
-			buyScrolls(scrollName, amount);
-			continue;
-		}
-		
-		let npc = find_npc("newupgrade");
-		if (distance(character, npc) < 400) {
-			use_skill("massproduction", character);
-			compound(itemIxs[0], itemIxs[1], itemIxs[2], scrollIx);
-		}
-
-		return;
+	} catch (e) {
+		game_log(`[compoundItemsLoop] - ${e.name}: ${e.message}`);
 	}
+
+	setTimeout(compoundItemsLoop, 500);
 }
 
 function getItemAndIndexes(trg_name, trg_level, trg_limit) {
@@ -164,7 +177,7 @@ function getScrollNumForItem(item) {
 	return scrollNum;
 }
 
-function buyScrolls(type, amount) {
+async function buyScrolls(type, amount) {
 	if (amount <= 0) {
 		return;
 	}
@@ -175,12 +188,15 @@ function buyScrolls(type, amount) {
 		if (item_def !== null) {
 			let cost = item_def.g * amount;
 			if (character.gold >= cost) {
-				buy(type, amount);
+				return buy(type, amount);
 			} else {
 				game_log("Not enough gold!");
+				return null;
 			}
 		}
 	}
+
+	return null;
 }
 
 function get_npc(name) {

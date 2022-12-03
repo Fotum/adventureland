@@ -15,8 +15,8 @@ async function moveLoop() {
 		let target = get_target();
 		if (target && !is_in_range(target, "attack")) {
 			move(
-                character.x + (target.x - character.x) / 2,
-                character.y + (target.y - character.y) / 2
+                character.x + (target.x - character.x) / 4,
+                character.y + (target.y - character.y) / 4
             )
 		}
 	} catch (e) {
@@ -53,13 +53,13 @@ async function regenLoop() {
 			let mpPot0 = locate_item("mpot0");
 			let mpPot1 = locate_item("mpot1");
 
-			if (mpPot1 !== -1 && mpRatio < 0.75) {
+			if (mpPot1 !== -1 && mpRatio < USE_MP_AT_RATIO) {
 				await equip(mpPot1);
 				reduce_cooldown("use_mp", minPing);
-			} else if (mpPot0 !== -1 && mpRatio < 0.75) {
+			} else if (mpPot0 !== -1 && mpRatio < USE_MP_AT_RATIO) {
 				await equip(mpPot0);
 				reduce_cooldown("use_mp", minPing);
-			} else if (mpRatio < 0.75) {
+			} else if (mpRatio < USE_MP_AT_RATIO) {
 				await use_skill("regen_mp");
 				reduce_cooldown("regen_mp", minPing);
 			}
@@ -68,13 +68,13 @@ async function regenLoop() {
 			let hpPot0 = locate_item("hpot0");
 			let hpPot1 = locate_item("hpot1");
 
-			if (hpPot1 !== -1 && hpRatio < 0.75) {
+			if (hpPot1 !== -1 && hpRatio < USE_HP_AT_RATIO) {
 				await equip(hpPot1);
 				reduce_cooldown("use_hp", minPing);
-			} else if (hpPot0 !== -1 && hpRatio < 0.75) {
+			} else if (hpPot0 !== -1 && hpRatio < USE_HP_AT_RATIO) {
 				await equip(hpPot0);
 				reduce_cooldown("use_hp", minPing);
-			} else if (hpRatio < 0.75) {
+			} else if (hpRatio < USE_HP_AT_RATIO) {
 				await use_skill("regen_hp");
 				reduce_cooldown("regen_hp", minPing);
 			}

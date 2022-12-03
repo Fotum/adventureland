@@ -19,23 +19,6 @@ async function attackLoop() {
 	setTimeout(attackLoop, Math.max(1, ms_to_next_skill("attack")));
 }
 
-async function tauntLoop() {
-	try {
-		let target = find_viable_targets().find((mob) => mob.targeting_party);
-		if (target && !is_on_cooldown("taunt") && is_in_range(target, "taunt")) {
-			await use_skill("taunt", target)
-				.catch(
-					(reason) => game_log(`Taunt failed: ${reason.reason}`)
-				);;
-			reduce_cooldown("taunt", Math.min(...parent.pings));
-		}
-	} catch (e) {
-		game_log(`[tauntLoop] - ${e.name}: ${e.message}`);
-	}
-	
-	setTimeout(tauntLoop, Math.max(1, ms_to_next_skill("taunt")));
-}
-
 async function targetChooseLoop() {
 	try {
 		let target = get_targeted_monster();
@@ -50,6 +33,40 @@ async function targetChooseLoop() {
 	}
 	
 	setTimeout(targetChooseLoop, 150);
+}
+
+async function tauntLoop() {
+	try {
+		let target = find_viable_targets().find((mob) => mob.targeting_party);
+		if (target && !is_on_cooldown("taunt") && is_in_range(target, "taunt")) {
+			await use_skill("taunt", target)
+				.catch(
+					(reason) => game_log(`Taunt failed: ${reason.reason}`)
+				);
+			reduce_cooldown("taunt", Math.min(...parent.pings));
+		}
+	} catch (e) {
+		game_log(`[tauntLoop] - ${e.name}: ${e.message}`);
+	}
+	
+	setTimeout(tauntLoop, Math.max(1, ms_to_next_skill("taunt")));
+}
+
+async function hardShellLoop() {
+	try {
+		let hpRatio = character.hp / character.max_hp;
+		if (hpRatio < USE_HS_AT_HP_RATIO && !character.moving) {
+			await use_skill("hardshell", character)
+				.catch(
+					(reason) => game_log(`Hard Shell failed: ${reason.reason}`)
+				);
+			reduce_cooldown("hardshell", Math.min(...parent.pings));
+		}
+	} catch (e) {
+		game_log(`[hardShellLoop] - ${e.name}: ${e.message}`);
+	}
+
+	setTimeout(hardShellLoop, Math.max(1, ms_to_next_skill("hardshell")));
 }
 
 function find_viable_targets() {
@@ -67,6 +84,9 @@ function find_viable_targets() {
 		monsters.sort(
 				function (current, next) {
 					if (current.targeting_party && !next.targeting_party) {
+						return -1;
+					}
+					if (current.special && !next.special) {
 						return -1;
 					}
 					if (current.xp > next.xp) {

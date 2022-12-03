@@ -1,3 +1,8 @@
+const USE_HP_AT_RATIO = 0.75;
+const USE_MP_AT_RATIO = 0.75;
+
+const USE_HS_AT_HP_RATIO = 0.5;
+
 const DO_NOT_SEND = [];
 
 // Farm options
@@ -10,7 +15,10 @@ const FARM_MONSTERS = [
 	"wolfie",
 	"arcticbee",
 	"goldenbat",
-	"cutebee"
+	"cutebee",
+	"iceroamer",
+	"armadillo",
+	"arcticbee"
 ];
 
 const BLACKLIST_MONSTERS = [
@@ -33,10 +41,12 @@ regenLoop();
 
 // Class dependent operations
 attackLoop();
-tauntLoop();
 targetChooseLoop();
+tauntLoop();
+hardShellLoop();
 
 sendItemsToCharacterLoop("Nlami");
+// sendItemsToCharacterLoop("Momental");
 
 function do_follow() {
 	curr_state = null;

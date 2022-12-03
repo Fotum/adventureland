@@ -3,7 +3,7 @@ async function attackHealLoop() {
 		const lowest_health = lowest_health_partymember();
 		const target = get_targeted_monster();
 		
-		if (lowest_health && !lowest_health.rip && lowest_health.health_ratio < 0.8) {
+		if (lowest_health && lowest_health.health_ratio < USE_HEAL_AT_RATIO) {
 			if (can_attack(lowest_health)) {
 				set_message("Healing");
 
@@ -56,7 +56,6 @@ async function targetChoosePartyLoop() {
 			let tank_character = parent.entities["Shalfey"];
 			if (tank_character) {
 				target = get_target_of(tank_character);
-				game_log(`Target of tank is: ${target.name}`);
 				if (target) {
 					change_target(target);
 				}
@@ -108,7 +107,7 @@ async function partyHealLoop() {
 	try {
 		const lowest_health = lowest_health_partymember();
 	
-		if (lowest_health && !lowest_health.rip && lowest_health.health_ratio < 0.5 && character.mp > 400) {
+		if (lowest_health && !lowest_health.rip && lowest_health.health_ratio < USE_MASS_HEAL_AT_RATIO && character.mp > 400) {
 			if (!is_on_cooldown("partyheal")) {
 				await use_skill("partyheal")
 					.catch(
@@ -139,7 +138,7 @@ function lowest_health_partymember() {
 			}
 			
 			let entity = parent.entities[member_name];
-			if (entity) {
+			if (entity && !entity.rip) {
 				entity.health_ratio = entity.hp / entity.max_hp;
 				party.push(entity)
 			}

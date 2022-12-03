@@ -1,3 +1,8 @@
+const USE_HP_AT_RATIO = 0.75;
+const USE_MP_AT_RATIO = 0.8;
+
+const USE_BURST_AT_MP_RATIO = 0.7;
+
 const FARM_MONSTERS = [
 	"porcupine",
 	"goldenbat",
@@ -6,10 +11,14 @@ const FARM_MONSTERS = [
 	"phoenix",
 	"snowman",
 	"grinch",
-	"armadillo"
+	"armadillo",
+	"minimush"
 ];
 
-const DO_NOT_SEND = [];
+const DO_NOT_SEND = [
+	{name: "firestaff", level: 6},
+	{name: "ornamentstaff", level: 7}
+];
 
 // Load farming functions and loops
 load_code("base_operations");
@@ -26,11 +35,13 @@ regenLoop();
 
 // Class dependent operations
 attackLoop();
-// targetChoosePartyLoop();
-targetChooseSoloLoop();
-// manaBurstLoop()
+targetChoosePartyLoop();
+// targetChooseSoloLoop();
+manaBurstLoop()
+changeWeaponOnBurnLoop();
 // Send all items and gold to healer
 sendItemsToCharacterLoop("Nlami");
+// sendItemsToCharacterLoop("Momental");
 
 function do_follow() {
 	let following_target = parent.entities["Nlami"];
