@@ -16,14 +16,17 @@ const FARM_MONSTERS = [
 ];
 
 const DO_NOT_SEND = [
-	{name: "firestaff", level: 6},
+	{name: "firestaff", level: 7},
 	{name: "ornamentstaff", level: 7}
 ];
+
+var attack_mode = true;
 
 // Load farming functions and loops
 load_code("base_operations");
 load_code("mage_farm");
 load_code("draw_ui");
+load_code("mover_module");
 
 // Send character info
 updateCharacterInfoLoop();

@@ -25,11 +25,14 @@ const BLACKLIST_MONSTERS = [
 	"porcupine"
 ];
 
+var attack_mode = true;
+
 // Load everything that's needed functions
 load_code("base_operations");
 load_code("warrior_farm");
 load_code("draw_ui");
 // load_code("dps_meter"); // DPS Meter
+load_code("mover_module");
 
 // Send character info
 updateCharacterInfoLoop();

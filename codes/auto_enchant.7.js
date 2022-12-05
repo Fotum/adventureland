@@ -1,13 +1,13 @@
 const upgrade_items = [
 	{item: "slimestaff", level: 8},
 
-	{item: "iceskates", level: 5},
-	{item: "xmaspants", level: 7},
-	{item: "xmasshoes", level: 7},
+	// {item: "iceskates", level: 5},
+	// {item: "xmaspants", level: 7},
+	// {item: "xmasshoes", level: 7},
 	{item: "mittens", level: 7},
-	{item: "xmashat", level: 7},
-	{item: "sweaterhs", level: 5},
-	{item: "cape", level: 4},
+	// {item: "xmashat", level: 7},
+	// {item: "sweaterhs", level: 6},
+	{item: "cape", level: 5},
 	// Rugged set
 	{item: "helmet1", level: 7},
 	{item: "coat1", level: 7},
@@ -16,28 +16,32 @@ const upgrade_items = [
 	{item: "shoes1", level: 7},
 	// Wanderer set
 	{item: "wattire", level: 7},
+	{item: "wgloves", level: 7},
+	{item: "wshoes", level: 7},
+	{item: "wcap", level: 7},
+	{item: "wbreeches", level: 7},
 	// Rare items
 	{item: "woodensword", level: 7},
 	{item: "firestaff", level: 7},
 	{item: "fireblade", level: 7},
 	{item: "ornamentstaff", level: 7},
 	{item: "basher", level: 5},
-	{item: "merry", level: 5},
+	// {item: "merry", level: 5},
 	{item: "candycanesword", level: 7}
 ];
 
 const compound_items = [
-	{item: "ringsj", level: 3},
+	{item: "ringsj", level: 4},
 	{item: "wbook0", level: 4},
 	// Earrings
 	{item: "strearring", level: 2},
 	{item: "intearring", level: 2},
 	// Amulets
-	{item: "intamulet", level: 2},
+	{item: "intamulet", level: 3},
 	{item: "stramulet", level: 3},
 	// Rings
 	{item: "strring", level: 3},
-	{item: "intring", level: 2},
+	{item: "intring", level: 3},
 	// Orbs
 	{item: "orbg", level: 2}
 ];

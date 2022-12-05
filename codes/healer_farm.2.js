@@ -22,7 +22,7 @@ async function attackHealLoop() {
 					);
 				reduce_cooldown("attack", Math.min(...parent.pings));
 			}
-		} else {
+		} else if (attack_mode) {
 			if (target && can_attack(target) && character.mp >= character.mp_cost) {
 				set_message("Attacking");
 

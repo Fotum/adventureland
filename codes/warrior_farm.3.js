@@ -1,16 +1,18 @@
 //This function contains our logic for when we're farming mobs
 async function attackLoop() {
 	try {
-		const target = get_targeted_monster();
-		if (!target) {
-			set_message("No targets");
-		} else if (can_attack(target)) {
-			set_message("Attacking");
-			await attack(target)
-				.catch(
-					(reason) => game_log(`Attack failed: ${reason.reason}`)
-				);
-			reduce_cooldown("attack", Math.min(...parent.pings));
+		if (attack_mode) {
+			const target = get_targeted_monster();
+			if (!target) {
+				set_message("No targets");
+			} else if (can_attack(target)) {
+				set_message("Attacking");
+				await attack(target)
+					.catch(
+						(reason) => game_log(`Attack failed: ${reason.reason}`)
+					);
+				reduce_cooldown("attack", Math.min(...parent.pings));
+			}
 		}
 	} catch (e) {
 		game_log(`[attackLoop] - ${e.name}: ${e.message}`);

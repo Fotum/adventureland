@@ -11,7 +11,6 @@ const SELL_LIST = [
 	"xmassweater",
 	"rednose",
 	"mcape",
-	// "wattire",
 	"warmscarf",
 	// Trash
 	"beewings",
@@ -32,16 +31,18 @@ const SELL_LIST = [
 	"pants",
 	"gloves",
 	"coat",
-	"wcap",
-	"wgloves",
-	"wshoes",
-	"wbreeches",
 	"hpbelt",
 	"hpamulet",
 	"cclaw"
 ];
 
 const PONTY_BUY_LIST = [
+    // Wanderer's set
+    {item: "wattire", max_level: 4},
+	// {item: "wgloves", max_level: 0},
+	{item: "wcap", max_level: 4},
+	{item: "wshoes", max_level: 4},
+    {item: "wbreeches", max_level: 4},
 	// Rugged set
 	// {item: "shoes1", max_level: 4},
 	// {item: "gloves1", max_level: 4},

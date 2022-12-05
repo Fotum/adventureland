@@ -1,15 +1,17 @@
 async function attackLoop() {
 	try {
-		const target = get_targeted_monster();
-		if (!target) {
-			set_message("No targets");
-		} else if (can_attack(target) && character.mp >= character.mp_cost) {
-			set_message("Attacking");
-			await attack(target)
-				.catch(
-					(reason) => game_log(`Attack failed: ${reason.reason}`)
-				);
-			reduce_cooldown("attack", Math.min(...parent.pings));
+		if (attack_mode) {
+			const target = get_targeted_monster();
+			if (!target) {
+				set_message("No targets");
+			} else if (can_attack(target) && character.mp >= character.mp_cost) {
+				set_message("Attacking");
+				await attack(target)
+					.catch(
+						(reason) => game_log(`Attack failed: ${reason.reason}`)
+					);
+				reduce_cooldown("attack", Math.min(...parent.pings));
+			}
 		}
 	} catch (e) {
 		game_log(`[attackLoop] - ${e.name}: ${e.message}`);
@@ -81,8 +83,8 @@ async function changeWeaponOnBurnLoop() {
 			let targetStatus = target.s;
 			let myBurn = false;
 			if (targetStatus && targetStatus.burned) {
-				// myBurn = targetStatus.burned.f === character.name;
-				myBurn = true;
+				myBurn = targetStatus.burned.f === character.name;
+				// myBurn = true;
 			}
 
 			let item = character.items[39];
