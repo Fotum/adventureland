@@ -9,6 +9,7 @@ const DO_NOT_SEND = [];
 const FARM_MONSTERS = [
 	"bat",
 	"mvampire",
+	"fvampire",
 	"phoenix",
 	"snowman",
 	"grinch",
@@ -18,7 +19,10 @@ const FARM_MONSTERS = [
 	"cutebee",
 	"iceroamer",
 	"armadillo",
-	"arcticbee"
+	"arcticbee",
+	"ghost",
+	"boar",
+	"bgoo"
 ];
 
 const BLACKLIST_MONSTERS = [

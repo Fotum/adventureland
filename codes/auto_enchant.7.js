@@ -6,7 +6,7 @@ const upgrade_items = [
 	// {item: "xmasshoes", level: 7},
 	{item: "mittens", level: 7},
 	// {item: "xmashat", level: 7},
-	// {item: "sweaterhs", level: 6},
+	{item: "sweaterhs", level: 6},
 	{item: "cape", level: 5},
 	// Rugged set
 	{item: "helmet1", level: 7},

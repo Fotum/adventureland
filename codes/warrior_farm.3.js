@@ -91,9 +91,9 @@ function find_viable_targets() {
 					if (current.special && !next.special) {
 						return -1;
 					}
-					if (current.xp > next.xp) {
-						return -1;
-					}
+					// if (current.xp > next.xp) {
+					// 	return -1;
+					// }
 					var dist_current = distance(character, current);
 					var dist_next = distance(character, next);
 					// Else go to the 2nd item

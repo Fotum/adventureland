@@ -1,3 +1,10 @@
+load_code("graph_mover");
+
+var MAP_GRAPH = initialize_graph(character.map);
+game.on("new_map", function () {
+    MAP_GRAPH = initialize_graph(character.map);
+});
+
 // Accept party from one of these sources
 function on_party_invite(name) {
 	if (parent.party_list > 0) {
@@ -10,14 +17,59 @@ function on_party_invite(name) {
 	}
 }
 
+var DO_MOVE_GRAPH = false;
+async function moveByGraph(target) {
+	try {
+		if (DO_MOVE_GRAPH) {
+			set_message("Graph moving");
+			if (!target) {
+				DO_MOVE_GRAPH = false;
+				return;
+			}
+
+			let from = {x: character.real_x, y: character.real_y};
+			let to = {x: target.x, y: target.y};
+			let path = getPathPlotted(from, to);
+
+			for (let node of path) {
+				if (DO_MOVE_GRAPH) {
+					await move(node.x, node.y);
+				}
+			}
+			DO_MOVE_GRAPH = false;
+		}
+	} catch (e) {
+		game_log(`${e.name}: ${e.message}`);
+	}
+}
+
 async function moveLoop() {
 	try {
 		let target = get_target();
-		if (target && !is_in_range(target, "attack")) {
-			move(
-                character.x + (target.x - character.x) / 4,
-                character.y + (target.y - character.y) / 4
-            )
+		if (target.name !== character.name) {
+			let isInRange = is_in_range(target, "attack");
+			if (target && isInRange && DO_MOVE_GRAPH) {
+				// No need to move, we are already in range
+				DO_MOVE_GRAPH = false;
+				move(character.real_x, character.real_y);
+			} else if (target && !isInRange) {
+				// We are not in range, so we have to move
+				let canMoveTo = can_move_to(target);
+				// If we cant move straight then move by graph
+				if (!canMoveTo && !DO_MOVE_GRAPH) {
+					DO_MOVE_GRAPH = true;
+					moveByGraph(target);
+				} else if (canMoveTo) {
+					// If we can move straight then turn off graph moving
+					if (!isInRange) {
+						set_message("Normal moving");
+						move(
+							character.x + (target.x - character.x) / 4,
+							character.y + (target.y - character.y) / 4
+						)
+					}
+				}
+			}
 		}
 	} catch (e) {
 		game_log(`${e.name}: ${e.message}`);
