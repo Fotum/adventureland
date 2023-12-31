@@ -3,30 +3,39 @@ const USE_MP_AT_RATIO = 0.8;
 
 const USE_BURST_AT_MP_RATIO = 0.7;
 
-const FARM_MONSTERS = [
-	"porcupine",
-	"goldenbat",
-	"cutebee",
+const FARM_BOSSES = [
 	"mvampire",
+	"fvampire",
 	"phoenix",
 	"snowman",
-	"grinch",
-	"armadillo",
-	"minimush"
+	"goldenbat",
+	"cutebee",
+	"grinch"
 ];
+const FARM_MONSTERS = [
+	"porcupine",
+	"armadillo",
+	"minimush",
+	"stoneworm",
+	"crab",
+	"osnake",
+	"bee",
+	"rat"
+];
+const BLACKLIST_MONSTERS = ["plantoid"];
 
 const DO_NOT_SEND = [
-	{name: "firestaff", level: 7},
+	{name: "firestaff", level: 8},
 	{name: "ornamentstaff", level: 7}
 ];
 
-var attack_mode = true;
+var is_solo = false;
+var combat_mode = false;
 
 // Load farming functions and loops
 load_code("base_operations");
 load_code("mage_farm");
 load_code("draw_ui");
-load_code("mover_module");
 
 // Send character info
 updateCharacterInfoLoop();
@@ -37,18 +46,13 @@ lootLoop();
 regenLoop();
 
 // Class dependent operations
-attackLoop();
-targetChoosePartyLoop();
-// targetChooseSoloLoop();
-manaBurstLoop()
-changeWeaponOnBurnLoop();
+switchMode();
+
 // Send all items and gold to healer
 sendItemsToCharacterLoop("Nlami");
 // sendItemsToCharacterLoop("Momental");
 
-function do_follow() {
-	let following_target = parent.entities["Nlami"];
-	if (following_target !== null) {
-		change_target(following_target);
-	}
+async function summonParty() {
+	await use_skill("magiport", "Nlami");
+	await use_skill("magiport", "Shalfey");
 }

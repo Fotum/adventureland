@@ -1,46 +1,49 @@
+async function switchMode() {
+	combat_mode = !combat_mode;
+
+	if (combat_mode) {
+		attackHealLoop();
+		if (is_solo) {
+			targetChooseSoloLoop();	
+		} else {
+			targetChoosePartyLoop();
+		}
+		curseLoop();
+		darkBlessingLoop();
+		partyHealLoop();
+	} else {
+		set_message("Out of combat");
+		// Sleep for 300 ms to wait for target chooser return
+		await sleep(300);
+		change_target(undefined);
+	}
+}
+
 async function attackHealLoop() {
 	try {
+		if (!combat_mode) {
+			return;
+		}
+
 		const lowest_health = lowest_health_partymember();
 		const target = get_targeted_monster();
 		
-		if (lowest_health && lowest_health.health_ratio < USE_HEAL_AT_RATIO) {
-			if (can_attack(lowest_health)) {
-				set_message("Healing");
+		if (lowest_health && is_in_range(lowest_health, "attack") && lowest_health.health_ratio < USE_HEAL_AT_RATIO) {
+			set_message("Healing");
 
-				// Equip slimestaff
-				let item = character.items[39];
-				if (item && item.name === "slimestaff") {
-					await equip(39)
-						.catch(
-							(reason) => game_log(`Item equip failed: ${reason.reason}`)
-						);
-				}
-
-				await heal(lowest_health)
-					.catch(
-						(reason) => game_log(`Heal failed: ${reason.reason}`)
-					);
-				reduce_cooldown("attack", Math.min(...parent.pings));
-			}
-		} else if (attack_mode) {
-			if (target && can_attack(target) && character.mp >= character.mp_cost) {
-				set_message("Attacking");
-
-				// Equip firestaff
-				let item = character.items[39];
-				if (item && item.name === "firestaff") {
-					await equip(39)
-						.catch(
-							(reason) => game_log(`Item equip failed: ${reason.reason}`)
-						);
-				}
-
-				await attack(target)
-					.catch(
-						(reason) => game_log(`Attack failed: ${reason.reason}`)
-					);
-				reduce_cooldown("attack", Math.min(...parent.pings));
-			}
+			last_targeted_monster = target;
+			await heal(lowest_health)
+				.catch(
+					(reason) => game_log(`Heal failed: ${reason.reason}`)
+				);
+			reduce_cooldown("attack", Math.min(...parent.pings));
+		} else if (target && is_in_range(target, "attack") && character.mp >= character.mp_cost) {
+			set_message("Attacking");
+			await attack(target)
+				.catch(
+					(reason) => game_log(`Attack failed: ${reason.reason}`)
+				);
+			reduce_cooldown("attack", Math.min(...parent.pings));
 		}
 	} catch (e) {
 		game_log(`[attackHealLoop] - ${e.name}: ${e.message}`);
@@ -51,6 +54,10 @@ async function attackHealLoop() {
 
 async function targetChoosePartyLoop() {
 	try {
+		if (!combat_mode) {
+			return;
+		}
+
 		let target = get_targeted_monster();
 		if (!target) {
 			let tank_character = parent.entities["Shalfey"];
@@ -70,6 +77,10 @@ async function targetChoosePartyLoop() {
 
 async function targetChooseSoloLoop() {
 	try {
+		if (!combat_mode) {
+			return;
+		}
+
 		let target = get_targeted_monster();
 		if (!target) {
 			target = find_viable_targets()[0];
@@ -86,6 +97,10 @@ async function targetChooseSoloLoop() {
 
 async function curseLoop() {
 	try {
+		if (!combat_mode) {
+			return;
+		}
+
 		const target = get_targeted_monster();
 		if (target && !target.immune) {
 			if (!is_on_cooldown("curse") && is_in_range(target, "curse") && !is_disabled(character) && character.mp > 450) {
@@ -103,8 +118,33 @@ async function curseLoop() {
 	setTimeout(curseLoop, Math.max(1, ms_to_next_skill("curse")));
 }
 
+async function darkBlessingLoop() {
+	try {
+		if (!combat_mode) {
+			return;
+		}
+
+		let target = get_targeted_monster();
+		if (target && !is_on_cooldown("darkblessing") && !is_disabled(character) && character.mp > 900) {
+			await use_skill("darkblessing")
+				.catch(
+					(reason) => game_log(`Dark Blessing failed: ${reason.reason}`)
+				);
+			reduce_cooldown("darkblessing", Math.min(...parent.pings));
+		}
+	} catch (e) {
+		game_log(`[darkBlessingLoop] - ${e.name}: ${e.message}`);
+	}
+
+	setTimeout(darkBlessingLoop, Math.max(1, ms_to_next_skill("darkblessing")));
+}
+
 async function partyHealLoop() {
 	try {
+		if (!combat_mode) {
+			return;
+		}
+
 		const lowest_health = lowest_health_partymember();
 	
 		if (lowest_health && !lowest_health.rip && lowest_health.health_ratio < USE_MASS_HEAL_AT_RATIO && character.mp > 400) {
@@ -155,27 +195,39 @@ function lowest_health_partymember() {
 }
 
 function find_viable_targets() {
+	let farmableMonsters = [...FARM_BOSSES, ...FARM_MONSTERS];
+	// Filter entities by monster type, not having any targets and not blacklisted
 	let monsters = Object.values(parent.entities).filter(
-			(mob) => (mob.type === "monster") &&
-					!mob.target &&
-					FARM_MONSTERS.includes(mob.mtype)
-		);
+		(mob) => (mob.type === "monster") &&
+				(!BLACKLIST_MONSTERS.includes(mob.mtype) && farmableMonsters.includes(mob.mtype))
+	);
 
 	if (monsters) {
+		// Mark boss monsters
+		monsters.forEach(
+			(mob) => mob.is_boss_target = FARM_BOSSES.includes(mob.mtype)
+		);
+
 		monsters.sort(
 				function (current, next) {
+					// If mob targeting our party member - prioritize it
 					if (current.target === character.name && next.target !== character.name) {
 						return -1;
 					}
-					var dist_current = distance(character, current);
-					var dist_next = distance(character, next);
+
+					let dist_current = distance(character, current);
+					let dist_next = distance(character, next);
+					// If mob is boss - prioritize it and sort em by distance (if more than one)
+					if (current.is_boss_target && !next.is_boss_target) {
+						return -1;
+					} else if (current.is_boss_target && next.is_boss_target) {
+						return (dist_current < dist_next) ? -1 : 1;
+					}
+
+					// If mob is not boss - sort em by distance
 					if (dist_current < dist_next) {
 						return -1;
-					}
-					else if (current.xp > next.xp) {
-						return -1;
-					}
-					else if (dist_current > dist_next) {
+					} else if (dist_current > dist_next) {
 						return 1;
 					}
 					

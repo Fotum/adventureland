@@ -18,7 +18,6 @@ setInterval(() => {
             //spacer Div
             infoHTML += `<div style="height:20px;"></div>`;
             infoHTML += `</div></div>`;
-            infoHTML += `<div>target: ${info.targName ? `<text style="color:red;">${info.targName}</text>` : '<text style="color:yellow;">None</text>'}</div>`;
 			if(info.eSize != null) { 
 				infoHTML += `<div>Bag: ${info.items.length - info.eSize} / ${info.items.length}</div>`;
 			} else {

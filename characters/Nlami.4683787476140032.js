@@ -4,32 +4,39 @@ const USE_MP_AT_RATIO = 0.75;
 const USE_HEAL_AT_RATIO = 0.8;
 const USE_MASS_HEAL_AT_RATIO = 0.5;
 
-var DRAW_DEBUG = true;
-
-const FARM_MONSTERS = [
-	"porcupine",
-	"goldenbat",
-	"cutebee",
+const FARM_BOSSES = [
 	"mvampire",
+	"fvampire",
 	"phoenix",
 	"snowman",
-	"armadillo",
-	"grinch",
-	"croc"
+	"goldenbat",
+	"cutebee",
+	"grinch"
 ];
+const FARM_MONSTERS = [
+	"porcupine",
+	"goo",
+	"minimush",
+	"rat",
+	"stoneworm",
+	"crab",
+	"osnake",
+	"bee",
+	"rat"
+];
+const BLACKLIST_MONSTERS = ["plantoid"];
 
 const DO_NOT_SEND = [
-	{name: "firestaff", level: 7},
-	{name: "slimestaff", level: 7}
+	{name: "firestaff", level: 8}
 ];
 
-var attack_mode = true;
+var is_solo = false;
+var combat_mode = false;
 
 // Load farming functions and loops
 load_code("base_operations");
 load_code("healer_farm");
 load_code("draw_ui");
-load_code("mover_module");
 
 // Send character info
 updateCharacterInfoLoop();
@@ -40,11 +47,7 @@ lootLoop();
 regenLoop();
 
 // Class dependent operations
-attackHealLoop();
-targetChoosePartyLoop();
-// targetChooseSoloLoop();
-curseLoop();
-partyHealLoop();
+switchMode();
 
 sendItemsToCharacterLoop("Momental");
 

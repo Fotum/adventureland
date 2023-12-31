@@ -10,7 +10,6 @@ const POTIONS_MINIMUM = 4500;
 const SELL_LIST = [
 	"xmassweater",
 	"rednose",
-	"mcape",
 	"warmscarf",
 	// Trash
 	"beewings",
@@ -24,35 +23,44 @@ const SELL_LIST = [
 	"vitearring",
 	"dexearring",
 	"snowball",
-	"blade",
-	"staff",
-	"shoes",
-	"helmet",
-	"pants",
-	"gloves",
-	"coat",
+	// "blade",
+	// "staff",
 	"hpbelt",
 	"hpamulet",
-	"cclaw"
+	"cclaw",
+	"iceskates",
+	"hbow",
+	"santasbelt",
+	"candycanesword",
+	"xmaspants",
+	"wcap",
+	"xmashat",
+	"xmasshoes",
+	"stinger",
+	"xmace",
+	"quiver",
+	"sstinger",
+	"merry"
 ];
 
 const PONTY_BUY_LIST = [
     // Wanderer's set
     {item: "wattire", max_level: 4},
-	// {item: "wgloves", max_level: 0},
-	//{item: "wcap", max_level: 4},
-	{item: "wshoes", max_level: 4},
+	// {item: "wgloves", max_level: 4},
+	// {item: "wcap", max_level: 4},
+	// {item: "wshoes", max_level: 4},
     {item: "wbreeches", max_level: 4},
-	// Rugged set
-	// {item: "shoes1", max_level: 4},
-	// {item: "gloves1", max_level: 4},
+	// Rugged set,
 	// {item: "helmet1", max_level: 4},
 	// {item: "pants1", max_level: 4},
+	// {item: "coat1", max_level: 4},
 	// Rare items
 	{item: "firestaff", max_level: 0},
 	{item: "fireblade", max_level: 0},
-	//{item: "sweaterhs", max_level: 0},
-	{item: "ololipop", max_level: 0}
+	{item: "ololipop", max_level: 0},
+	{item: "oozingterror", max_level: 0},
+	{item: "mittens", max_level: 4},
+	{item: "pmace", max_level: 4}
 	// Amulets
 	// {item: "intamulet", level: 1},
 	// {item: "stramulet", level: 1},
@@ -70,7 +78,6 @@ var do_enchant_jewelry = true;
 load_code("base_operations");
 load_code("auto_enchant");
 load_code("draw_ui");
-load_code("mover_module");
 
 // Send character info
 updateCharacterInfoLoop();
@@ -113,13 +120,85 @@ async function buffPlayersAroundLoop() {
 	setTimeout(buffPlayersAroundLoop, Math.max(100, ms_to_next_skill("mluck")));
 }
 
+// async function resupplyMembersLoop() {
+// 	try {
+// 		upgrade_state = false;
+
+// 		let resupply_members = getMembersToResupply();
+// 		resupply_members.sort(function (prev, next) {
+// 			if (prev.map !== next.map) {
+// 				return -1;
+// 			}
+
+// 			return 0;
+// 		});
+
+// 		if (resupply_members.length > 0) {
+// 			await Mover.move("potions")
+// 				.then(() => buyPotionsToMembers(resupply_members)
+// 			);
+			
+// 			for (let member of resupply_members) {
+// 				if (member.name === character.name) {
+// 					continue;
+// 				}
+
+// 				let memberEntity = parent.entities[member.name];
+// 				// Member is not on our map or in close vicinity
+// 				if (!memberEntity) {
+// 					await Mover.move(member.x, member.y, member.map);
+// 				}
+
+// 				memberEntity = parent.entities[member.name];
+// 				if (memberEntity) {
+// 					if (distance(character, memberEntity) > 100) {
+// 						await moveTo({x: memberEntity.x, y: memberEntity.y});
+// 					}
+
+// 					let hpPotsNeeded = member.hp_pots;
+// 					let mpPotsNeeded = member.mp_pots;
+					
+// 					let hpPotsIx = locate_item(HP_POTIONS_TYPE);
+// 					let mpPotsIx = locate_item(MP_POTIONS_TYPE);
+
+// 					if (hpPotsIx > -1 && hpPotsNeeded > 0) {
+// 						sendPotionsToMember(HP_POTIONS_TYPE, member.name, hpPotsNeeded);
+// 					}
+	
+// 					if (mpPotsIx > -1 && mpPotsNeeded > 0) {
+// 						sendPotionsToMember(MP_POTIONS_TYPE, member.name, mpPotsNeeded);
+// 					}
+// 				}
+// 			}
+
+// 			await Mover.move(-232, -136, "main")
+// 				.catch((e) => game_log(e.reason)
+// 			);
+// 		}
+// 	} catch (e) {
+// 		game_log(`[resupplyMembersLoop] - ${e.name}: ${e.message}`);
+// 	} finally {
+// 		upgrade_state = true;
+// 	}
+
+// 	setTimeout(resupplyMembersLoop, 60000);
+// }
+
 async function resupplyMembersLoop() {
 	try {
 		upgrade_state = false;
 
 		let resupply_members = getMembersToResupply();
+		resupply_members.sort(function (prev, next) {
+			if (prev.map !== next.map) {
+				return -1;
+			}
+
+			return 0;
+		});
+
 		if (resupply_members.length > 0) {
-			await Mover.move("potions")
+			await smart_move("potions")
 				.then(() => buyPotionsToMembers(resupply_members)
 			);
 			
@@ -131,13 +210,17 @@ async function resupplyMembersLoop() {
 				let memberEntity = parent.entities[member.name];
 				// Member is not on our map or in close vicinity
 				if (!memberEntity) {
-					await Mover.move(member.x, member.y, member.map);
+					if (member.map !== character.map) {
+						await smart_move(member.map);
+					}
+
+					await moveTo({x: member.x, y: member.y})
 				}
 
 				memberEntity = parent.entities[member.name];
 				if (memberEntity) {
 					if (distance(character, memberEntity) > 100) {
-						await Mover.moveX(memberEntity.x, memberEntity.y);
+						await moveTo({x: memberEntity.x, y: memberEntity.y});
 					}
 
 					let hpPotsNeeded = member.hp_pots;
@@ -156,7 +239,13 @@ async function resupplyMembersLoop() {
 				}
 			}
 
-			await Mover.move(-232, -136, "main");
+			if (character.map !== "main") {
+				await smart_move({map: "main", x: -232, y: -136})
+					.catch((e) => game_log(e.reason)
+				);
+			} else {
+				await moveTo({x: -232, y: -136});
+			}
 		}
 	} catch (e) {
 		game_log(`[resupplyMembersLoop] - ${e.name}: ${e.message}`);
@@ -275,7 +364,7 @@ function buyPotionsToMembers(resupply_members) {
 }
 
 function adjustPotionsToBuy(potType) {
-	let potInInventory = num_items(potType);
+	let potInInventory = num_items((i) => i && i.name === potType);
 	let numToAdjust = potInInventory - POTIONS_NEEDED;
 
 	return (numToAdjust > 0) ? numToAdjust : 0;
