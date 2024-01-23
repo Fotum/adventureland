@@ -31,7 +31,6 @@ async function attackHealLoop() {
 		if (lowest_health && is_in_range(lowest_health, "attack") && lowest_health.health_ratio < USE_HEAL_AT_RATIO) {
 			set_message("Healing");
 
-			last_targeted_monster = target;
 			await heal(lowest_health)
 				.catch(
 					(reason) => game_log(`Heal failed: ${reason.reason}`)
@@ -65,6 +64,8 @@ async function targetChoosePartyLoop() {
 				target = get_target_of(tank_character);
 				if (target) {
 					change_target(target);
+				} else if (simple_distance(character, tank_character) > 50) {
+					change_target(tank_character);
 				}
 			}
 		}

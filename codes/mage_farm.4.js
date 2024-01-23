@@ -56,6 +56,8 @@ async function targetChoosePartyLoop() {
 				target = get_target_of(tank_character);
 				if (target) {
 					change_target(target);
+				} else if (simple_distance(character, tank_character) > 50) {
+					change_target(tank_character);
 				}
 			}
 		}

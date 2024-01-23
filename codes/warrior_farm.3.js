@@ -142,6 +142,13 @@ function find_viable_targets() {
 			}
 		);
 
+        // Use circle area
+        if (farm_area) {
+            monsters = monsters.filter(
+                (mob) => distance(farm_area, mob) <= farm_area.d
+            );
+        }
+
 		monsters.sort(
 			function (current, next) {
 				// If mob targeting our party member - prioritize it

@@ -26,7 +26,9 @@ const BLACKLIST_MONSTERS = ["plantoid"];
 
 const DO_NOT_SEND = [
 	{name: "firestaff", level: 8},
-	{name: "ornamentstaff", level: 7}
+	{name: "ornamentstaff", level: 7},
+	{name: "orbg", level: 2},
+	{name: "test_orb", level: 0}
 ];
 
 var is_solo = false;

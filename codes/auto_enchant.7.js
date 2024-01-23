@@ -21,7 +21,7 @@ const upgrade_items = [
 	{item: "wcap", level: 8},
 	{item: "wbreeches", level: 8},
 	// Heavy set
-	{item: "hhelmet", level: 6},
+	{item: "hhelmet", level: 7},
 	{item: "harmor", level: 7},
 	{item: "hpants", level: 7},
 	// Rare items

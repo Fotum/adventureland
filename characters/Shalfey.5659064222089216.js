@@ -1,9 +1,18 @@
+// Load everything that's needed functions
+load_code("base_operations");
+load_code("warrior_farm");
+// load_code("draw_ui");
+
+
 const USE_HP_AT_RATIO = 0.75;
 const USE_MP_AT_RATIO = 0.75;
 
 const USE_HS_AT_HP_RATIO = 0.5;
 
-const DO_NOT_SEND = [];
+const DO_NOT_SEND = [
+	{name: "orbg", level: 2},
+	{name: "test_orb", level: 0}
+];
 
 const FARM_BOSSES = [
 	"mvampire",
@@ -12,7 +21,8 @@ const FARM_BOSSES = [
 	"snowman",
 	"goldenbat",
 	"cutebee",
-	"grinch"
+	"grinch",
+	"dragold"
 ];
 const FARM_MONSTERS = [
 	"bat",
@@ -38,10 +48,7 @@ const BLACKLIST_MONSTERS = [
 var is_solo = false;
 var combat_mode = false;
 
-// Load everything that's needed functions
-load_code("base_operations");
-load_code("warrior_farm");
-load_code("draw_ui");
+var farm_area = FARM_AREAS.caveFirst.area;
 
 // Send character info
 updateCharacterInfoLoop();

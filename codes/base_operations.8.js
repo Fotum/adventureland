@@ -1,6 +1,19 @@
 load_code("graph_mover");
 load_code("mover_module");
 
+
+const FARM_AREAS = {
+	caveFirst: {
+		area: {x: 70, y: -1300, d: 550},
+		position: {x: 377, y: -1075, map: "cave"}
+	},
+	caveSecond: {
+		area: {x: 1282, y: -19, d: 300},
+		position: {x: 1282, y: -19, map: "cave"}
+	}
+};
+
+
 var MAP_GRAPH = initializeGraphGlobal(character.map);
 game.on("new_map", function () {
     MAP_GRAPH = initializeGraphGlobal(character.map);
@@ -222,6 +235,29 @@ async function sendItemsToCharacterLoop(name) {
 	setTimeout(async () => { sendItemsToCharacterLoop(name) }, 1000);
 }
 
+async function changeSpot(spot) {
+	if (!spot || !FARM_AREAS[spot]) {
+		return;
+	}
+
+	// Turn off combat mode
+	switchMode();
+
+	let spotArea = FARM_AREAS[spot];
+	farm_area = spotArea.area;
+	farmPosition = spotArea.position;
+
+	// Find cruise speed
+	let party_speeds = parent.party_list.map(nm => get(nm)?.speed);
+	let min_speed = Math.min(character.speed, ...party_speeds);
+	
+	cruise(min_speed);
+	await smart_move(farmPosition);
+	cruise(null);
+
+	switchMode();
+}
+
 //Returns the number of items in your inventory for a given item name;
 function num_items(filtCondition) {
 	return character.items
@@ -232,12 +268,12 @@ function num_items(filtCondition) {
 }
 
 function ms_to_next_skill(skill) {
-	var next_skill = parent.next_skill[skill];
+	let next_skill = parent.next_skill[skill];
 	if (!next_skill) {
 		return 0;
     }
 	
-	var ms = parent.next_skill[skill].getTime() - Date.now();
+	let ms = parent.next_skill[skill].getTime() - Date.now();
 	
 	return ms < 0 ? 0 : ms;
 }

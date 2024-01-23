@@ -11,10 +11,6 @@ const SELL_LIST = [
 	"xmassweater",
 	"rednose",
 	"warmscarf",
-	// Trash
-	"beewings",
-	"rattail",
-	"spores",
 
 	"dexamulet",
 	"vitamulet",
@@ -40,13 +36,22 @@ const SELL_LIST = [
 	"xmace",
 	"quiver",
 	"sstinger",
-	"merry"
+	"merry",
+	// "ringsj",
+	"t2bow",
+
+	// Rugged
+	"helmet1",
+	"coat1",
+	"pants1",
+	"gloves1",
+	"shoes1"
 ];
 
 const PONTY_BUY_LIST = [
     // Wanderer's set
     {item: "wattire", max_level: 4},
-	// {item: "wgloves", max_level: 4},
+	{item: "wgloves", max_level: 4},
 	// {item: "wcap", max_level: 4},
 	// {item: "wshoes", max_level: 4},
     {item: "wbreeches", max_level: 4},
@@ -54,13 +59,18 @@ const PONTY_BUY_LIST = [
 	// {item: "helmet1", max_level: 4},
 	// {item: "pants1", max_level: 4},
 	// {item: "coat1", max_level: 4},
+	// Heavy set
+	// {item: "hhelmet", max_level: 2},
+	{item: "harmor", max_level: 2},
+	{item: "hpants", max_level: 2},
 	// Rare items
 	{item: "firestaff", max_level: 0},
 	{item: "fireblade", max_level: 0},
 	{item: "ololipop", max_level: 0},
 	{item: "oozingterror", max_level: 0},
 	{item: "mittens", max_level: 4},
-	{item: "pmace", max_level: 4}
+	{item: "pmace", max_level: 4},
+	{item: "lmace", max_level: 5}
 	// Amulets
 	// {item: "intamulet", level: 1},
 	// {item: "stramulet", level: 1},
@@ -68,6 +78,24 @@ const PONTY_BUY_LIST = [
 	// {item: "strring", level: 1},
 	// {item: "intring", level: 1}
 ];
+
+const EXCHANGE_ITEMS = [
+	"weaponbox",
+	"armorbox",
+	"gem0",
+	"greenenvelope",
+	"goldenegg"
+];
+
+const NO_TELEPORT_MAPS = [
+	"cave"
+];
+
+const AFK_POSITION = {
+	x: -232,
+	y: -136,
+	map: "main"
+};
 
 
 var upgrade_state = true;
@@ -82,6 +110,7 @@ load_code("draw_ui");
 // Send character info
 updateCharacterInfoLoop();
 
+// General operations
 lootLoop();
 regenLoop();
 
@@ -98,6 +127,8 @@ setInterval(buyFromPonty, 60000);
 buffPlayersAroundLoop();
 // Do resupply runs
 resupplyMembersLoop();
+// Exchange items from Xyn
+exchangeItemsLoop();
 
 async function buffPlayersAroundLoop() {
 	try {
@@ -120,70 +151,6 @@ async function buffPlayersAroundLoop() {
 	setTimeout(buffPlayersAroundLoop, Math.max(100, ms_to_next_skill("mluck")));
 }
 
-// async function resupplyMembersLoop() {
-// 	try {
-// 		upgrade_state = false;
-
-// 		let resupply_members = getMembersToResupply();
-// 		resupply_members.sort(function (prev, next) {
-// 			if (prev.map !== next.map) {
-// 				return -1;
-// 			}
-
-// 			return 0;
-// 		});
-
-// 		if (resupply_members.length > 0) {
-// 			await Mover.move("potions")
-// 				.then(() => buyPotionsToMembers(resupply_members)
-// 			);
-			
-// 			for (let member of resupply_members) {
-// 				if (member.name === character.name) {
-// 					continue;
-// 				}
-
-// 				let memberEntity = parent.entities[member.name];
-// 				// Member is not on our map or in close vicinity
-// 				if (!memberEntity) {
-// 					await Mover.move(member.x, member.y, member.map);
-// 				}
-
-// 				memberEntity = parent.entities[member.name];
-// 				if (memberEntity) {
-// 					if (distance(character, memberEntity) > 100) {
-// 						await moveTo({x: memberEntity.x, y: memberEntity.y});
-// 					}
-
-// 					let hpPotsNeeded = member.hp_pots;
-// 					let mpPotsNeeded = member.mp_pots;
-					
-// 					let hpPotsIx = locate_item(HP_POTIONS_TYPE);
-// 					let mpPotsIx = locate_item(MP_POTIONS_TYPE);
-
-// 					if (hpPotsIx > -1 && hpPotsNeeded > 0) {
-// 						sendPotionsToMember(HP_POTIONS_TYPE, member.name, hpPotsNeeded);
-// 					}
-	
-// 					if (mpPotsIx > -1 && mpPotsNeeded > 0) {
-// 						sendPotionsToMember(MP_POTIONS_TYPE, member.name, mpPotsNeeded);
-// 					}
-// 				}
-// 			}
-
-// 			await Mover.move(-232, -136, "main")
-// 				.catch((e) => game_log(e.reason)
-// 			);
-// 		}
-// 	} catch (e) {
-// 		game_log(`[resupplyMembersLoop] - ${e.name}: ${e.message}`);
-// 	} finally {
-// 		upgrade_state = true;
-// 	}
-
-// 	setTimeout(resupplyMembersLoop, 60000);
-// }
-
 async function resupplyMembersLoop() {
 	try {
 		upgrade_state = false;
@@ -198,6 +165,7 @@ async function resupplyMembersLoop() {
 		});
 
 		if (resupply_members.length > 0) {
+			useTownSwitch();
 			await smart_move("potions")
 				.then(() => buyPotionsToMembers(resupply_members)
 			);
@@ -207,45 +175,38 @@ async function resupplyMembersLoop() {
 					continue;
 				}
 
-				let memberEntity = parent.entities[member.name];
-				// Member is not on our map or in close vicinity
-				if (!memberEntity) {
+				// Member is not in close vicinity
+				while (distance(character, member) > 100) {
+					// Member is not on our map
 					if (member.map !== character.map) {
-						await smart_move(member.map);
+						useTownSwitch();
+						await smart_move(member);
 					}
-
-					await moveTo({x: member.x, y: member.y})
+					// Member is on our map, but not near
+					else {
+						await moveTo(member);
+					}
 				}
 
-				memberEntity = parent.entities[member.name];
-				if (memberEntity) {
-					if (distance(character, memberEntity) > 100) {
-						await moveTo({x: memberEntity.x, y: memberEntity.y});
-					}
+				let hpPotsNeeded = member.hp_pots;
+				let mpPotsNeeded = member.mp_pots;
+				
+				let hpPotsIx = locate_item(HP_POTIONS_TYPE);
+				let mpPotsIx = locate_item(MP_POTIONS_TYPE);
 
-					let hpPotsNeeded = member.hp_pots;
-					let mpPotsNeeded = member.mp_pots;
-					
-					let hpPotsIx = locate_item(HP_POTIONS_TYPE);
-					let mpPotsIx = locate_item(MP_POTIONS_TYPE);
+				if (hpPotsIx > -1 && hpPotsNeeded > 0) {
+					sendPotionsToMember(HP_POTIONS_TYPE, member.name, hpPotsNeeded);
+				}
 
-					if (hpPotsIx > -1 && hpPotsNeeded > 0) {
-						sendPotionsToMember(HP_POTIONS_TYPE, member.name, hpPotsNeeded);
-					}
-	
-					if (mpPotsIx > -1 && mpPotsNeeded > 0) {
-						sendPotionsToMember(MP_POTIONS_TYPE, member.name, mpPotsNeeded);
-					}
+				if (mpPotsIx > -1 && mpPotsNeeded > 0) {
+					sendPotionsToMember(MP_POTIONS_TYPE, member.name, mpPotsNeeded);
 				}
 			}
 
-			if (character.map !== "main") {
-				await smart_move({map: "main", x: -232, y: -136})
-					.catch((e) => game_log(e.reason)
-				);
-			} else {
-				await moveTo({x: -232, y: -136});
-			}
+			useTownSwitch();
+			await smart_move(AFK_POSITION)
+				.catch((e) => game_log(e.reason)
+			);
 		}
 	} catch (e) {
 		game_log(`[resupplyMembersLoop] - ${e.name}: ${e.message}`);
@@ -254,6 +215,34 @@ async function resupplyMembersLoop() {
 	}
 
 	setTimeout(resupplyMembersLoop, 60000);
+}
+
+async function exchangeItemsLoop() {
+	let currentMap = G.maps[character.map];
+	const exchangeLoc = Object.values(currentMap.npcs).find((n) => n?.id === "exchange");
+	let itemsToExchange = getItemsToExchange();
+	
+	if (exchangeLoc && itemsToExchange.length > 0 && character.esize > 0 && !character.moving) {
+		let exchangePosition = {
+			x: exchangeLoc.position[0],
+			y: exchangeLoc.position[1]
+		};
+
+		if (simple_distance(character, exchangePosition) > 400) {
+			await moveTo(exchangePosition);
+		}
+
+		while (itemsToExchange.length > 0 && character.esize > 0 && simple_distance(character, exchangePosition) <= 400) {
+			await exchangeItems(itemsToExchange);
+			itemsToExchange = getItemsToExchange();
+		}
+
+		await moveTo(AFK_POSITION);
+	} else {
+		game_log("Could not exchange items, either location not found or no items to exchange");
+	}
+
+	setTimeout(exchangeItemsLoop, 90000);
 }
 
 function sellStuffFromList() {
@@ -307,7 +296,7 @@ function getMembersToResupply() {
 		return [];
 	}
 	
-	let member_info = party_members.map((nm) => get(nm));
+	let member_info = party_members.map((nm) => get(nm)).filter((m) => m);
 
 	let someoneOverMinimum = member_info.find(
 		(m) => m.name !== character.name && (m.hpPots < POTIONS_MINIMUM || m.mpPots < POTIONS_MINIMUM)
@@ -436,4 +425,39 @@ async function sendPotionsToMember(potionType, memberName, totalAmount) {
 	} catch (e) {
 		game_log(`[sendPotionsToMember] - ${e.name}: ${e.message}`);
 	}
+}
+
+function getItemsToExchange() {
+	let result = [];
+	for (let i = 0; i < character.items.length; i++) {
+		let item = character.items[i];
+		if (item?.name && EXCHANGE_ITEMS.includes(item?.name)) {
+			result.push(
+				{
+					ix: i,
+					nm: item.name,
+					q: item.q
+				}
+			);
+		}
+	}
+
+	return result;
+}
+
+async function exchangeItems(itemsList) {
+	if (!itemsList?.length) {
+		return;
+	}
+
+	while (itemsList.length > 0 && character.esize > 0) {
+		let item = itemsList.pop();
+		for (let j = 0; j < item.q && character.esize > 0; j++) {
+			await exchange(item.ix);
+		}
+	}
+}
+
+function useTownSwitch() {
+	smart.use_town = !NO_TELEPORT_MAPS.includes(character.map);
 }
