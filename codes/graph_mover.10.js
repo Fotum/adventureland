@@ -1,4 +1,86 @@
-const GRAPH_RESOLUTION = 10;
+const GRAPH_RESOLUTION = 5;
+
+class CustHeap {
+    heapArray = [];
+    compare = CustHeap.minComparator;
+
+    constructor(comp_func = Heap.minComparator) {
+        this.compare = comp_func;
+    }
+
+    static minComparator(a, b) {
+        if (a > b) return 1;
+        else if (a < b) return -1;
+        else return 0;
+    }
+
+    size() {
+        return this.heapArray.length;
+    }
+
+    pop() {
+        let lastelt = this.heapArray.pop();
+        let returnItem = this.heapArray[0];
+
+        if (this.heapArray.length) {
+            this.heapArray[0] = lastelt;
+            this._siftup(this.heapArray, 0);
+        } else {
+            returnItem = lastelt;
+        }
+
+        return returnItem;
+    }
+
+    push(item) {
+        this.heapArray.push(item);
+        this._siftdown(this.heapArray, 0, this.size() - 1);
+    }
+
+    updateItem(item) {
+        let pos = this.heapArray.indexOf(item);
+        if (pos == -1) return;
+
+        this._siftdown(this.heapArray, 0, pos);
+        this._siftup(this.heapArray, pos);
+    }
+
+    _siftdown(array, startpos, pos) {
+        let newItem = array[pos];
+        while (pos > startpos) {
+            let parentpos = (pos - 1) >> 1;
+            let parent = array[parentpos];
+            if (this.compare(newItem, parent) < 0) {
+                array[pos] = parent;
+                pos = parentpos;
+                continue;
+            }
+
+            break;
+        }
+
+        array[pos] = newItem;
+    }
+
+    _siftup(array, pos) {
+        let endpos = array.length;
+        let startpos = pos;
+        let newItem = array[pos];
+        let childpos = 2 * pos + 1;
+
+        while (childpos < endpos) {
+            let rightpos = childpos + 1;
+            if (rightpos < endpos && !(this.compare(array[childpos], array[rightpos]) < 0)) childpos = rightpos;
+
+            array[pos] = array[childpos];
+            pos = childpos;
+            childpos = 2 * pos + 1;
+        }
+
+        array[pos] = newItem;
+        this._siftdown(array, startpos, pos);
+    }
+}
 
 class Box {
     constructor(x1, y1, x2, y2) {
@@ -6,20 +88,6 @@ class Box {
         this.y1 = y1;
         this.x2 = x2;
         this.y2 = y2;
-    }
-
-    square() {
-        let width = this.width();
-        let height = this.height();
-        let difference = Math.abs(height - width) / 2;
-
-        if (width < height) {
-            this.x1 -= difference;
-            this.x2 += difference;
-        } else {
-            this.y1 -= difference;
-            this.y2 += difference;
-        }
     }
 
     width() {
@@ -31,7 +99,6 @@ class Box {
     }
 
     contains(x, y) {
-        // Added equalty sign for case when characters stands directrly at the centre
         return (this.x1 <= x && x <= this.x2 &&
                 this.y1 <= y && y <= this.y2);
     }
@@ -58,6 +125,11 @@ class Box {
         return true;
     }
 
+    static square(cx, cy, side) {
+        let half_side = side / 2;
+        return new Box(cx - half_side, cy - half_side, cx + half_side, cy + half_side);
+    }
+
     drawBoxLines() {
         let width = this.width();
         let height = this.height();
@@ -77,44 +149,56 @@ class Box {
 }
 
 class NodeTree {
-    constructor(region, obstacles, parent, nodeIx) {
-        if (parent) {
-            this.parent = parent;
+    constructor(region, obstacles, root, level) {
+        if (!level) {
+            this.level = Math.ceil(Math.log2(region.width() / GRAPH_RESOLUTION));
         } else {
-            this.parent = null;
+            this.level = level;
         }
 
-        // Represents and index of this node relative to parent
-        // NW - 00, NE - 01, SW - 10, SE - 11
-        this.index = nodeIx;
-        // Square representing current region
+        if (root) {
+            this.root = root;
+        } else {
+            this.root = this;
+        }
+
         this.region = region;
 
-        // Coords of region's centre
         this.x = (region.x1 + region.x2) / 2;
         this.y = (region.y1 + region.y2) / 2;
 
-        // Subregions
-        this.children = [];
-        // Adjacent nodes
-        this.connections = [];
-        // Obstacles inside this node
         this.obstacles = obstacles;
 
-        // Is region was connected or not
-        this.isConnected = false;
-        // This region is crossable or not
-        this.isCrossable = this.obstacles.length === 0;
-        // This node is a leaf or not
-        this.isLeaf = this.isCrossable || this.region.width() <= GRAPH_RESOLUTION;
+        this.crossable = true;
+        this.is_leaf = false;
 
-        this.subdivide();
+        if (this.obstacles.length == 0) {
+            this.is_leaf = true;
+        } else if (this.level == 0) {
+            this.is_leaf = true;
+            this.crossable = false;
+        }
+
+        this.quads = null;
+        this.neighbors = null;
+
+        this.list_id = 0;
+        this.heuristic = 0;
+
+        if (!this.is_leaf) {
+            this.subdivide();
+        }
+    }
+
+    get_quad(x, y) {
+        if (x < this.x && y < this.y) return this.quads[0];
+        else if (x >= this.x && y < this.y) return this.quads[1];
+        else if (x < this.x && y >= this.y) return this.quads[2];
+        return this.quads[3];
     }
 
     subdivide() {
-        if (this.isLeaf) {
-            return;
-        }
+        this.quads = [];
 
         let l = this.region.x1;
         let r = this.region.x2;
@@ -125,310 +209,150 @@ class NodeTree {
         let y = this.y;
 
         let subregions = [
-            new Box(l, t, x, y), // 0 - 00 NW
-            new Box(x, t, r, y), // 1 - 01 NE
-            new Box(l, y, x, b), // 2 - 10 SW
-            new Box(x, y, r, b), // 3 - 11 SE
+            new Box(l, t, x, y),
+            new Box(x, t, r, y),
+            new Box(l, y, x, b),
+            new Box(x, y, r, b),
         ];
 
+        let obstacles = this.obstacles;
         for (let i = 0; i < subregions.length; i++) {
             let subregion = subregions[i];
-            let subObstacles = [];
+            let subregion_obstacles = [];
 
-            for (let obstacle of this.obstacles) {
+            for (let j = 0; j < obstacles.length; j++) {
+                let obstacle = obstacles[j];
                 if (subregion.intersects(obstacle)) {
-                    subObstacles.push(obstacle);
+                    subregion_obstacles.push(obstacle);
                 }
             }
 
-            this.children[i] = new NodeTree(subregion, subObstacles, this, i);
+            this.quads[i] = new NodeTree(subregion, subregion_obstacles, this.root, this.level - 1);
         }
     }
 
-    getGreaterOrEqualSizeConnections(direction) {
-        // Straight Directions: N, E, S, W
-        // Diagonal Directions: NW, NE, SE, SW
-        // Reached root of the tree
-        if (this.parent == this) {
-            return null;
-        }
-
-        // This node is NW child of it's parent
-        if (this.index === 0) {
-            if (direction === "E") {
-                return this.parent.children[1];
-            } else if (direction === "S") {
-                return this.parent.children[2];
-            } else if (direction === "SE") {
-                return this.parent.children[3];
-            } else if (direction === "N" || direction === "W") {
-                let node = this.parent.getGreaterOrEqualSizeConnections(direction);
-                if (!node || node.isLeaf) {
-                    return node;
-                }
-
-                if (direction === "N") {
-                    return node.children[2];
-                } else if (direction === "W") {
-                    return node.children[1];
-                }
-            } else if (direction === "SW" || direction === "NW" || direction === "NE") {
-                let node = undefined;
-                if (direction === "SW") {
-                    node = this.parent.getGreaterOrEqualSizeConnections("W");
-                } else if (direction === "NW") {
-                    node = this.parent.getGreaterOrEqualSizeConnections(direction);
-                } else if (direction === "NE") {
-                    node = this.parent.getGreaterOrEqualSizeConnections("N");
-                }
-
-                if (!node || node.isLeaf) {
-                    return node;
-                }
-
-                return node.children[3];
-            }
-        }
-        // This node is NE child of it's parent
-        else if (this.index === 1) {
-            if (direction === "S") {
-                return this.parent.children[3];
-            } else if (direction === "W") {
-                return this.parent.children[0];
-            } else if (direction === "SW") {
-                return this.parent.children[2];
-            } else if (direction === "N" || direction === "E") {
-                let node = this.parent.getGreaterOrEqualSizeConnections(direction);
-                if (!node || node.isLeaf) {
-                    return node;
-                }
-
-                if (direction === "N") {
-                    return node.children[3];
-                } else if (direction === "E") {
-                    return node.children[0];
-                }
-            } else if (direction === "NW" || direction === "NE" || direction === "SE") {
-                let node = undefined;
-                if (direction === "NW") {
-                    node = this.parent.getGreaterOrEqualSizeConnections("N");
-                } else if (direction === "NE") {
-                    node = this.parent.getGreaterOrEqualSizeConnections(direction);
-                } else if (direction === "SE") {
-                    node = this.parent.getGreaterOrEqualSizeConnections("E");
-                }
-
-                if (!node || node.isLeaf) {
-                    return node;
-                }
-
-                return node.children[2];
-            }
-        }
-        // This node is SW child of it's parent
-        else if (this.index === 2) {
-            if (direction === "N") {
-                return this.parent.children[0];
-            } else if (direction === "E") {
-                return this.parent.children[3];
-            } else if (direction === "NE") {
-                return this.parent.children[1];
-            } else if (direction === "S" || direction === "W") {
-                let node = this.parent.getGreaterOrEqualSizeConnections(direction);
-                if (!node || node.isLeaf) {
-                    return node;
-                }
-
-                if (direction === "S") {
-                    return node.children[0];
-                } else if (direction === "W") {
-                    return node.children[3];
-                }
-            } else if (direction === "SE" || direction === "SW" || direction === "NW") {
-                let node = undefined;
-                if (direction === "SE") {
-                    node = this.parent.getGreaterOrEqualSizeConnections("S");
-                } else if (direction === "SW") {
-                    node = this.parent.getGreaterOrEqualSizeConnections(direction);
-                } else if (direction === "NW") {
-                    node = this.parent.getGreaterOrEqualSizeConnections("W");
-                }
-
-                if (!node || node.isLeaf) {
-                    return node;
-                }
-
-                return node.children[1];
-            }
-        }
-        // This node is SE child of it's parent
-        else if (this.index === 3) {
-            if (direction === "N") {
-                return this.parent.children[1];
-            } else if (direction === "W") {
-                return this.parent.children[2];
-            } else if (direction === "NW") {
-                return this.parent.children[0];
-            } else if (direction === "E" || direction === "S") {
-                let node = this.parent.getGreaterOrEqualSizeConnections(direction);
-                if (!node || node.isLeaf) {
-                    return node;
-                }
-
-                if (direction === "E") {
-                    return node.children[2];
-                } else if (direction === "S") {
-                    return node.children[1];
-                } else if (direction === "SE") {
-                    return node.children[0];
-                }
-            } else if (direction === "NE" || direction === "SE" || direction === "SW") {
-                let node = undefined;
-                if (direction === "NE") {
-                    node = this.parent.getGreaterOrEqualSizeConnections("E");
-                } else if (direction === "SE") {
-                    node = this.parent.getGreaterOrEqualSizeConnections(direction);
-                } else if (direction === "SW") {
-                    node = this.parent.getGreaterOrEqualSizeConnections("S");
-                }
-
-                if (!node || node.isLeaf) {
-                    return node;
-                }
-
-                return node.children[0];
-            }
-        }
-
-        return null;
+    get(x, y) {
+        if (!this.region.contains(x, y)) return null;
+        if (this.is_leaf) return this;
+        return this.get_quad(x, y).get(x, y);
     }
 
-    getSmallerSizeConnections(connection, direction) {
-        let candidates = [];
-        let connections = [];
+    get_neighbors() {
+        if (!this.is_leaf) throw new Error('Tried getting neighbors of non-leaf node');
+        if (this.neighbors) return this.neighbors;
 
-        if (connection) {
-            candidates.push(connection);
+        let left = this.region.x1;
+        let right = this.region.x2;
+        let top = this.region.y1;
+        let bottom = this.region.y2;
+
+        let min_size = this.region.width() * (2 ** -this.level);
+        let num_neighbors = 2 ** this.level;
+
+        let neighbor_set = new Set();
+
+        // Top and bottom (and corners).
+        for (let x = -(num_neighbors + 1); x <= (num_neighbors + 1); x += 2) {
+            let real_x = this.x + min_size * (x / 2);
+
+            let neighbor = this.root.get(real_x, top - min_size / 2);
+            if (neighbor && neighbor.crossable) neighbor_set.add(neighbor);
+
+            neighbor = this.root.get(real_x, bottom + min_size / 2);
+            if (neighbor && neighbor.crossable) neighbor_set.add(neighbor);
         }
 
-        while (candidates.length > 0) {
-            let zeroCandidate = candidates.shift(candidates[0]);
-            if (zeroCandidate.isLeaf) {
-                connections.push(zeroCandidate);
-            } else {
-                if (direction === "N") {
-                    candidates.push(zeroCandidate.children[2]);
-                    candidates.push(zeroCandidate.children[3]);
-                } else if (direction === "E") {
-                    candidates.push(zeroCandidate.children[0]);
-                    candidates.push(zeroCandidate.children[2]);
-                } else if (direction === "S") {
-                    candidates.push(zeroCandidate.children[0]);
-                    candidates.push(zeroCandidate.children[1]);
-                } else if (direction === "W") {
-                    candidates.push(zeroCandidate.children[1]);
-                    candidates.push(zeroCandidate.children[3]);
-                } else if (direction === "NE") {
-                    candidates.push(zeroCandidate.children[2]);
-                } else if (direction === "SE") {
-                    candidates.push(zeroCandidate.children[0]);
-                } else if (direction === "SW") {
-                    candidates.push(zeroCandidate.children[1]);
-                } else if (direction === "NW") {
-                    candidates.push(zeroCandidate.children[3]);
-                }
-            }
+        // Left and right.
+        for (let y = -(num_neighbors - 1); y <= (num_neighbors - 1); y += 2) {
+            let real_y = this.y + min_size * (y / 2);
+
+            let neighbor = this.root.get(left - min_size / 2, real_y);
+            if (neighbor && neighbor.crossable) neighbor_set.add(neighbor);
+
+            neighbor = this.root.get(right + min_size / 2, real_y);
+            if (neighbor && neighbor.crossable) neighbor_set.add(neighbor);
         }
 
-        return connections.filter((n) => n.isCrossable);
+        this.neighbors = [...neighbor_set];
+
+        return this.neighbors;
     }
 
-    establishConnections() {
-        if (!this.isLeaf || !this.isCrossable) {
-            return [];
-        }
+    get_containing(a, b) {
+        if (this.is_leaf) return this;
 
-        if (this.isConnected) {
-            return this.connections;
-        }
+        let a_quad = this.get_quad(a.x, a.y);
+        let b_quad = this.get_quad(b.x, b.y);
 
-        let directions = ["N", "E", "S", "W"];
-        let tmpConnections = [];
-        for (let direction of directions) {
-            let greaterOrEqual = this.getGreaterOrEqualSizeConnections(direction);
-            let smaller = this.getSmallerSizeConnections(greaterOrEqual, direction);
-
-            tmpConnections = tmpConnections.concat(smaller);
-        }
-
-        this.isConnected = true;
-        this.connections = tmpConnections;
-
-        return this.connections;
-    }
-
-    initConnections() {
-        // Initialize connections only for crossable leaf nodes which are not already connected
-        if (!this.isLeaf || !this.isCrossable || this.isConnected) {
-            return;
-        }
-
-        // #TODO For debug purposes
-        // this.region.drawBoxLines();
-        let connections = this.establishConnections();
-        for (let conn of connections) {
-            if (!conn.isConnected) {
-                conn.initConnections();
-            }
-        }
-    }
-
-    getRegionOfPoint(x, y) {
-        if (!this.region.contains(x, y)) {
-            return null;
-        }
-
-        if (this.isLeaf) {
-            return this;
-        }
-
-        return this.getQuad(x, y).getRegionOfPoint(x, y);
-    }
-
-    getQuad(x, y) {
-        if (this.children.length === 0) {
-            return this;
-        }
-
-        if (x < this.x && y < this.y) return this.children[0];
-        else if (x >= this.x && y < this.y) return this.children[1];
-        else if (x < this.x && y >= this.y) return this.children[2];
-        return this.children[3];
-    }
-
-    getContaining(a, b) {
-        // Acquiring nodes for both pair of coordinates
-        let a_quad = this.getQuad(a.x, a.y);
-        let b_quad = this.getQuad(b.x, b.y);
-
-        // If a = b, check children
-        if (a_quad == b_quad) {
-            return a_quad.getContaining(a, b);
-        }
+        if (a_quad == b_quad) return a_quad.get_containing(a, b);
 
         return this;
     }
 
-    hasConnection(node) {
-        if (!node || this.connections.length === 0) {
-            return false;
+    has_sight(node) {
+        let ancestor = this.root.get_containing(this, node);
+        let obstacles = ancestor.obstacles;
+
+        let min_x = Math.min(node.x, this.x);
+        let max_x = Math.max(node.x, this.x);
+        let min_y = Math.min(node.y, this.y);
+        let max_y = Math.max(node.y, this.y);
+
+        let invdx = 1 / (node.x - this.x);
+        let invdy = 1 / (node.y - this.y);
+
+        for (let i = 0; i < obstacles.length; i++) {
+            let obstacle = obstacles[i];
+            if (max_x >= obstacle.x1 && min_x <= obstacle.x2 &&
+                max_y >= obstacle.y1 && min_y <= obstacle.y2 &&
+                obstacle.intersects_segment(this.x, this.y, invdx, invdy)) {
+                return false;
+            }
         }
 
-        return this.connections.includes(node);
+        return true;
     }
 }
 
-function initializeGraphGlobal(mapName) {
+class VirtualNode extends NodeTree {
+    constructor(parent, x, y) {
+        super(parent.region, [], parent.root, -1);
+
+        this.x = x;
+        this.y = y;
+
+        this.parent = parent;
+        this.neighbors = [parent];
+
+        let neighbors = parent.get_neighbors();
+        for (let neighbor of neighbors) {
+            if (!neighbor.has_sight(this)) continue;
+            this.neighbors.push(neighbor);
+            neighbor.get_neighbors().push(this);
+        }
+
+        neighbors.push(this);
+    }
+
+    destroy() {
+        for (let neighbor of this.neighbors) {
+            let neighbor_neighbors = neighbor.get_neighbors();
+            neighbor_neighbors.splice(neighbor_neighbors.indexOf(this), 1);
+        }
+    }
+}
+
+function calculate_size(actual_size) {
+    let cur_size = GRAPH_RESOLUTION;
+
+    while (cur_size < actual_size) {
+        cur_size *= 2;
+    }
+
+    return cur_size;
+}
+
+function initialize_graph(mapName) {
     let mapData = parent.G.maps[mapName].data;
 
     let min_x = Infinity;
@@ -442,11 +366,14 @@ function initializeGraphGlobal(mapName) {
         min_x = Math.min(min_x, line[0]);
         max_x = Math.max(max_x, line[0]);
 
+        let ly1 = line[1] > line[2] ? line[1] + BASE.v : line[1] - BASE.vn;
+        let ly2 = line[2] > line[1] ? line[2] + BASE.v : line[2] - BASE.vn;
+
         obstacles.push(new Box(
-            line[0] - 1,
-            Math.min(line[1], line[2]) - 1,
-            line[0] + 1,
-            Math.max(line[1], line[2]) + 5
+            line[0] - BASE.h,
+            ly1,
+            line[0] + BASE.h,
+            ly2
         ));
     }
 
@@ -454,92 +381,141 @@ function initializeGraphGlobal(mapName) {
         min_y = Math.min(min_y, line[0]);
         max_y = Math.max(max_y, line[0]);
 
+        let lx1 = line[1] > line[2] ? line[1] + BASE.h : line[1] - BASE.h;
+        let lx2 = line[2] > line[1] ? line[2] + BASE.h : line[2] - BASE.h;
+
         obstacles.push(new Box(
-            Math.min(line[1], line[2]) - 1,
-            line[0] - 1,
-            Math.max(line[1], line[2]) + 1,
-            line[0] + 5
+            lx1,
+            line[0] - BASE.v,
+            lx2,
+            line[0] + BASE.vn
         ));
     }
     
-    let bx = new Box(min_x, min_y, max_x, max_y);
-    bx.square();
+    let largest_side = Math.max(max_x - min_x, max_y - min_y);
+    let side = calculate_size(largest_side);
 
-    let grid = new NodeTree(bx, obstacles);
-    let connInitNode = grid.getRegionOfPoint(character.real_x, character.real_y);
-    connInitNode.initConnections();
+    let center_x = (max_x + min_x) / 2;
+    let center_y = (max_y + min_y) / 2;
+    let region = Box.square(center_x, center_y, side);
 
-    return grid;
+    return new NodeTree(region, obstacles);
 }
 
-function initializeGraphLocal(a, b) {
-    let mapData = parent.G.maps[character.map].data;
+let list_id = 0;
+function find_path(source, target) {
+    list_id += 2;
+    let closed_id = list_id - 1;
+    let open_id = list_id;
 
-    let obstacles = [];
+    let open = new CustHeap(function (a, b) { return a.heuristic - b.heuristic; });
 
-    for (let line of mapData.x_lines) {
-        obstacles.push(new Box(
-            line[0] - 1,
-            Math.min(line[1], line[2]) - 1,
-            line[0] + 1,
-            Math.max(line[1], line[2]) + 5
-        ));
+    let traveled = new Map();
+    let parents = new Map();
+
+    traveled.set(source, 0);
+    parents.set(source, source);
+
+    source.heuristic = distance(source, target);
+    open.push(source);
+    source.list_id = open_id;
+
+    while (open.size()) {
+        let current = open.pop();
+        let parent = parents.get(current);
+        let neighbors = current.get_neighbors();
+
+        if (!parent.has_sight(current)) {
+            let min_path = Infinity;
+            let fastest_neighbor = null;
+            for (let neighbor of neighbors) {
+                if (neighbor.list_id == closed_id) {
+                    let path = traveled.get(neighbor) + distance(neighbor, current);
+                    if (path < min_path) {
+                        min_path = path;
+                        fastest_neighbor = neighbor;
+                    }
+                }
+            }
+
+            parents.set(current, fastest_neighbor);
+            traveled.set(current, min_path);
+
+            parent = fastest_neighbor;
+        }
+
+        if (current == target) {
+            break;
+        }
+
+        current.list_id = closed_id;
+
+        for (let i = 0; i < neighbors.length; i++) {
+            let neighbor = neighbors[i];
+
+            if (neighbor.list_id == closed_id) continue;
+
+            let old_path = traveled.get(neighbor) || Infinity;
+
+            let new_path = traveled.get(parent) + distance(parent, neighbor);
+            if (new_path < old_path) {
+                traveled.set(neighbor, new_path);
+                parents.set(neighbor, parent);
+
+                neighbor.heuristic = new_path + distance(neighbor, target);
+                if (neighbor.list_id == open_id) {
+                    open.updateItem(neighbor);
+                } else {
+                    open.push(neighbor);
+                    neighbor.list_id = open_id;
+                }
+            }
+        }
     }
 
-    for (let line of mapData.y_lines) {
-        obstacles.push(new Box(
-            Math.min(line[1], line[2]) - 1,
-            line[0] - 1,
-            Math.max(line[1], line[2]) + 1,
-            line[0] + 5
-        ));
+    if (!parents.has(target)) return [];
+
+    let path = [];
+    let node = target;
+    while (node && node != source) {
+        let pathNode = {x: node.x, y: node.y};
+        path.unshift(pathNode);
+        node = parents.get(node);
     }
 
-    let x1 = a.x;
-    let y1 = a.y;
-    let x2 = b.x;
-    let y2 = b.y;
-    
-    let bx = new Box(x1, y1, x2, y2);
-    bx.square();
+    // // smooth path
+    // for (let i = 0; i < path.length; i++) {
+	// 	while(i+2 < path.length && can_move({map: character.map, x: path[i].x, y: path[i].y, going_x: path[i+2].x, going_y: path[i+2].y, base: BASE})) {
+    //         path.splice(i + 1, 1);
+    //     }
+	// 	i++;
+	// }
 
-    return new NodeTree(bx, obstacles);
+    // let prevNode = {x: character.x, y: character.y};
+    // for (let node of path) {
+    //     draw_line(prevNode.x, prevNode.y, node.x, node.y, 1, 0x2B97FF);
+    //     prevNode = node;
+    // }
+    // console.log(path);
+
+    return path;
 }
 
 function reducePath(path) {
-    if (!path) {
-        return [];
-    }
-
-    let reduced = [];
-    reduced.push(path[0]);
+    if (!path) return [];
 
     let sameCnt = 0;
     let prevNode = path[0];
+    let reduced = [prevNode];
     for (let node of path) {
         let changedX = false;
         let changedY = false;
-        
-        // Checking X
-        if (node.x != prevNode.x) {
-            changedX = true;
-        }
 
-        // Checking Y
-        if (node.y != prevNode.y) {
-            changedY = true;
-        }
+        if (node.x !== prevNode.x) changedX = true;
+        if (node.y !== prevNode.y) changedY = true;
 
         if (changedX && changedY) {
-            reduced.push(node);
-        } else if (changedX) {
-            reduced.push([prevNode]);
-            reduced.push(node);
-        }
-
-        let needPush = sameCnt > 1;
-        if (needPush) {
-            reduced.push(prevNode);
+            if (sameCnt > 1) reduced.push(prevNode);
             reduced.push(node);
             sameCnt = 0;
         }
@@ -551,182 +527,44 @@ function reducePath(path) {
     return reduced;
 }
 
-function plotPath(startNode, endNode) {
-    // Not yet travelled nodes
-    let openNodes = new Set();
-    // Already travelled nodes
-    let closedNodes = new Set();
-
-    // Map to track our traveled path
-    let traveled = new Map();
-    // Map to track distance between nodes
-    let heuristic = new Map();
-    // Map to track parents of nodes (parent is from where did we come to current node)
-    let parents = new Map();
-
-    // Adding start point as initial
-    openNodes.add(startNode);
-
-    traveled.set(startNode, 0);
-    heuristic.set(startNode, simple_distance(startNode, endNode));
-    parents.set(startNode, startNode);
-
-    while (openNodes.size) {
-        let currNode = null;
-        let minHeuristic = Infinity;
-
-        for (let open of openNodes) {
-            let nodeHeuristic = heuristic.get(open);
-            if (nodeHeuristic < minHeuristic) {
-                minHeuristic = nodeHeuristic;
-                currNode = open;
-            }
-        }
-
-        if (currNode == endNode) {
-            break;
-        }
-
-        // Remove current from open nodes
-        openNodes.delete(currNode);
-        // Add current to closed nodes
-        closedNodes.add(currNode);
-
-        let connections = currNode.connections;
-        for (let conn of connections) {
-            if (closedNodes.has(conn)) {
-                continue;
-            }
-
-            let oldPath = traveled.get(conn);
-            if (!openNodes.has(conn)) {
-                oldPath = Infinity;
-                openNodes.add(conn);
-            }
-
-            // From where did we come to the current node
-            let parent = parents.get(currNode);
-            if (parent.hasConnection(conn)) {
-                // Check if we can come to this connection from parent node
-                let parentPath = traveled.get(parent) + simple_distance(parent, conn);
-                if (parentPath < oldPath) {
-                    parents.set(conn, parent);
-                    traveled.set(conn, parentPath);
-                    heuristic.set(conn, parentPath + simple_distance(conn, endNode));
-                }
-            } else {
-                let newPath = traveled.get(currNode) + simple_distance(currNode, conn);
-                if (newPath < oldPath) {
-                    parents.set(conn, currNode);
-                    traveled.set(conn, newPath);
-                    heuristic.set(conn, newPath + simple_distance(conn, endNode));
-                }
-            }
-        }
-    }
-
-    // Just in case check if we've found the path to target
-    if (!parents.has(endNode)) {
-        return [];
-    }
-
-    let path = [];
-    let current = endNode;
-    while (current && current != startNode) {
-        let pathNode = {x: current.x, y: current.y};
-        path.unshift(pathNode);
-        current = parents.get(current);
-    }
-
-    // console.log(path);
-    // console.log(reducePath(path));
-    return path;
-}
-
-function plotPathLocal(gridSize, source, target) {
-    if (!gridSize || !source || !target) {
-        return [];
-    }
-
-    let dp1 = {x: character.real_x - gridSize / 2, y: character.real_y - gridSize / 2};
-    let dp2 = {x: character.real_x + gridSize / 2, y: character.real_y + gridSize / 2};
-
-    // Initialize graph, starting point and end point
-    let grid = initializeGraphLocal(dp1, dp2);
-    let startNode = grid.getRegionOfPoint(source.x, source.y);
-    let endNode = grid.getRegionOfPoint(target.x, target.y);
-
-    // If both start and end nodes are not found within graph -> return
-    if (!startNode || !endNode) {
-        console.log("Unreachable target or start position is invalid");
-        return [];
-    }
-
-    // If startNode was not crossable - mark it as crossable because we are standing on it
-    if (!startNode.isCrossable) {
-        startNode.isCrossable = true;
-    }
-
-    // Init connections within graph
-    startNode.initConnections();
-
-    // If endNode was not connected then target is unreachable
-    if (!endNode.isConnected) {
-        console.log("Unreachable target");
-        return [];
-    }
-
-    let path = plotPath(startNode, endNode);
-    // Replace final step with step to target directly
-    path.splice(path.length - 1, 1, target);
-
-    return path;
-}
-
-function plotPathGlobal(source, target) {
+function plotPath(source, target) {
     if (!source || !target) {
         return [];
     }
 
-    let startNode = MAP_GRAPH.getRegionOfPoint(source.x, source.y);
-    let endNode = MAP_GRAPH.getRegionOfPoint(target.x, target.y);
+    let startNode = MAP_GRAPH.get(source.x, source.y);
+    let endNode = MAP_GRAPH.get(target.x, target.y);
 
     // If both start and end nodes are not found within graph -> return
-    if (!startNode || !endNode) {
-        console.log("Unreachable target or start position is invalid");
-        return [];
-    }
+    if (!startNode || !endNode) throw new Error("Unreachable target or start position is invalid");
 
-    // If endNode was not connected then target is unreachable
-    if (!endNode.isConnected) {
-        console.log("Unreachable target");
-        return [];
-    }
+    let vStartNode = new VirtualNode(startNode, source.x, source.y);
+    let vEndNode = new VirtualNode(endNode, target.x, target.y);
 
-    // If startNode was not crossable - mark it as crossable because we are standing on it
-    let oldCrossable = startNode.isCrossable;
-    if (!oldCrossable) {
-        startNode.isCrossable = true;
-        // Init connections for start node (because it might be not crossable before, so no connections within graph)
-        startNode.establishConnections();
-    }
+    let path = find_path(vStartNode, vEndNode);
 
-    let path = plotPath(startNode, endNode);
-    path.splice(path.length - 1, 1, target);
+    vStartNode.destroy();
+    vEndNode.destroy();
 
-    if (!oldCrossable) {
-        startNode.isCrossable = false;
-        startNode.connections = [];
-    }
+    path = reducePath(path);
 
     return path;
 }
 
-async function moveTo(to) {
-    let from = {x: character.real_x, y: character.real_y};
-    let path = plotPathGlobal(from, to);
+async function moveTo(x, y, map) {
+    let to = x;
+    if (typeof(x) !== "object") {
+        to = {x: x, y: y, map: map};
+    }
 
-    for (let node of path) {
-        await move(node.x, node.y);
+    if (character.map === to.map) {
+        let from = {x: character.real_x, y: character.real_y};
+        let path = plotPath(from, to);
+
+        for (let node of path) {
+            await move(node.x, node.y);
+        }
+    } else {
+        await smart_move(to);
     }
 }

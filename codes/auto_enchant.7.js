@@ -1,13 +1,14 @@
-const upgrade_items = [
+const UPGRADE_ITEMS = [
 	{item: "slimestaff", level: 8},
 
 	// {item: "iceskates", level: 5},
 	// {item: "xmaspants", level: 7},
 	// {item: "xmasshoes", level: 7},
-	{item: "mittens", level: 7},
+	{item: "mittens", level: 6},
 	// {item: "xmashat", level: 7},
 	// {item: "sweaterhs", level: 6},
 	{item: "cape", level: 5},
+	{item: "sshield", level: 7},
 	// Rugged set
 	// {item: "helmet1", level: 8},
 	// {item: "coat1", level: 8},
@@ -15,29 +16,47 @@ const upgrade_items = [
 	// {item: "gloves1", level: 8},
 	// {item: "shoes1", level: 8},
 	// Wanderer set
-	{item: "wattire", level: 8},
-	{item: "wgloves", level: 8},
-	{item: "wshoes", level: 8},
-	{item: "wcap", level: 8},
+	// {item: "wattire", level: 8},
+	// {item: "wgloves", level: 8},
+	// {item: "wshoes", level: 8},
+	// {item: "wcap", level: 8},
 	{item: "wbreeches", level: 8},
 	// Heavy set
-	{item: "hhelmet", level: 7},
-	{item: "harmor", level: 7},
-	{item: "hpants", level: 7},
+	{item: "hhelmet", level: 5},
+	{item: "harmor", level: 5},
+	{item: "hpants", level: 5},
+	{item: "hgloves", level: 5},
 	// Rare items
 	// {item: "woodensword", level: 7},
-	{item: "firestaff", level: 7},
-	{item: "fireblade", level: 7},
+	{item: "firestaff", level: 6},
+	{item: "fireblade", level: 6},
+
+	// Bunny stuff
+	{item: "eears", level: 6},
+	{item: "ecape", level: 6},
+	{item: "epyjamas", level: 7},
+	{item: "pinkie", level: 6},
+
 	{item: "ornamentstaff", level: 8},
-	{item: "pmace", level: 7},
-	{item: "mcape", level: 7},
-	{item: "wingedboots", level: 7},
-	{item: "gcape", level: 6}
+	{item: "pmace", level: 6},
+	{item: "mcape", level: 6},
+	{item: "wingedboots", level: 6},
+	{item: "gcape", level: 6},
+	{item: "lmace", level: 3},
+	{item: "glolipop", level: 5},
+	{item: "ololipop", level: 5},
+	{item: "handofmidas", level: 5},
+	{item: "bataxe", level: 5},
+	{item: "frankypants", level: 3},
+	// Weapon of the dead
+	{item: "phelmet", level: 6},
+	// {item: "pmaceofthedead", level: 6},
+	// {item: "bowofthedead", level: 6}
 ];
 
-const compound_items = [
-	{item: "ringsj", level: 4},
-	{item: "wbook0", level: 4},
+const COMPOUND_ITEMS = [
+	// {item: "ringsj", level: 4},
+	// {item: "wbook0", level: 4},
 	{item: "wbookhs", level: 3},
 	// Earrings
 	{item: "strearring", level: 3},
@@ -45,18 +64,20 @@ const compound_items = [
 	// Amulets
 	{item: "intamulet", level: 4},
 	{item: "stramulet", level: 4},
+	{item: "skullamulet", level: 4},
 	// Rings
 	{item: "strring", level: 4},
 	{item: "intring", level: 4},
 	// Belts
 	{item: "strbelt", level: 3},
 	{item: "intbelt", level: 3},
-	{item: "dexbelt", level: 3},
+	// {item: "dexbelt", level: 3},
 	// Orbs
-	{item: "orbg", level: 3}
+	{item: "orbg", level: 3},
+	{item: "lostearring", level: 2}
 ];
 
-const scrolls_amount = {
+const SCROLLS_AMOUNT = {
 	"scroll0": 50,
 	"scroll1": 30,
 	"scroll2": 5,
@@ -65,11 +86,12 @@ const scrolls_amount = {
 	"cscroll2": 1
 };
 
-async function upgradeItemsLoop() {
+
+async function upgradeItems() {
 	try {
-		if (!character.q.upgrade && upgrade_state && do_enchant_items) {
+		if (!character.q.upgrade) {
 			// For each item in upgrade list
-			for (let toUpgrade of upgrade_items) {
+			for (let toUpgrade of UPGRADE_ITEMS) {
 				let toUpgradeName = toUpgrade.item;
 				let toUpgradeLevel = toUpgrade.level;
 
@@ -94,39 +116,37 @@ async function upgradeItemsLoop() {
 							(sc) => (sc.name === scrollName)
 						);
 						if (!scroll || scrollIx < -1) {
-							let amount = scrolls_amount[scrollName];
+							let amount = SCROLLS_AMOUNT[scrollName];
 							await buyScrolls(scrollName, amount);
-							// Sleep for 1s to wait for inventory update
+							// Sleep for 500ms to wait for inventory update
 							await sleep(500);
 							[scroll, scrollIx] = getItemAndIx(
 								(sc) => (sc.name === scrollName)
 							);
 						}
 
-						let npc = find_npc("newupgrade");
-						if (distance(character, npc) < 400 && scrollIx > -1) {
-							game_log(`Upgrading: ${item.name}`);
-							await use_skill("massproduction", character);
-							await upgrade(itemIx, scrollIx)
-								.catch(
-									(reason) => game_log(`Upgrade failed: ${reason.reason}`)
-								);
-						}
+						game_log(`Upgrading: ${item.name}`, LOG_COLORS.blue);
+						await use_skill("massproduction", character);
+						if (G.skills.massproductionpp.mp <= character.mp)
+							await use_skill("massproductionpp", character);
+
+						await upgrade(itemIx, scrollIx)
+							.catch(
+								(reason) => game_log(`Upgrade failed: ${reason.reason}`)
+							);
 					}
 				}
 			}
 		}
 	} catch (e) {
-		game_log(`[upgradeItemsLoop] - ${e.name}: ${e.message}`);
+		game_log(`[upgradeItems] - ${e.name}: ${e.message}`);
 	}
-
-	setTimeout(upgradeItemsLoop, 1000);
 }
 
-async function compoundItemsLoop() {
+async function compoundItems() {
 	try {
-		if (!character.q.compound && upgrade_state && do_enchant_jewelry) {
-			for (let toCompound of compound_items) {
+		if (!character.q.compound) {
+			for (let toCompound of COMPOUND_ITEMS) {
 				let toCompoundName = toCompound.item;
 				let toCompoundLevel = toCompound.level;
 				
@@ -140,7 +160,7 @@ async function compoundItemsLoop() {
 					(i) => (i.name === scrollName)
 				);
 				if (!scroll || scrollIx === -1) {
-					let amount = scrolls_amount[scrollName];
+					let amount = SCROLLS_AMOUNT[scrollName];
 					await buyScrolls(scrollName, amount);
 					// Sleep for 1s to wait for inventory update
 					await sleep(500);
@@ -149,22 +169,20 @@ async function compoundItemsLoop() {
 					);
 				}
 				
-				let npc = find_npc("newupgrade");
-				if (distance(character, npc) < 400 && scrollIx > -1) {
-					game_log(`Compounding: ${item.name}`);
-					await use_skill("massproduction", character);
-					await compound(itemIxs[0], itemIxs[1], itemIxs[2], scrollIx)
-						.catch(
-							(reason) => game_log(`Compound failed: ${reason.reason}`)
-						);
-				}
+				game_log(`Compounding: ${item.name}`, LOG_COLORS.blue);
+				await use_skill("massproduction", character);
+				if (G.skills.massproductionpp.mp <= character.mp)
+					await use_skill("massproductionpp", character);
+
+				await compound(itemIxs[0], itemIxs[1], itemIxs[2], scrollIx)
+					.catch(
+						(reason) => game_log(`Compound failed: ${reason.reason}`)
+					);
 			}
 		}
 	} catch (e) {
-		game_log(`[compoundItemsLoop] - ${e.name}: ${e.message}`);
+		game_log(`[compoundItems] - ${e.name}: ${e.message}`);
 	}
-
-	setTimeout(compoundItemsLoop, 500);
 }
 
 function getItemAndIndexes(trg_name, trg_level, trg_limit) {
@@ -217,9 +235,8 @@ async function buyScrolls(type, amount) {
 	if (amount <= 0) {
 		return;
 	}
-	
-	let scroll_merchant = get_npc("scrolls");
-	if (scroll_merchant && character.esize > 0) {
+
+	if (character.esize > 0) {
 		let item_def = parent.G.items[type];
 		if (item_def !== null) {
 			let cost = item_def.g * amount;
@@ -232,14 +249,5 @@ async function buyScrolls(type, amount) {
 		}
 	}
 
-	return null;
-}
-
-function get_npc(name) {
-	let npc = parent.G.maps[character.map].npcs.filter(npc => npc.id === name);
-	if (npc.length > 0) {
-		return npc[0];
-	}
-	
 	return null;
 }

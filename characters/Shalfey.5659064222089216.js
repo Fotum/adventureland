@@ -1,65 +1,72 @@
-// Load everything that's needed functions
-load_code("base_operations");
-load_code("warrior_farm");
-// load_code("draw_ui");
-
-
-const USE_HP_AT_RATIO = 0.75;
-const USE_MP_AT_RATIO = 0.75;
-
-const USE_HS_AT_HP_RATIO = 0.5;
-
 const DO_NOT_SEND = [
 	{name: "orbg", level: 2},
-	{name: "test_orb", level: 0}
+	{name: "test_orb", level: 0},
+	{name: "bataxe", level: 8},
+	{name: "fireblade", level: 9},
+	{name: "fireblade", level: 8},
+	{name: "ololipop", level: 8}
 ];
 
-const FARM_BOSSES = [
-	"mvampire",
-	"fvampire",
-	"phoenix",
-	"snowman",
-	"goldenbat",
-	"cutebee",
-	"grinch",
-	"dragold"
-];
-const FARM_MONSTERS = [
-	"bat",
-	"wolfie",
-	"arcticbee",
-	// "ghost",
-	"bgoo",
-	"rat",
-	"croc",
-	// "bigbird",
-	"stoneworm",
-	"cgoo",
-	"scorpion",
-	//"spider",
-	"osnake",
-	"snake",
-	"xscorpion"
-];
-const BLACKLIST_MONSTERS = [
-	"porcupine"
-];
 
-var is_solo = false;
-var combat_mode = false;
+character.on("cm", function(data) {
+	if (data.name !== "MagicFotum") return;
+	controller.pushFarmBossActions(data.message);
+});
 
-var farm_area = FARM_AREAS.caveFirst.area;
+var controller = undefined;
+async function runCharacter() {
+	// Initialize modules
+	await initialize_character();
 
-// Send character info
-updateCharacterInfoLoop();
+	// Restore state
+	restoreCharacterState();
 
-// General operations
-moveLoop();
-lootLoop();
-regenLoop();
+	// Send character info
+	updateCharacterInfoLoop();
 
-// Class dependent operations
-switchMode();
+	// Character behaviour
+	let currStrat = new WarriorBehaviour({
+		is_solo: false,
+		looter: "Nlami",
+		farm_area: FARM_AREAS.cave_first,
+		do_circle: true,
+		use_taunt: true,
+		use_agitate: false,
+		use_cleave: true
+	});
 
-sendItemsToCharacterLoop("Nlami");
-// sendItemsToCharacterLoop("Momental");
+	// Character controller
+	controller = new WarriorController({}, currStrat);
+	
+	currStrat.enable();
+	controller.enable();
+
+	sendItemsToCharacterLoop("Momental");
+}
+runCharacter();
+
+async function initialize_character() {
+	// Pathfinding modules
+	await load_module("graph_mover");
+	await load_module("mover_module");
+
+	// General functions
+	await load_module("base_operations");
+	// await load_module("events");
+	// await load_module("draw_ui");
+
+	// Class specific functions
+	await load_module("warrior_strats");
+}
+
+async function load_module(module) {
+	try {
+		if (parent.caracAL) {
+			await parent.caracAL.load_scripts([module]);
+		} else {
+			await load_code(module);
+		}
+	} catch (ex) {
+		console.error(ex);
+	}
+}
