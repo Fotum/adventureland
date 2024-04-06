@@ -3,14 +3,25 @@ const DO_NOT_SEND = [
 	{name: "test_orb", level: 0},
 	{name: "bataxe", level: 8},
 	{name: "fireblade", level: 9},
-	{name: "fireblade", level: 8},
 	{name: "ololipop", level: 8}
 ];
 
 
 character.on("cm", function(data) {
-	if (data.name !== "MagicFotum") return;
+	if (data.name !== "MagicFotum" && data.name !== "Momental") return;
 	controller.pushFarmBossActions(data.message);
+});
+
+character.on("death", function(data) {
+	if (controller) {
+		controller.strategy.disable();
+		controller.disable();
+	}
+});
+
+character.on("respawn", function(data) {
+	controller.strategy.enable();
+	controller.enable();
 });
 
 var controller = undefined;
@@ -20,26 +31,29 @@ async function runCharacter() {
 
 	// Restore state
 	restoreCharacterState();
-
 	// Send character info
 	updateCharacterInfoLoop();
+	// Respawn if dead
+    respawnLoop();
 
 	// Character behaviour
 	let currStrat = new WarriorBehaviour({
 		is_solo: false,
+		healer: "Nlami",
 		looter: "Nlami",
-		farm_area: FARM_AREAS.cave_first,
+		farm_area: FARM_AREAS.moles,
 		do_circle: true,
 		use_taunt: true,
-		use_agitate: false,
-		use_cleave: true
+		use_agitate: true,
+		use_cleave: true,
+		use_explosion: true
 	});
 
 	// Character controller
 	controller = new WarriorController({}, currStrat);
 	
-	currStrat.enable();
 	controller.enable();
+	currStrat.enable();
 
 	sendItemsToCharacterLoop("Momental");
 }
@@ -52,8 +66,8 @@ async function initialize_character() {
 
 	// General functions
 	await load_module("base_operations");
-	// await load_module("events");
-	// await load_module("draw_ui");
+	await load_module("vector_movement");
+	await load_module("event_task");
 
 	// Class specific functions
 	await load_module("warrior_strats");

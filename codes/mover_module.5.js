@@ -9,7 +9,8 @@ let _smart_move = smart_move;
 
 continue_pathfinding = function() {}
 
-smart.curr_step = undefined;
+smart.curr_step = null;
+smart.blink_min = 200;
 smart.blink_mode = 1500;
 smart.no_target = false;
 smart.unlocked_keys = [];
@@ -57,7 +58,7 @@ smart_move = function(destination) {
 
     smart.moving = true;
     smart.found = false;
-    smart.curr_step = undefined;
+    smart.curr_step = null;
     return parent.push_deferred("smart_move");
 }
 
@@ -191,7 +192,7 @@ function prepare_smart_move(destination) {
 }
 
 function plot_path_smart_move() {
-    smart.error = undefined;
+    smart.error = null;
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000);
@@ -333,7 +334,8 @@ smart_move_logic = async function() {
     if (smart.blink_mode && can_use("blink") && !is_on_cooldown("blink") && character.mp >= 1600) {
         for (let i = smart.plot.length - 1; i >= 0; i--) {
             let blinkNode = smart.plot[i];
-            if (blinkNode.map === character.map && parent.simple_distance(blinkNode, character) <= parseFloat(smart.blink_mode)) {
+            let nodeDist = parent.simple_distance(blinkNode, character);
+            if (blinkNode.map === character.map && nodeDist >= smart.blink_min && nodeDist <= parseFloat(smart.blink_mode)) {
                 game_log(`Blinking to: x: ${blinkNode.x}, y: ${blinkNode.y}`, "#2b97ff");
 
                 use_skill("blink", [blinkNode.x, blinkNode.y]);

@@ -9,6 +9,7 @@ const UPGRADE_ITEMS = [
 	// {item: "sweaterhs", level: 6},
 	{item: "cape", level: 5},
 	{item: "sshield", level: 7},
+	{item: "xmace", level: 6},
 	// Rugged set
 	// {item: "helmet1", level: 8},
 	// {item: "coat1", level: 8},
@@ -26,16 +27,21 @@ const UPGRADE_ITEMS = [
 	{item: "harmor", level: 5},
 	{item: "hpants", level: 5},
 	{item: "hgloves", level: 5},
+	{item: "hboots", level: 5},
 	// Rare items
 	// {item: "woodensword", level: 7},
 	{item: "firestaff", level: 6},
 	{item: "fireblade", level: 6},
 
+	{item: "harbringer", level: 5},
+	{item: "oozingterror", level: 5},
+
 	// Bunny stuff
-	{item: "eears", level: 6},
-	{item: "ecape", level: 6},
+	{item: "eears", level: 7},
+	{item: "ecape", level: 7},
 	{item: "epyjamas", level: 7},
-	{item: "pinkie", level: 6},
+	{item: "pinkie", level: 7},
+	{item: "eslippers", level: 7},
 
 	{item: "ornamentstaff", level: 8},
 	{item: "pmace", level: 6},
@@ -80,16 +86,16 @@ const COMPOUND_ITEMS = [
 const SCROLLS_AMOUNT = {
 	"scroll0": 50,
 	"scroll1": 30,
-	"scroll2": 5,
+	"scroll2": 10,
 	"cscroll0": 50,
-	"cscroll1": 5,
-	"cscroll2": 1
+	"cscroll1": 30,
+	"cscroll2": 0
 };
 
 
 async function upgradeItems() {
 	try {
-		if (!character.q.upgrade) {
+		if (!character.q.upgrade && character.map !== "bank") {
 			// For each item in upgrade list
 			for (let toUpgrade of UPGRADE_ITEMS) {
 				let toUpgradeName = toUpgrade.item;
@@ -115,14 +121,16 @@ async function upgradeItems() {
 						let [scroll, scrollIx] = getItemAndIx(
 							(sc) => (sc.name === scrollName)
 						);
+
 						if (!scroll || scrollIx < -1) {
-							let amount = SCROLLS_AMOUNT[scrollName];
-							await buyScrolls(scrollName, amount);
-							// Sleep for 500ms to wait for inventory update
-							await sleep(500);
-							[scroll, scrollIx] = getItemAndIx(
-								(sc) => (sc.name === scrollName)
-							);
+							return;
+							// let amount = SCROLLS_AMOUNT[scrollName];
+							// await buyScrolls(scrollName, amount);
+							// // Sleep for 500ms to wait for inventory update
+							// await sleep(500);
+							// [scroll, scrollIx] = getItemAndIx(
+							// 	(sc) => (sc.name === scrollName)
+							// );
 						}
 
 						game_log(`Upgrading: ${item.name}`, LOG_COLORS.blue);
@@ -138,14 +146,14 @@ async function upgradeItems() {
 				}
 			}
 		}
-	} catch (e) {
-		game_log(`[upgradeItems] - ${e.name}: ${e.message}`);
+	} catch (ex) {
+		console.error("upgradeItems", ex);
 	}
 }
 
 async function compoundItems() {
 	try {
-		if (!character.q.compound) {
+		if (!character.q.compound && character.map !== "bank") {
 			for (let toCompound of COMPOUND_ITEMS) {
 				let toCompoundName = toCompound.item;
 				let toCompoundLevel = toCompound.level;
@@ -159,14 +167,16 @@ async function compoundItems() {
 				let [scroll, scrollIx] = getItemAndIx(
 					(i) => (i.name === scrollName)
 				);
+
 				if (!scroll || scrollIx === -1) {
-					let amount = SCROLLS_AMOUNT[scrollName];
-					await buyScrolls(scrollName, amount);
-					// Sleep for 1s to wait for inventory update
-					await sleep(500);
-					[scroll, scrollIx] = getItemAndIx(
-						(sc) => (sc.name === scrollName)
-					);
+					return;
+					// let amount = SCROLLS_AMOUNT[scrollName];
+					// await buyScrolls(scrollName, amount);
+					// // Sleep for 1s to wait for inventory update
+					// await sleep(500);
+					// [scroll, scrollIx] = getItemAndIx(
+					// 	(sc) => (sc.name === scrollName)
+					// );
 				}
 				
 				game_log(`Compounding: ${item.name}`, LOG_COLORS.blue);
@@ -180,8 +190,24 @@ async function compoundItems() {
 					);
 			}
 		}
-	} catch (e) {
-		game_log(`[compoundItems] - ${e.name}: ${e.message}`);
+	} catch (ex) {
+		console.error("compoundItems", ex);
+	}
+}
+
+async function restockScrolls() {
+	try {
+		if (character.map !== "bank") {
+			for (let key in SCROLLS_AMOUNT) {
+				let scrollsMax = SCROLLS_AMOUNT[key];
+				let scrollsNow = num_items((i) => i && i.name === key);
+
+				let diff = scrollsMax - scrollsNow;
+				if (diff > 0) await buyScrolls(key, diff);
+			}
+		}
+	} catch (ex) {
+		console.error("restockScrolls", ex);
 	}
 }
 
@@ -244,7 +270,6 @@ async function buyScrolls(type, amount) {
 				return buy(type, amount);
 			} else {
 				game_log("Not enough gold!");
-				return null;
 			}
 		}
 	}

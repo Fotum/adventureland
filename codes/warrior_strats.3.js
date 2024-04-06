@@ -3,8 +3,7 @@ class WarriorController {
     #actionExecutorLoopFlg = false;
 
     // Current action
-	#current_action = undefined;
-    #current_event = undefined;
+	#current_task = null;
 
     constructor(options, strategy) {
 		if (!character.action_queue) character.action_queue = [];
@@ -28,79 +27,61 @@ class WarriorController {
 
     // ----------------- ACTION QUEUE HANDLERS SECTION ------------------ //
     async actionCheckerLoop() {
-		if (!this.#actionCheckerLoopFlg) {
+		if (!this.#actionCheckerLoopFlg || character.rip) {
 			setTimeout(this.actionCheckerLoop.bind(this), 1000);
 			return;
 		}
 
-        if (!this.#current_event && character.current_state === "event") {
-            game_log(`Pushing "change_state" event to queue`, "#2b97ff");
-            character.action_queue.push({
-                task: "return",
-                type: "change_state",
-                arg: "farming"
-            });
-        }
-
         // Check and push return to spot
-        if (character.current_state === "farming" && this.strategy.options.farm_area && character.action_queue.length === 0) {
-            const farm_area = this.strategy.options.farm_area;
+        if (character.current_state === "farming" && !character.action_queue.some((t) => t.name === "return") && this.strategy.options.farm_area) {
+            let farm_area = this.strategy.options.farm_area;
             if (!get_targeted_monster() && farm_area.position && (farm_area.position.map !== character.map || distance(character, farm_area.area) > (farm_area.area.d * 2))) {
-                game_log(`Pushing "return to spot" task to queue`, "#2b97ff");
-                character.action_queue.push({
-                    task: "return",
-					type: "call",
-					name: "strat.disable",
-					arg: undefined
-                });
-                character.action_queue.push({
-                    task: "return",
-					type: "call",
-					name: "window.moveTo",
-					arg: farm_area.position
-                });
-                character.action_queue.push({
-                    task: "return",
-					type: "call",
-					name: "strat.enable",
-					arg: undefined
-                });
+                game_log(`Pushing "return to spot" task to queue`, LOG_COLORS.blue);
+
+                let returnTask = Task.getReturnTask(farm_area);
+                character.action_queue.push(returnTask);
             }
         }
 
-        if (!character.current_state) {
-            character.action_queue.push({
-                task: "farming",
-                type: "change_state",
-                arg: "farming"
-            });
+        if ((!character.current_state || character.current_state !== "farming") && character.action_queue.length === 0) {
+            game_log(`Pushing "farming" task to queue`, LOG_COLORS.blue);
+
+            let farmStateTask = new Task("farming");
+            farmStateTask.pushAction("change_state", null, "farming");
+            character.action_queue.push(farmStateTask);
         }
 
 		setTimeout(this.actionCheckerLoop.bind(this), 1000);
 	}
 
-	async actionExecutorLoop() {
-		if (!this.#actionExecutorLoopFlg) {
+    async actionExecutorLoop() {
+		if (!this.#actionExecutorLoopFlg || character.rip) {
 			setTimeout(this.actionExecutorLoop.bind(this), 500);
 			return;
 		}
 
 		// Execute from queue
-		if (!this.#current_action && character.action_queue.length > 0) {
-			let queued_action = character.action_queue[0];
-
-			this.#current_action = queued_action;
-			try {
-				game_log(`Executing "${queued_action.type}" step`, "#2b97ff");
-                await this.executeActionStep(queued_action);
-				game_log(`Finished "${queued_action.type}" step`, "#2b97ff");
-			} catch (ex) {
-				game_log(`[${queued_action.action}] - ${ex.name}: ${ex.message}`, "#cf5b5b");
-				console.error(ex);
-			} finally {
-				character.action_queue.splice(0, 1);
-				this.#current_action = null;
-			}
+		if (!this.#current_task && character.action_queue.length > 0) {
+            this.#current_task = character.action_queue[0];
+            try {
+                while (!this.#current_task.isComplete()) {
+                    try {
+                        let action = this.#current_task.getCurrentAction();
+                        game_log(`Executing "${action.type}" step`, LOG_COLORS.blue);
+                        await this.executeActionStep(action);
+                        game_log(`Finished "${action.type}" step`, LOG_COLORS.blue);
+                    } catch (ex) {
+                        console.error("actionExecutorLoop.action", ex);
+                    } finally {
+                        this.#current_task.actionComplete();
+                    }
+                }
+            } catch (ex) {
+                console.error("actionExecutorLoop", ex);
+            } finally {
+                character.action_queue.splice(0, 1);
+                this.#current_task = null;
+            }
 		}
 
 		setTimeout(this.actionExecutorLoop.bind(this), 100);
@@ -109,7 +90,7 @@ class WarriorController {
 	async executeActionStep(action) {
 		let actionType = action.type;
 		if (actionType === "change_state") {
-			game_log(`Changing state to: ${action.arg}`, "#2b97ff");
+			game_log(`Changing state to: ${action.arg}`, LOG_COLORS.blue);
 			character.current_state = action.arg;
 			return set_message(action.arg);
 		}
@@ -120,7 +101,7 @@ class WarriorController {
 			let funcName = splitted[1];
 			let arg = action.arg;
 
-			game_log(`Calling ${action.name} function`, "#2b97ff");
+			game_log(`Calling ${action.name} function`, LOG_COLORS.blue);
 			console.log("Function call: ", action.name, arg);
 			if (context === "window") {
 				if (arg) return window[funcName](arg);
@@ -137,75 +118,65 @@ class WarriorController {
 				else return this.strategy[funcName]();
             }
 		}
-
-        if (actionType === "change_options") {
-            // game_log(`Changing options`, "#2b97ff");
-            // this.prev_options = this.options;
-            // this.options = action.arg;
-            // return;
-        }
     }
 
     // ------------------------ ACTION ROUTINES ------------------------- //
     pushFarmBossActions(event) {
-        let bossFarmArea = FARM_AREAS.event;
-        bossFarmArea.position = {map: event.map, x: event.x, y: event.y};
-        bossFarmArea.farm_monsters = [event.target];
+        if (character.action_queue.some((t) => t.id === event.id)) return;
 
-        let bossFarmOptions = {
-            is_solo: false,
-            looter: character.name,
-            farm_area: bossFarmArea,
-            do_circle: true,
-            use_taunt: true,
-            use_agitate: false,
-            use_cleave: false
-        };
-
-        game_log(`Pushing "boss_farm" event to queue`, "#2b97ff");
-        character.action_queue.push({
-            task: "event",
-            type: "change_state",
-            arg: "event"
-        });
-        character.action_queue.push({
-            task: "event",
-            type: "call",
-            name: "this.changeOptions",
-            arg: [bossFarmOptions, event]
-        });
-        character.action_queue.push({
-            task: "event",
-            type: "call",
-            name: "this.awaitCompletion",
-            arg: event
-        });
-        character.action_queue.push({
-            task: "event",
-            type: "call",
-            name: "this.changeOptions",
-            arg: [character.farm_options, null]
-        });
+        game_log(`Pushing "boss_farm" event to queue`, LOG_COLORS.blue);
+        let bossFarmTask = Task.getFarmBossTask(event);
+        
+        if (event.type === "global" && character.action_queue.length > 0) character.action_queue.splice(1, 0, bossFarmTask);
+        else character.action_queue.push(bossFarmTask);
     }
 
-    async changeOptions(newOptions) {
-        this.strategy.disable();
-        this.strategy.options = newOptions[0];
-        this.strategy.enable();
+    async changeOptions(event) {
+        if (event && event.name) {
+            let bossInfo = BOSS_INFO[event.type][event.name];
+            let bossFarmArea = FARM_AREAS.event;
+            bossFarmArea.farm_monsters = [...bossInfo.targets];
+    
+            let bossFarmOptions = bossInfo.characters[character.name];
+            bossFarmOptions.farm_area = bossFarmArea;
 
-        this.#current_event = newOptions[1];
+            event.targets = bossInfo.targets;
+            event.options = bossFarmOptions;
+    
+            this.strategy.options = bossFarmOptions;
+            character.current_event = event;
+        } else {
+            this.strategy.options = character.farm_options;
+            character.current_event = null;
+        }
     }
 
-    async awaitCompletion(event) {
-        await sleep(1000);
+    async awaitCompletion() {
+        let targets = character.current_event.targets;
+        let targetsAround = await waitForTargets(targets, 5);
+        if (targetsAround.length === 0) return;
 
-        let target = Object.values(parent.entities).find((m) => m.mtype === event.target);
-        if (!target) return;
+        let waitForRespawn = character.current_event && character.current_event.wait_resp;
+        let lastCheckTs = Date.now();
 
-        await change_target(target);
-        while (target && target.hp > 0) {
-            await sleep(2000);
-            target = Object.values(parent.entities).find((m) => m.mtype === event.target);
+        let lastHpChange = Date.now();
+        let targetsHp = targetsAround.reduce((partial, t) => partial + t.hp, 0);
+        while (ts_msince(lastHpChange) < 1) {
+            await sleep(1000);
+
+            targetsAround = Object.values(parent.entities).filter((m) => m.type === "monster" && targets.includes(m.mtype));
+            let targetsLastHp = targetsAround.reduce((partial, t) => partial + t.hp, 0);
+            let isFullGuard = targetsAround.some((t) => t.s.fullguardx);
+            if (targetsHp !== targetsLastHp || isFullGuard) {
+                lastHpChange = Date.now();
+                targetsHp = targetsLastHp;
+            }
+            // Nowait respawn logic
+            if (targetsAround.length === 0 && !waitForRespawn) return;
+
+            // Wait respawn logic
+            if (targetsAround.length > 0) lastCheckTs = Date.now();
+            if (targetsAround.length === 0 && ts_ssince(lastCheckTs) >= 10) return;
         }
     }
 }
@@ -213,23 +184,21 @@ class WarriorController {
 
 class WarriorBehaviour {
     #USE_HP_AT_RATIO = 0.75;
-    #USE_MP_AT_RATIO = 0.8;
+    #USE_MP_AT_RATIO = 0.6;
 
     // General settings
     #USE_HS_AT_HP_RATIO = 0.5;
     #KEEP_MP = character.mp_cost * 5;
-    #CIRCLE_AT_RANGE = character.range - 1;
-    #CIRCLE_ANGLE = 45;
 
     // Skill items
     #mainhandItem = {name: "fireblade", level: 9};
     #offhandItem = {name: "ololipop", level: 8};
-    #alterOffhandItem = {name: "fireblade", level: 8};
+    #alterOffhandItem = {name: "fireblade", level: 9};
     #cleaveItem = {name: "bataxe", level: 8};
 
     // States
     #move_by_graph = false;
-    #circle_around = false;
+    // #circle_around = false;
     #last_cleave = new Date();
     #last_equip = new Date();
 
@@ -242,6 +211,8 @@ class WarriorBehaviour {
     constructor(options) {
         this.options = options;
         character.farm_options = options;
+
+        if (character.current_event) this.options = character.current_event.options;
 
         this.lootLoop();
         this.regenLoop();
@@ -272,29 +243,26 @@ class WarriorBehaviour {
 
     // --------------------- GENERAL COMBAT SECTION --------------------- //
     async attackLoop() {
-        if (!this.#attackFlag) {
+        if (!this.#attackFlag || smart.moving || character.rip) {
             setTimeout(this.attackLoop.bind(this), Math.max(1, ms_to_next_skill("attack")));
             return;
         }
 
         try {
-            const target = get_targeted_monster();
+            let target = get_targeted_monster();
             if (target && is_monster(target) && can_attack(target) && target.hp > 0 && character.mp >= character.mp_cost && !target.s.fullguardx) {
-                await attack(target)
-                    .catch(
-                        (reason) => game_log(`Attack failed: ${reason.reason}`)
-                    );
+                await attack(target).catch(() => {});
                 reduce_cooldown("attack", Math.min(...parent.pings));
             }
-        } catch (e) {
-            game_log(`[attackLoop] - ${e.name}: ${e.message}`);
+        } catch (ex) {
+            console.error("attackLoop", ex);
         }
 
         setTimeout(this.attackLoop.bind(this), Math.max(1, ms_to_next_skill("attack")));
     }
 
     async targetChooseLoop() {
-        if (!this.#targetChooseFlag || smart.moving) {
+        if (!this.#targetChooseFlag || smart.moving || character.rip) {
             setTimeout(this.targetChooseLoop.bind(this), 100);
             return;
         }
@@ -302,16 +270,26 @@ class WarriorBehaviour {
         try {
             // Check if we have some monster in target
             let target = get_targeted_monster();
-            // If not, find viable monster to attack and select target
-            if (!target) {
-                target = this.find_viable_targets()[0];
-                if (target) await change_target(target);
+            if (target && !parent.entities[target.id]) {
+                await change_target(null);
+                target = null;
             }
 
-            // // Update class target field if our current target differs with it
-            // if (this.#target?.id !== target?.id) this.#target = target;
-        } catch (e) {
-            game_log(`[targetChooseLoop] - ${e.name}: ${e.message}`);
+            // If not, find viable monster to attack and select target
+            if (!target) {
+                let healerEntity = parent.entities[this.options.healer];
+                let healerNearby = this.options.is_solo || !this.options.healer || (healerEntity && healerEntity.map === character.map && parent.simple_distance(character, healerEntity) <= 300);
+
+                if (healerNearby) {
+                    target = this.find_viable_targets()[0];
+                    if (target) await change_target(target);
+                } else {
+                    let targetingMe = Object.values(parent.entities).find((e) => e.type === "monster" && e.target === character.name);
+                    if (targetingMe) await change_target(targetingMe);
+                }
+            }
+        } catch (ex) {
+            console.error("targetChooseLoop", ex);
         }
 
         setTimeout(this.targetChooseLoop.bind(this), 100);
@@ -319,160 +297,167 @@ class WarriorBehaviour {
 
     async moveLoop() {
         try {
-            if (!this.#moveFlag || this.#circle_around || smart.moving) {
-                setTimeout(this.moveLoop.bind(this), 250);
+            if (!this.#moveFlag || smart.moving || character.rip) {
+                setTimeout(this.moveLoop.bind(this), 200);
                 return;
             }
 
-            const target = get_targeted_monster();
-            const isInRange = is_in_range(target, "attack");
-
+            let target = get_targeted_monster();
             if (target && target.name !== character.name) {
+                let isInRange = is_in_range(target, "attack");
+                let kitingRange = character.range - 5;
+
+                let targetPositionVector = new Vector(target.real_x, target.real_y);
+                let charTrgDiffVector = new Vector(character.real_x - target.real_x, character.real_y - target.real_y).normalize().multiply(kitingRange);
+                // If in range - run around and attack
                 if (isInRange) {
-                    try {
-                        // No need to move, we are already in range
-                        if (this.#move_by_graph) this.#move_by_graph = false;
-                        if (this.options.do_circle) this.circleTarget(target);
-                    } catch (ex) {
-                        console.log(ex);
-                    }
-                } else {
-                    // We are not in range, so we have to move
-                    let canMoveTo = can_move_to(target);
-                    // If we cant move straight then move by graph
-                    if (!canMoveTo && !this.#move_by_graph) {
-                        this.#move_by_graph = true;
-                        this.moveByGraph(target);
-                    } else if (canMoveTo) {
-                        // If we can move straight then turn off graph moving
-                        this.#move_by_graph = false;
-                        if (!isInRange) {
-                            move(
-                                character.x + (target.x - character.x) / 4,
-                                character.y + (target.y - character.y) / 4
-                            )
+                    this.#move_by_graph = false;
+
+                    let newPositionVec = targetPositionVector.clone();
+                    if (this.options.do_circle) {
+                        let rndAngle = get_random_angle();
+                        let rotatedVector = charTrgDiffVector.clone().rotate(rndAngle);
+                        newPositionVec.add(rotatedVector);
+
+                        while (!can_move_to(newPositionVec.x, newPositionVec.y)) {
+                            rndAngle = get_random_angle();
+                            rotatedVector.rotate(rndAngle);
+                            newPositionVec = targetPositionVector.clone().add(rotatedVector);
                         }
+                    } else {
+                        newPositionVec.add(charTrgDiffVector);
                     }
+
+                    if (distance2D(newPositionVec.x, newPositionVec.y) > 15) await move(newPositionVec.x, newPositionVec.y);
+
+                // If moving by graph and can already use our normal movement
+                } else if (this.#move_by_graph && can_move_to(targetPositionVector.x, targetPositionVector.y)) {
+                    this.#move_by_graph = false;
+
+                    let newPositionVec = targetPositionVector.clone().add(charTrgDiffVector);
+                    move(newPositionVec.x, newPositionVec.y);
+
+                // Cannot reach target so move by graph
+                } else if (!this.#move_by_graph) {
+                    this.#move_by_graph = true;
+                    this.moveByGraph(target);
                 }
             }
-        } catch (e) {
-            game_log(`${e.name}: ${e.message}`);
+        } catch (ex) {
+            this.#move_by_graph = false;
+            console.error("moveLoop", ex);
         }
         
-        setTimeout(this.moveLoop.bind(this), 250);
+        setTimeout(this.moveLoop.bind(this), 200);
     }
 
     async moveByGraph(target) {
-        try {
-            if (this.#move_by_graph) {
-                if (!target) {
-                    this.#move_by_graph = false;
-                    return;
-                }
-
-                let from = {x: character.real_x, y: character.real_y};
-                let to = {x: target.x, y: target.y};
-                let path = plotPath(from, to);
-
-                for (let node of path) {
-                    if (this.#move_by_graph) {
-                        await move(node.x, node.y);
-                    }
-                }
+        if (this.#move_by_graph) {
+            if (!target) {
                 this.#move_by_graph = false;
-            }
-        } catch (e) {
-            game_log(`${e.name}: ${e.message}`);
-        }
-    }
-
-    async circleTarget(target) {
-        let debugDraw = false;
-
-        let targetId = target.id;
-        let startAngle = get_angle_between(target, character);
-        let inclination = degrees_to_radian(this.#CIRCLE_ANGLE) * get_random_sign();
-        let i = 0;
-        let quotient = (360 / this.#CIRCLE_ANGLE >> 0) - 1;
-
-        let retries = 0;
-        let j = 0;
-
-        this.#circle_around = true;
-        while (target && target.id === targetId && target.hp > 0 && this.#circle_around && this.options.do_circle && j <= 100) {
-            j++;
-
-            let centreX = target.x;
-            let centreY = target.y;
-            let centreR = character.range - 1;
-
-            let angle = startAngle + inclination * i;
-            let newX = centreX + this.#CIRCLE_AT_RANGE * Math.cos(angle);
-            let newY = centreY + this.#CIRCLE_AT_RANGE * Math.sin(angle);
-
-            if (debugDraw) {
-                clear_drawings();
-                // Kite circle
-                draw_circle(centreX, centreY, centreR, 2, 0x2B97FF);
-                draw_line(centreX, centreY, newX, newY, 2, 0x2B97FF);
+                return;
             }
 
-            if (!can_move_to(newX, newY)) {
-                startAngle = angle;
-                inclination *= -1;
-                i = 2;
+            let from = {x: character.real_x, y: character.real_y};
+            let to = {x: target.x, y: target.y};
+            let path = plotPath(from, to);
 
-                retries++;
-                if (retries >= 2) {
-                    startAngle *= -1;
-                    retries = 0;
+            for (let node of path) {
+                if (this.#move_by_graph) {
+                    await move(node.x, node.y);
                 }
-
-                continue;
             }
-
-            await move(newX, newY);
-            await sleep(250);
-
-            retries = 0;
-            i++;
-            if (i > quotient) i = 0;
-            target = get_targeted_monster();
+            this.#move_by_graph = false;
         }
-
-        if (debugDraw) clear_drawings();
-        this.#circle_around = false;
     }
+
+    // async circleTarget(target) {
+    //     let debugDraw = false;
+
+    //     let targetId = target.id;
+    //     let startAngle = get_angle_between(target, character);
+    //     let inclination = degrees_to_radian(this.#CIRCLE_ANGLE) * get_random_sign();
+    //     let i = 0;
+    //     let quotient = (360 / this.#CIRCLE_ANGLE >> 0) - 1;
+
+    //     let retries = 0;
+    //     let j = 0;
+
+    //     this.#circle_around = true;
+    //     while (target && target.id === targetId && target.hp > 0 && this.#circle_around && this.options.do_circle && j <= 100) {
+    //         j++;
+
+    //         let centreX = target.x;
+    //         let centreY = target.y;
+    //         let centreR = character.range - 1;
+
+    //         let angle = startAngle + inclination * i;
+    //         let newX = centreX + this.#CIRCLE_AT_RANGE * Math.cos(angle);
+    //         let newY = centreY + this.#CIRCLE_AT_RANGE * Math.sin(angle);
+
+    //         if (debugDraw) {
+    //             clear_drawings();
+    //             // Kite circle
+    //             draw_circle(centreX, centreY, centreR, 2, 0x2B97FF);
+    //             draw_line(centreX, centreY, newX, newY, 2, 0x2B97FF);
+    //         }
+
+    //         if (!can_move_to(newX, newY)) {
+    //             startAngle = angle;
+    //             inclination *= -1;
+    //             i = 2;
+
+    //             retries++;
+    //             if (retries >= 2) {
+    //                 startAngle *= -1;
+    //                 retries = 0;
+    //             }
+
+    //             continue;
+    //         }
+
+    //         await move(newX, newY);
+    //         await sleep(250);
+
+    //         retries = 0;
+    //         i++;
+    //         if (i > quotient) i = 0;
+    //         target = get_targeted_monster();
+    //     }
+
+    //     if (debugDraw) clear_drawings();
+    //     this.#circle_around = false;
+    // }
 
     // ------------------------- SKILLS SECTION ------------------------- //
     async useSkillsLoop() {
-        if (!this.#useSkillsFlag) {
+        if (!this.#useSkillsFlag || smart.moving || character.rip) {
             setTimeout(this.useSkillsLoop.bind(this), 100);
             return;
         }
 
         try {
-            if (!smart.moving) await this.warriorSkills();
+            await this.warriorSkills();
         } catch (ex) {
-            console.log(ex);
+            console.error("useSkillsLoop", ex);
         }
 
         setTimeout(this.useSkillsLoop.bind(this), 100);
     }
 
     warriorSkills() {
+        let healerEntity = parent.entities[this.options.healer];
+        let healerNearby = this.options.is_solo || !this.options.healer || (healerEntity && healerEntity.map === character.map && parent.simple_distance(character, healerEntity) <= 300);
+        
         let allPromises = [];
-        if (!character.rip) {
-            if (this.options?.use_taunt) allPromises.push(this.taunt());
-            if (this.options?.use_agitate) allPromises.push(this.massTaunt());
-            if (this.options?.use_cleave) {
-                allPromises.push(this.cleave());
-            }
 
-            allPromises.push(this.ensureEquipped());
-            allPromises.push(this.hardShell());
-            allPromises.push(this.warCry());
-        }
+        if (this.options?.use_taunt) allPromises.push(this.taunt());
+        if (this.options?.use_agitate && healerNearby) allPromises.push(this.massTaunt());
+        if (this.options?.use_cleave && healerNearby) allPromises.push(this.cleave());
+
+        allPromises.push(this.ensureEquipped());
+        allPromises.push(this.hardShell());
+        allPromises.push(this.warCry());
 
         return Promise.allSettled(allPromises);
     }
@@ -536,35 +521,71 @@ class WarriorBehaviour {
 
         const cleaveItem = this.#cleaveItem;
         if (cleaveItem && !is_on_cooldown("cleave") && !is_disabled(character) && character.mp > (G.skills.cleave.mp + this.#KEEP_MP)) {
-            const monstersToCleave = this.find_viable_targets().filter((mob) => is_in_range(mob, "cleave"));
+            let monstersToCleave = this.find_viable_targets().filter((mob) => is_in_range(mob, "cleave"));
             if (monstersToCleave.length >= 3) {
 
+                let currMainhand = character.slots.mainhand;
+                let currOffhand = character.slots.offhand;
+
+                let shouldChangeMain = currMainhand.name !== cleaveItem.name || currMainhand.level !== cleaveItem.level;
+                let shouldUnequipOffhand = !!currOffhand;
+
                 this.#last_cleave = new Date();
-                let task = async function() {
-                    let currMainhand = character.slots.mainhand;
-                    let currOffhand = character.slots.offhand;
+                let task = async function(shouldChangeMain, shouldUnequipOffhand) {
+                    if (shouldChangeMain) {
+                        if (shouldUnequipOffhand) await unequip("offhand");
 
-                    if (currMainhand.name !== cleaveItem.name && currMainhand.level !== cleaveItem.level) {
-                        let cleaveItemIx = find_desired_item(cleaveItem);
-                        if (cleaveItemIx < 0) return;
-
-                        if (currOffhand) await unequip("offhand");
-                        await equip(cleaveItemIx);
+                        let cleaveItemIndex = find_desired_item(cleaveItem)[0];
+                        if (cleaveItemIndex > -1) await equip(cleaveItemIndex);
                     }
-                    
+
                     await use_skill("cleave").then(reduce_cooldown("cleave", Math.min(...parent.pings)));
                 };
 
-                return task();
+                return task(shouldChangeMain, shouldUnequipOffhand);
             }
         } 
+    }
+
+    ensureEquipped() {
+        const currMainhand = character.slots.mainhand;
+        const currOffHand = character.slots.offhand;
+
+        const desiredMainhand = this.#mainhandItem;
+        const desiredOffhand = (this.options.use_explosion) ? this.#offhandItem : this.#alterOffhandItem;
+
+        if (mssince(this.#last_cleave) > 300 && mssince(this.#last_equip) > 300) {
+            let wrongMainhand = (currMainhand?.name !== desiredMainhand.name || currMainhand?.level !== desiredMainhand.level);
+            let wrongOffhand = (currOffHand?.name !== desiredOffhand.name || currOffHand?.level !== desiredOffhand.level);
+            let somethingWrong = wrongMainhand || wrongOffhand;
+
+            if (somethingWrong) {
+                let desiredMainhandIx = -1;
+                if (wrongMainhand) desiredMainhandIx = find_desired_item(desiredMainhand)[0];
+
+                let desiredOffhandIx = -1;
+                if (wrongOffhand) {
+                    let indexes = find_desired_item(desiredOffhand);
+                    desiredOffhandIx = indexes.length > 1 ? indexes[1] : indexes[0];
+                }
+
+                let equipArray = [];
+                if (desiredMainhandIx > -1) equipArray.push({num: desiredMainhandIx, slot: "mainhand"});
+                if (desiredOffhandIx > -1) equipArray.push({num: desiredOffhandIx, slot: "offhand"});
+
+                if (equipArray.length > 0) {
+                    this.#last_equip = new Date();
+                    return equip_batch(equipArray);
+                }            
+            }
+        }
     }
 
     // ------------------------- UTILITY SECTION ------------------------ //
     async regenLoop() {
 		try {
 			// Don't heal if we're dead or using teleport to town
-			if ((!can_use("regen_hp") && !can_use("regen_mp")) || character.rip || is_transporting(character)) {
+			if (!can_use("regen_hp") || character.rip || smart.curr_step?.town) {
 				setTimeout(this.regenLoop.bind(this), Math.max(100, ms_to_next_skill("use_hp")));
 				return;
 			}
@@ -604,8 +625,8 @@ class WarriorBehaviour {
                     reduce_cooldown("regen_mp", minPing);
                 }
             }
-		} catch (e) {
-			game_log(`${e.name}: ${e.message}`);
+		} catch (ex) {
+			console.error("regenLoop", ex);
 		}
 	
 		setTimeout(this.regenLoop.bind(this), Math.max(100, ms_to_next_skill("use_hp")));
@@ -617,48 +638,16 @@ class WarriorBehaviour {
             if (this.options.is_solo || !looterNm || looterNm === character.name || !parent.party_list.includes(looterNm) || get(looterNm).map !== character.map) {
                 loot();
             }
-        } catch (e) {
-            game_log(`${e.name}: ${e.message}`);
+        } catch (ex) {
+            console.error("lootLoop", ex);
         }
         
         setTimeout(this.lootLoop.bind(this), 250);
     }
 
-    ensureEquipped() {
-        const currMainhand = character.slots.mainhand;
-        const currOffHand = character.slots.offhand;
-
-        const desiredMainhand = this.#mainhandItem;
-        const desiredOffhand = (this.options.use_cleave) ? this.#offhandItem : this.#alterOffhandItem;
-
-        if (mssince(this.#last_cleave) > 300 && mssince(this.#last_equip) > 300) {
-            let somethingWrong = (currMainhand?.name !== desiredMainhand.name || currMainhand?.level !== desiredMainhand.level)
-                              || (currOffHand?.name !== desiredOffhand.name || currOffHand?.level !== desiredOffhand.level);
-
-            if (somethingWrong) {
-                this.#last_equip = new Date();
-                let task = async function() {
-                    if (currMainhand) await unequip("mainhand");
-                    if (currOffHand) await unequip("offhand");
-
-                    await sleep(50);
-
-                    let desiredMainhandIx = find_desired_item(desiredMainhand);
-                    let desiredOffhandIx = find_desired_item(desiredOffhand);
-
-                    if (desiredMainhandIx > -1) await equip(desiredMainhandIx);
-                    if (desiredOffhandIx > -1) await equip(desiredOffhandIx);
-                };
-                
-                return task();
-            }
-        }
-    }
-
     find_viable_targets() {
-        let monsters = Object.values(parent.entities);
-        monsters.filter((e) => e.type === "monster")
-            .forEach((e) => {
+        let monsters = Object.values(parent.entities).filter((e) => e.type === "monster");
+        monsters.forEach((e) => {
                 e.targeting_party = e.target !== character.name && parent.party_list.includes(e.target);
                 e.is_boss_target = FARM_BOSSES.includes(e.mtype);
             });
@@ -707,6 +696,6 @@ class WarriorBehaviour {
             );
         }
     
-        return monsters || [];
+        return monsters.filter((m) => m.mtype !== "wabbit");
     }
 }
