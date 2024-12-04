@@ -1,164 +1,12 @@
-class MageController {
-    #actionCheckerLoopFlg = false;
-    #actionExecutorLoopFlg = false;
-
-    // Current action
-    #current_task = null;
-
-    constructor(options, strategy) {
-        if (!character.action_queue) character.action_queue = [];
-
-        this.options = options;
-        this.strategy = strategy;
-
-        this.actionCheckerLoop();
-        this.actionExecutorLoop();
-    }
-
-    enable() {
-        this.#actionCheckerLoopFlg = true;
-        this.#actionExecutorLoopFlg = true;
-    }
-
-    disable() {
-        this.#actionCheckerLoopFlg = false;
-        this.#actionExecutorLoopFlg = false;
-    }
-
-    // ----------------- ACTION QUEUE HANDLERS SECTION ------------------ //
-    async actionCheckerLoop() {
-        if (!this.#actionCheckerLoopFlg || character.rip) {
-            setTimeout(this.actionCheckerLoop.bind(this), 1000);
-            return;
-        }
-
-        // Check and push return to spot
-        if (character.current_state === "farming" && !character.action_queue.some((t) => t.name === "return") && this.strategy.options.farm_area) {
-            let farm_area = this.strategy.options.farm_area;
-            if (!get_targeted_monster() && farm_area.position && (farm_area.position.map !== character.map || distance(character, farm_area.area) > (farm_area.area.d * 2))) {
-                game_log(`Pushing "return to spot" task to queue`, LOG_COLORS.blue);
-                
-                let returnTask = Task.getReturnTask(farm_area);
-                character.action_queue.push(returnTask);
-            }
-        }
-
-        if ((!character.current_state || character.current_state !== "farming") && character.action_queue.length === 0) {
-            game_log(`Pushing "farming" task to queue`, LOG_COLORS.blue);
-
-            let farmStateTask = new Task("farming");
-            farmStateTask.pushAction("change_state", null, "farming");
-            character.action_queue.push(farmStateTask);
-        }
-
-        setTimeout(this.actionCheckerLoop.bind(this), 1000);
-    }
-
-    async actionExecutorLoop() {
-		if (!this.#actionExecutorLoopFlg || character.rip) {
-			setTimeout(this.actionExecutorLoop.bind(this), 500);
-			return;
-		}
-
-		// Execute from queue
-		if (!this.#current_task && character.action_queue.length > 0) {
-            this.#current_task = character.action_queue[0];
-            try {
-                while (!this.#current_task.isComplete()) {
-                    try {
-                        let action = this.#current_task.getCurrentAction();
-                        game_log(`Executing "${action.type}" step`, LOG_COLORS.blue);
-                        await this.executeActionStep(action);
-                        game_log(`Finished "${action.type}" step`, LOG_COLORS.blue);
-                    } catch (ex) {
-                        console.error("actionExecutorLoop.action", ex);
-                    } finally {
-                        this.#current_task.actionComplete();
-                    }
-                }
-            } catch (ex) {
-                console.error("actionExecutorLoop", ex);
-            } finally {
-                character.action_queue.splice(0, 1);
-                this.#current_task = null;
-            }
-		}
-
-		setTimeout(this.actionExecutorLoop.bind(this), 100);
-	}
-
-    async executeActionStep(action) {
-        let actionType = action.type;
-        if (actionType === "change_state") {
-            game_log(`Changing state to: ${action.arg}`, LOG_COLORS.blue);
-            character.current_state = action.arg;
-            return set_message(action.arg);
-        }
-
-        if (actionType === "call") {
-            let splitted = action.name.split(".");
-            let context = splitted[0];
-            let funcName = splitted[1];
-            let arg = action.arg;
-
-            game_log(`Calling ${action.name} function`, LOG_COLORS.blue);
-            console.log("Function call: ", action.name, arg);
-            if (context === "window") {
-                if (arg) return window[funcName](arg);
-                else return window[funcName]();
-            }
-
-            if (context === "this") {
-                if (arg) return this[funcName](arg);
-                else return this[funcName]();
-            }
-
-            if (context === "strat") {
-                if (arg) return this.strategy[funcName](arg);
-                else return this.strategy[funcName]();
-            }
-        }
-    }
-
-    // ------------------------ ACTION ROUTINES ------------------------- //
-    pushFarmBossActions(event) {
-        if (character.action_queue.some((t) => t.id === event.id)) return;
-
-        game_log(`Pushing "boss_farm" event to queue`, LOG_COLORS.blue);
-        let bossFarmTask = Task.getFarmBossTask(event);
-
-        if (event.type === "global" && character.action_queue.length > 0) character.action_queue.splice(1, 0, bossFarmTask);
-        else character.action_queue.push(bossFarmTask);
-    }
-
-    async changeOptions(event) {
-        if (event && event.name) {
-            let bossInfo = BOSS_INFO[event.type][event.name];
-            let bossFarmArea = FARM_AREAS.event;
-            bossFarmArea.farm_monsters = [...bossInfo.targets];
-    
-            let bossFarmOptions = bossInfo.characters[character.name];
-            bossFarmOptions.farm_area = bossFarmArea;
-
-            event.targets = bossInfo.targets;
-            event.options = bossFarmOptions;
-    
-            this.strategy.options = bossFarmOptions;
-            character.current_event = event;
-        } else {
-            this.strategy.options = character.farm_options;
-            character.current_event = null;
-        }
-    }
-
+class MageController extends CharacterController {
     async callPartyForEvent() {
-        let currEvent = character.current_event;
-        let targets = currEvent.targets;
+        let myState = character.state;
+        let targets = myState.farm_area.farm_monsters;
 
         let targetsAround = await waitForTargets(targets, 5);
         if (targetsAround.length === 0) return;
 
-        let bossInfo = BOSS_INFO[currEvent.type][currEvent.name];
+        let bossInfo = BOSS_INFO[myState.event_options.type][myState.event_options.name];
         let eventCharacters = Object.keys(bossInfo.characters);
         if (eventCharacters.length > 2) {
             let onServer = getOnlineCharacters();
@@ -169,74 +17,56 @@ class MageController {
                 if (!summonEntity || parent.simple_distance(character, summonEntity) >= 300) toSummon.push(summonNm);
             }
 
+            let notifyEvent = {
+                id: myState.event_options.id,
+                name: myState.event_options.name,
+                type: myState.event_options.type,
+                wait_resp: myState.event_options.wait_resp,
+                summon: true,
+                destination: myState.farm_area.position
+            };
             await this.strategy.massMagiport(toSummon, true);
-            for (let name of summonNames) {
-                send_cm(name, currEvent);
-            }
+            send_cm(summonNames, notifyEvent);
         }
     }
 
-    async awaitCompletion() {
-        let targets = character.current_event.targets;
-        let targetsAround = await waitForTargets(targets, 5);
-        if (targetsAround.length === 0) return;
+    async callPartyBackToSpot() {
+        let myFarmSpot = this.strategy.farm_area.name;
+        if (!myFarmSpot) return;
 
-        let waitForRespawn = character.current_event && character.current_event.wait_resp;
-        let lastCheckTs = Date.now();
+        let myParty = parent.party_list
+                .map((nm) => get(nm))
+                .filter((m) => m && ![character.name, "Momental"].includes(m.name));
 
-        let lastHpChange = Date.now();
-        let targetsHp = targetsAround.reduce((partial, t) => partial + t.hp, 0);
-        while (ts_msince(lastHpChange) < 1) {
-            await sleep(1000);
+        let summonList = [];
+        for (let partyMember of myParty) {
+            let memberIsSolo = partyMember.state?.solo;
+            let memberFarmArea = partyMember.state?.farm_area?.name;
 
-            targetsAround = Object.values(parent.entities).filter((m) => m.type === "monster" && targets.includes(m.mtype));
-            let targetsLastHp = targetsAround.reduce((partial, t) => partial + t.hp, 0);
-            let isFullGuard = targetsAround.some((t) => t.s.fullguardx);
-            if (targetsHp !== targetsLastHp || isFullGuard) {
-                lastHpChange = Date.now();
-                targetsHp = targetsLastHp;
-            }
-            // Nowait respawn logic
-            if (targetsAround.length === 0 && !waitForRespawn) return;
+            let canSummon = !memberIsSolo
+                         && partyMember?.state?.name !== "event"
+                         && (memberFarmArea && memberFarmArea === myFarmSpot)
+                         && (partyMember.map !== character.map || distance(character, partyMember) >= 600);
 
-            // Wait respawn logic
-            if (targetsAround.length > 0) lastCheckTs = Date.now();
-            if (targetsAround.length === 0 && ts_ssince(lastCheckTs) >= 10) return;
+            if (canSummon) summonList.push(partyMember.name);
         }
+
+        await this.strategy.massMagiport(summonList, true);
     }
-
-    // #TODO: Доделать возврат пати на спот через суммон
-    // async callPartyBackToSpot() {
-    //     let partyNames = parent.party_list;
-    //     let summonList = [];
-    //     for (let partyNm of partyNames) {
-    //         let partyMemberInfo = get(partyNm);
-    //         if (!partyMemberInfo) continue;
-
-    //         let partyMemberOpts = partyMemberInfo.farmOptions;
-    //         if (!partyMemberOpts) continue;
-
-    //         let canSummon = !partyMemberOpts.is_solo
-    //                         && partyMemberInfo.currState === "farming"
-    //                         && partyMemberOpts.farm_area?.name === this.options.farm_area?.name
-    //                         && distance(character, partyMemberInfo) >= 400;
-
-    //         console.log(partyMemberOpts, canSummon);
-    //         if (canSummon) summonList.push(partyNm);
-    //     }
-
-    //     await this.strategy.massMagiport(summonList, true);
-    // }
 }
 
 
 class MageBehaviour {
+    // General settings
     #USE_HP_AT_RATIO = 0.75;
     #USE_MP_AT_RATIO = 0.9;
 
-    // General settings
     #USE_BURST_AT_MP_RATIO = 0.8;
     #KEEP_MP = character.mp_cost * 6;
+
+    // Weapons for swap
+    #mainWeapon = {name: "firestaff", level: 9};
+    #alterWeapon = {name: "pinkie", level: 8};
 
     // States
     #move_by_graph = false;
@@ -247,11 +77,10 @@ class MageBehaviour {
     #targetChooseFlag = false;
     #moveFlag = false;
 
-    constructor(options) {
-        this.options = options;
-        character.farm_options = options;
-
-        if (character.current_event) this.options = character.current_event.options;
+    constructor(solo, farm_location) {
+        this.solo = solo;
+        this.farm_area = farm_location.farm_area;
+        this.farm_options = farm_location.farm_options[character.name];
 
         this.regenLoop();
         this.lootLoop();
@@ -307,7 +136,7 @@ class MageBehaviour {
         }
 
         try {
-            if (!this.options.is_solo) {
+            if (!this.solo) {
                 await this.targetChooseParty();
             } else {
                 await this.targetChooseSolo();
@@ -322,34 +151,79 @@ class MageBehaviour {
     async targetChooseParty() {
         let tank_character = parent.entities["Shalfey"];
         let target = get_targeted_monster();
+        let entityTarget = target ? parent.entities[target.id] : null;
         let tanks_target = get_target_of(tank_character);
         let targetingMe = Object.values(parent.entities).find((e) => e.type === "monster" && e.target === character.name);
 
-        if (target && tanks_target && target.id !== tanks_target.id) {
-            await change_target(tanks_target);
-        } else if (tanks_target) {
-            await change_target(tanks_target);
-        } else if (targetingMe) {
+        if (targetingMe && (!target || (targetingMe.id !== target.id))) {
             await change_target(targetingMe);
-        } else {
+        } else if (tanks_target && (!target || (tanks_target.id !== target.id))) {
+            await change_target(tanks_target);
+        } else if (!target) {
             await change_target(tank_character);
+        } else if (target && !entityTarget) {
+            await change_target(null);
         }
     }
     
     async targetChooseSolo() {
         // Check if we have some monster in target
         let target = get_targeted_monster();
-        if (target && !parent.entities[target.id]) {
-            await change_target(null);
-            target = null;
-        }
+        let entityTarget = target ? parent.entities[target.id] : null;
 
         // If not, find viable monster to attack and select target
         if (!target) {
             target = this.find_viable_targets()[0];
             if (target) await change_target(target);
+        } else if (target && !entityTarget) {
+            await change_target(null);
         }
     }
+
+    // async moveLoop() {
+    //     try {
+    //         if (!this.#moveFlag || smart.moving || character.rip) {
+    //             setTimeout(this.moveLoop.bind(this), 200);
+    //             return;
+    //         }
+
+    //         // Avoidance parameters
+    //         let entityScale = 20;
+    //         let rangeBuffer = 50;
+    //         let characterMaxRange = character.range - 10;
+
+    //         let target = get_target();
+    //         let characterVector = new Vector(character.real_x, character.real_y);
+    //         let avoidanceVector = getEntityAvoidanceVector(characterVector, rangeBuffer, characterMaxRange, entityScale);
+    //         if (target && target.name !== character.name) {
+    //             let targetVector = getTargetVector(target, target.range + 50, characterMaxRange);
+    //             let moveVector = targetVector.clone().add(avoidanceVector).limit(50);
+    //             let pathVector = characterVector.clone().add(moveVector);
+
+    //             let secondAvoidanceVector = getEntityAvoidanceVector(pathVector, rangeBuffer, characterMaxRange, entityScale);
+    //             if (Math.abs(avoidanceVector.toAngles() - secondAvoidanceVector.toAngles()) > 0.087266) moveVector.add(avoidanceVector).limit(50);
+
+    //             pathVector = characterVector.clone().add(moveVector);
+
+    //             let canMoveTo = can_move_to(pathVector.x, pathVector.y);
+    //             if (distance2D(pathVector.x, pathVector.y) > 10 && canMoveTo) {
+    //                 this.#move_by_graph = false;
+    //                 move(pathVector.x, pathVector.y);
+    //             } else if (!this.#move_by_graph && !canMoveTo) {
+    //                 this.#move_by_graph = true;
+    //                 this.moveByGraph(characterVector.add(targetVector));
+    //             }
+    //         } else if (avoidanceVector.length() > 10) {
+    //             let evadeMove = characterVector.add(avoidanceVector.limit(50));
+    //             move(evadeMove.x, evadeMove.y);
+    //         }
+    //     } catch (ex) {
+    //         this.#move_by_graph = false;
+    //         console.error("moveLoop", ex);
+    //     }
+
+    //     setTimeout(this.moveLoop.bind(this), 200);
+    // }
 
     async moveLoop() {
         try {
@@ -367,22 +241,21 @@ class MageBehaviour {
             let characterVector = new Vector(character.real_x, character.real_y);
             let avoidanceVector = getEntityAvoidanceVector(characterVector, rangeBuffer, characterMaxRange, entityScale);
             if (target && target.name !== character.name) {
-                let targetVector = getTargetVector(target, target.range + 50, characterMaxRange);
-                let moveVector = targetVector.clone().add(avoidanceVector).limit(50);
-                let pathVector = characterVector.clone().add(moveVector);
-
-                let secondAvoidanceVector = getEntityAvoidanceVector(pathVector, rangeBuffer, characterMaxRange, entityScale);
-                if (Math.abs(avoidanceVector.toAngles() - secondAvoidanceVector.toAngles()) > 0.087266) moveVector.add(avoidanceVector).limit(50);
-
-                pathVector = characterVector.clone().add(moveVector);
-
-                let canMoveTo = can_move_to(pathVector.x, pathVector.y);
-                if (distance2D(pathVector.x, pathVector.y) > 10 && canMoveTo) {
+                if (can_move_to(target.x, target.y)) {
                     this.#move_by_graph = false;
-                    move(pathVector.x, pathVector.y);
-                } else if (!this.#move_by_graph && !canMoveTo) {
+                    let targetVector = getTargetVector(target, target.range + 50, characterMaxRange);
+
+                    let moveVector = targetVector.clone().add(avoidanceVector).limit(50);
+                    let pathVector = characterVector.clone().add(moveVector);
+
+                    let secondAvoidanceVector = getEntityAvoidanceVector(pathVector, rangeBuffer, characterMaxRange, entityScale);
+                    if (Math.abs(avoidanceVector.toAngles() - secondAvoidanceVector.toAngles()) > 0.087266) moveVector.add(avoidanceVector).limit(50);
+
+                    pathVector = characterVector.clone().add(moveVector);
+                    if (distance2D(pathVector.x, pathVector.y) > 10) move(pathVector.x, pathVector.y);
+                } else if (!this.#move_by_graph) {
                     this.#move_by_graph = true;
-                    this.moveByGraph(characterVector.add(targetVector));
+                    this.moveByGraph(target);
                 }
             } else if (avoidanceVector.length() > 10) {
                 let evadeMove = characterVector.add(avoidanceVector.limit(50));
@@ -435,8 +308,10 @@ class MageBehaviour {
     mageSkills() {
         let allPromises = [];
 
-        if (this.options?.use_burst) allPromises.push(this.manaBurst());
-        if (this.options?.energize) allPromises.push(this.energize("Shalfey"));
+        if (this.farm_options?.use_burst) allPromises.push(this.manaBurst());
+        if (this.farm_options?.energize) allPromises.push(this.energize("Shalfey"));
+
+        allPromises.push(this.ensureEquipped());
 
         return Promise.allSettled(allPromises);
     }
@@ -448,7 +323,7 @@ class MageBehaviour {
         const manaToSpend = character.mp - this.#KEEP_MP;
 
         let targets = this.find_viable_targets();
-        if (!this.options.is_solo) targets = targets.filter((mob) => mob.target === "Shalfey");
+        if (!this.solo) targets = targets.filter((mob) => mob.target === "Shalfey");
 
         if (targets.length > 0) {
             if (targets.length > 1) {
@@ -523,8 +398,39 @@ class MageBehaviour {
 
         return task(toSummon, mpNeeded, shouldWait);
     }
+
+    ensureEquipped() {
+        let currMainhand = character.slots.mainhand;
+        // let desiredMainhand = this.farm_options?.alter_weapon ? this.#alterWeapon : this.#mainWeapon;
+        let desiredMainhand = this.#mainWeapon;
+
+        let target = get_targeted_monster();
+        if (target && target.max_hp <= 1500)
+            desiredMainhand = this.#alterWeapon;
+
+        let wrongMainhand = target && (currMainhand?.name !== desiredMainhand.name || currMainhand?.level !== desiredMainhand.level);
+        if (wrongMainhand) {
+            let desiredMainhandIx = find_desired_item(desiredMainhand);
+            if (desiredMainhandIx > -1) return equip(desiredMainhandIx);
+        }
+    }
     
     // ------------------------- UTILITY SECTION ------------------------ //
+    // async regenLoop() {
+    //     if (!can_use("regen_hp") || character.rip || smart.curr_step?.town) {
+    //         setTimeout(this.regenLoop.bind(this), Math.max(100, ms_to_next_skill("use_hp")));
+    //         return;
+    //     }
+
+    //     try {
+
+    //     } catch (ex) {
+    //         console.error(ex);
+    //     }
+
+    //     setTimeout(this.regenLoop.bind(this), Math.max(100, ms_to_next_skill("use_hp")));
+    // }
+
     async regenLoop() {
         try {
             // Don't heal if we're dead or using teleport to town
@@ -577,8 +483,8 @@ class MageBehaviour {
 
     async lootLoop() {
         try {
-            let looterNm = this.options.looter;
-            if (this.options.is_solo || !looterNm || looterNm === character.name || !parent.party_list.includes(looterNm) || get(looterNm).map !== character.map) {
+            let looterNm = this.farm_options.looter;
+            if (this.solo || !looterNm || looterNm === character.name || !parent.party_list.includes(looterNm) || get(looterNm).map !== character.map) {
                 loot();
             }
         } catch (ex) {
@@ -595,13 +501,13 @@ class MageBehaviour {
                 e.is_boss_target = FARM_BOSSES.includes(e.mtype);
             });
 
-        if (this.options.farm_area) {
-            let farmable = this.options.farm_area.farm_monsters;
-            let blacklist = this.options.farm_area.blacklist_monsters;
+        if (this.farm_area) {
+            let farmable = this.farm_area.farm_monsters;
+            let blacklist = this.farm_area.blacklist_monsters;
 
             // Area filter
-            let area = this.options.farm_area.area;
-            if (area) monsters = monsters.filter((mob) => (!this.options.is_solo && mob.targeting_party) || mob.is_boss_target || parent.simple_distance(area, mob) <= area.d);
+            let area = this.farm_area.area;
+            if (area) monsters = monsters.filter((mob) => (!this.solo && mob.targeting_party) || mob.is_boss_target || parent.simple_distance(area, mob) <= area.d);
 
             // Whitelist/Blacklist filter
             monsters = monsters.filter((mob) => mob.targeting_party || mob.is_boss_target || (farmable.includes(mob.mtype) && !blacklist.includes(mob.mtype)));

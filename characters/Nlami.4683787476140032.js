@@ -2,8 +2,8 @@ const DO_NOT_SEND = [
 	{name: "lmace", level: 7},
 	{name: "orbg", level: 2},
 	{name: "wbookhs", level: 2},
-	{name: "wbook0", level: 4},
-	{name: "handofmidas", level: 6},
+	{name: "exoarm", level: 0},
+	{name: "handofmidas", level: 7},
 	{name: "wgloves", level: 9},
 	{name: "jacko", level: 2}
 ];
@@ -39,16 +39,12 @@ async function runCharacter() {
     respawnLoop();
 
 	// Character behaviour
-	let currStrat = new HealerBehaviour({
-		is_solo: false,
-		looter: "Nlami",
-		farm_area: FARM_AREAS.moles,
-		use_curse: false,
-		use_mass_heal: true
-	});
+	let currStrat = new HealerBehaviour(false, FARM_AREAS.bigbird);
 
 	// Character controller
-	controller = new HealerController({}, currStrat);
+	controller = new CharacterController({
+		do_quests: false
+	}, currStrat);
 
 	controller.enable();
 	currStrat.enable();
@@ -86,6 +82,9 @@ function create_party() {
 }
 
 async function initialize_character() {
+	// Constants
+    await load_module("constants");
+
 	// Pathfinding modules
 	await load_module("graph_mover");
 	await load_module("mover_module");
@@ -96,6 +95,7 @@ async function initialize_character() {
 	await load_module("event_task");
 
 	// Class specific functions
+	await load_module("character_controller");
 	await load_module("healer_strats");
 }
 

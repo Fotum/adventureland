@@ -1,26 +1,12 @@
 const UPGRADE_ITEMS = [
+	{item: "staff", level: 8},
 	{item: "slimestaff", level: 8},
 
-	// {item: "iceskates", level: 5},
-	// {item: "xmaspants", level: 7},
-	// {item: "xmasshoes", level: 7},
 	{item: "mittens", level: 6},
-	// {item: "xmashat", level: 7},
-	// {item: "sweaterhs", level: 6},
 	{item: "cape", level: 5},
 	{item: "sshield", level: 7},
-	{item: "xmace", level: 6},
-	// Rugged set
-	// {item: "helmet1", level: 8},
-	// {item: "coat1", level: 8},
-	// {item: "pants1", level: 8},
-	// {item: "gloves1", level: 8},
-	// {item: "shoes1", level: 8},
-	// Wanderer set
-	// {item: "wattire", level: 8},
-	// {item: "wgloves", level: 8},
-	// {item: "wshoes", level: 8},
-	// {item: "wcap", level: 8},
+	{item: "mshield", level: 5},
+	{item: "basher", level: 6},
 	{item: "wbreeches", level: 8},
 	// Heavy set
 	{item: "hhelmet", level: 5},
@@ -32,9 +18,12 @@ const UPGRADE_ITEMS = [
 	// {item: "woodensword", level: 7},
 	{item: "firestaff", level: 6},
 	{item: "fireblade", level: 6},
+	{item: "firebow", level: 6},
 
 	{item: "harbringer", level: 5},
 	{item: "oozingterror", level: 5},
+	{item: "mshield", level: 5},
+	{item: "t2quiver", level: 6},
 
 	// Bunny stuff
 	{item: "eears", level: 7},
@@ -49,8 +38,8 @@ const UPGRADE_ITEMS = [
 	{item: "wingedboots", level: 6},
 	{item: "gcape", level: 6},
 	{item: "lmace", level: 3},
-	{item: "glolipop", level: 5},
-	{item: "ololipop", level: 5},
+	{item: "glolipop", level: 6},
+	{item: "ololipop", level: 6},
 	{item: "handofmidas", level: 5},
 	{item: "bataxe", level: 5},
 	{item: "frankypants", level: 3},
@@ -71,6 +60,11 @@ const COMPOUND_ITEMS = [
 	{item: "intamulet", level: 4},
 	{item: "stramulet", level: 4},
 	{item: "skullamulet", level: 4},
+
+	{item: "t2stramulet", level: 2},
+	{item: "t2intamulet", level: 2},
+	{item: "t2dexamulet", level: 2},
+
 	// Rings
 	{item: "strring", level: 4},
 	{item: "intring", level: 4},

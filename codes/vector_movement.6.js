@@ -170,7 +170,7 @@ class Vector {
 // const ENTITY_SCALE_MULT = 20;
 const MAX_VEC_LEN = 50;
 const PLAYER_MIN_DISTANCE = 15;
-const AVOID_MTYPES = new Set(["mole", "prat"]);
+const AVOID_MTYPES = new Set(["mole", "prat", "cgoo"]);
 
 function getTargetVector(target, minDistance, maxDistance) {
     let targetVector = new Vector();

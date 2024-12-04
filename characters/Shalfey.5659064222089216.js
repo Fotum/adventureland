@@ -1,9 +1,10 @@
 const DO_NOT_SEND = [
-	{name: "orbg", level: 2},
-	{name: "test_orb", level: 0},
 	{name: "bataxe", level: 8},
 	{name: "fireblade", level: 9},
-	{name: "ololipop", level: 8}
+	{name: "ololipop", level: 9},
+	{name: "molesteeth", level: 2},
+	{name: "strearring", level: 4},
+	{name: "basher", level: 7}
 ];
 
 
@@ -37,20 +38,12 @@ async function runCharacter() {
     respawnLoop();
 
 	// Character behaviour
-	let currStrat = new WarriorBehaviour({
-		is_solo: false,
-		healer: "Nlami",
-		looter: "Nlami",
-		farm_area: FARM_AREAS.moles,
-		do_circle: true,
-		use_taunt: true,
-		use_agitate: true,
-		use_cleave: true,
-		use_explosion: true
-	});
+	let currStrat = new WarriorBehaviour(false, FARM_AREAS.bigbird);
 
 	// Character controller
-	controller = new WarriorController({}, currStrat);
+	controller = new CharacterController({
+		do_quests: false
+	}, currStrat);
 	
 	controller.enable();
 	currStrat.enable();
@@ -60,6 +53,9 @@ async function runCharacter() {
 runCharacter();
 
 async function initialize_character() {
+	// Constants
+    await load_module("constants");
+
 	// Pathfinding modules
 	await load_module("graph_mover");
 	await load_module("mover_module");
@@ -70,6 +66,7 @@ async function initialize_character() {
 	await load_module("event_task");
 
 	// Class specific functions
+	await load_module("character_controller");
 	await load_module("warrior_strats");
 }
 

@@ -5,6 +5,7 @@ class Task {
 
         this.step = 0;
         this.length = 0;
+        this.is_complete = false;
 
         this.action_list = [];
     }
@@ -12,64 +13,65 @@ class Task {
     static getReturnTask(farm_area) {
         let returnTask = new Task("return");
 
-        returnTask.pushAction("change_state", null, "return");
+        returnTask.pushAction("call", "window.set_message", "return");
         returnTask.pushAction("call", "strat.disable", null);
         returnTask.pushAction("call", "window.moveTo", farm_area.position);
+        if (character.ctype === "mage") returnTask.pushAction("call", "this.callPartyBackToSpot", null);
         returnTask.pushAction("call", "strat.enable", null);
-        returnTask.pushAction("change_state", null, null);
+        returnTask.pushAction("call", "window.set_message", character.state.name);
 
         return returnTask;
     }
 
-    static getFarmBossTask(event) {
-        let task = new Task(event.name, event.id);
+    static getHolidayBuffTask() {
+        let aquireBuffTask = new Task("holiday");
 
-        task.pushAction("change_state", null, "event");
-        task.pushAction("call", "this.changeOptions", event);
-        if (!event.summon || character.ctype === "mage") task.pushAction("call", "window.smart_move", event);
-        if (event.summon && character.ctype === "mage") task.pushAction("call", "this.callPartyForEvent", null);
-        task.pushAction("call", "this.awaitCompletion", null);
-        task.pushAction("call", "this.changeOptions", null);
-        task.pushAction("change_state", null, null);
+        aquireBuffTask.pushAction("call", "window.set_message", "holiday");
+        aquireBuffTask.pushAction("call", "strat.disable", null);
+        aquireBuffTask.pushAction("call", "window.smart_move", "main");
+        aquireBuffTask.pushAction("call", "window.acquireHolidayBuff", null);
+        aquireBuffTask.pushAction("call", "strat.enable", null);
 
-        return task;
+        return aquireBuffTask;
     }
 
     pushAction(type, action, arg) {
         this.action_list.push({
             type: type,
             name: action,
-            arg: arg
+            arg: arg,
+            is_complete: false
         });
 
         this.length++;
     }
 
-    removeAction(i) {
-        if (this.length > 0) {
-            this.action_list.splice(i, 1);
-            this.length--;
+    setComplete() {
+        this.is_complete = true;
+    }
 
-            if (i <= this.step) this.step--;
+    stepComplete() {
+        this.setStepComplete(this.step);
+        this.step++;
+    }
+
+    setStepComplete(i) {
+        if (!this.is_complete && i < this.length) {
+            this.action_list[i].is_complete = true;
+            this.is_complete = this.action_list.every((s) => s.is_complete);
         }
     }
 
-    getCurrentAction() {
-        if (this.isComplete()) return null;
+    getCurrentStep() {
+        if (this.is_complete) return null;
         let action = this.action_list[this.step];
 
         return action;
     }
 
-    actionComplete() {
-        this.step++;
-    }
-
     reset() {
+        this.is_complete = false;
         this.step = 0;
-    }
-
-    isComplete() {
-        return this.step >= this.length;
+        this.action_list.forEach((a) => a.is_complete = false);
     }
 }

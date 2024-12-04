@@ -9,21 +9,13 @@ game.on("event", function (data) {
         name: eventToNotify.name,
         type: "global",
         summon: eventToNotify.summon,
-        wait_resp: eventToNotify.wait_resp
+        wait_resp: eventToNotify.wait_resp,
+        destination: eventToNotify.destination
     };
-
-    if (eventToNotify.to) event.to = eventToNotify.to;
-    if (eventToNotify.map) event.map = eventToNotify.map;
-    if (eventToNotify.x) event.x = eventToNotify.x;
-    if (eventToNotify.y) event.y = eventToNotify.y;
 
     notifyCharactersOfEvent(event, Object.keys(eventToNotify.characters));
 });
 
-// parent.socket.on("players", (data) => {
-//     console.log(data);
-// });
-// parent.socket.emit("players");
 
 var controller = undefined;
 async function runCharacter() {
@@ -38,7 +30,7 @@ async function runCharacter() {
     respawnLoop();
 
     // Character behaviour
-    let currStrat = new MerchantBehaviour();
+    let currStrat = new MerchantBehaviour(FARM_AREAS.bigbird);
 
     // Character controller
     controller = new MerchantController({
@@ -55,12 +47,15 @@ async function runCharacter() {
         }
     }, currStrat);
 
+    // controller.enable();
     currStrat.enable();
-    controller.enable();
 }
 runCharacter();
 
 async function initialize_character() {
+    // Constants
+    await load_module("constants");
+
     // Pathfinding modules
     await load_module("graph_mover");
     await load_module("mover_module");

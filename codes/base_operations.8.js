@@ -1,483 +1,3 @@
-const LOG_COLORS = {
-    blue: "#2b97ff",
-    red: "#cf5b5b"
-};
-
-const MY_CHARACTERS = ["Shalfey", "Nlami", "MagicFotum", "Momental"];
-
-const BASE = {
-    h: 8,
-    v: 7,
-    vn: 2
-};
-
-const FARM_BOSSES = [
-    "mvampire",
-    "fvampire",
-    "phoenix",
-    "snowman",
-    "goldenbat",
-    "cutebee",
-    "grinch",
-    "dragold",
-    "franky",
-    "icegolem",
-    // "crabxx",
-    "jr",
-    "greenjr",
-    "pinkgoo",
-    "bgoo",
-    // "wabbit",
-
-    // Crypt bosses
-    "a7",
-    "a3"
-];
-
-const FARM_AREAS = {
-    // EVENT AREAS
-    event: {
-        name: "event",
-        area: null,
-        position: null,
-        merchant_position: {map: "main", x: 0, y: 0},
-        farm_monsters: [],
-        blacklist_monsters: []
-    },
-
-    // REGULAR AREAS
-    cave_first: {
-        name: "cave_first",
-        area: {x: 70, y: -1300, d: 550},
-        position: {x: 377, y: -1075, map: "cave"},
-        merchant_position: null,
-        farm_monsters: ["bat"],
-        blacklist_monsters: []
-    },
-    cave_second: {
-        name: "cave_second",
-        area: {x: 1282, y: -19, d: 300},
-        position: {x: 1282, y: -19, map: "cave"},
-        merchant_position: null,
-        farm_monsters: ["bat"],
-        blacklist_monsters: []
-    },
-    stoneworm: {
-        name: "stoneworm",
-        area: {x: 860, y: -14, d: 250},
-        position: {x: 795, y: -41, map: "spookytown"},
-        merchant_position: null,
-        farm_monsters: ["stoneworm"],
-        blacklist_monsters: []
-    },
-    booboo: {
-        name: "booboo",
-        area: {x: 400, y: -700, d: 200},
-        position: {x: 155, y: -556, map: "spookytown"},
-        merchant_position: null,
-        farm_monsters: ["booboo"],
-        blacklist_monsters: []
-    },
-    bees: {
-        name: "bees",
-        area: {x: 547, y: 1064, d: 150},
-        position: {x: 547, y: 1064, map: "main"},
-        merchant_position: null,
-        farm_monsters: ["bee"],
-        blacklist_monsters: []
-    },
-    squigs: {
-        name: "squigs",
-        area: {x: -1150, y: 424, d: 300},
-        position: {x: -1150, y: 424, map: "main"},
-        merchant_position: null,
-        farm_monsters: ["squig", "squigtoad", "frog"],
-        blacklist_monsters: []
-    },
-    tortoise: {
-        name: "tortoise",
-        area: {x: -1105, y: 1138, d: 370},
-        position: {x: -1105, y: 1138, map: "main"},
-        merchant_position: null,
-        farm_monsters: ["tortoise", "frog"],
-        blacklist_monsters: []
-    },
-    croc: {
-        name: "croc",
-        area: {x: 780, y: 1714, d: 300},
-        position: {x: 798, y: 1576, map: "main"},
-        merchant_position: null,
-        farm_monsters: ["croc"],
-        blacklist_monsters: []
-    },
-    armadillo: {
-        name: "armadillo",
-        area: {x: 506, y: 1817, d: 200},
-        position: {x: 506, y: 1817, map: "main"},
-        merchant_position: null,
-        farm_monsters: ["armadillo"],
-        blacklist_monsters: []
-    },
-    rats: {
-        name: "rats",
-        area: {x: -5, y: -173, d: 200},
-        position: {x: -5, y: -173, map: "mansion"},
-        merchant_position: null,
-        farm_monsters: ["rat"],
-        blacklist_monsters: []
-    },
-    moles: {
-        name: "moles",
-        area: {x: -2, y: -300, d: 250},
-        position: {x: -1, y: -63, map: "tunnel"},
-        merchant_position: {x: 242, y: -21, map: "tunnel"},
-        farm_monsters: ["mole"],
-        blacklist_monsters: ["wabbit"]
-    }
-    // vrats: {
-    //     name: "vrats",
-    //     area: {x: 59, y: 118, d: 200},
-    //     position: {x: 56, y: 400, map: "level1"},
-    //     merchant_position: {x: 57, y: 424, map: "level1"},
-    //     farm_monsters: ["prat"],
-    //     blacklist_monsters: []
-    // }
-};
-
-const BOSS_INFO = {
-    // Global bosses
-    global: {
-        dragold: {
-            id: -1,
-            name: "dragold",
-            targets: ["dragold"],
-            wait_resp: false,
-            summon: true,
-            map: "cave",
-            x: 1060,
-            y: -746,
-            characters: {
-                Shalfey: {
-                    is_solo: false,
-                    looter: character.name,
-                    healer: "Nlami",
-                    farm_area: null,
-                    do_circle: true,
-                    use_taunt: false,
-                    use_agitate: false,
-                    use_cleave: false,
-                    use_explosion: false
-                },
-                Nlami: {
-                    is_solo: false,
-                    looter: character.name,
-                    farm_area: null,
-                    do_circle: true,
-                    use_curse: false,
-                    use_mass_heal: true
-                }
-            },
-            is_active: true
-        },
-        snowman: {
-            id: -2,
-            name: "snowman",
-            targets: ["snowman"],
-            wait_resp: false,
-            summon: true,
-            map: "winterland",
-            x: 1220,
-            y: -936,
-            characters: {
-                Shalfey: {
-                    is_solo: false,
-                    looter: character.name,
-                    healer: null,
-                    farm_area: null,
-                    do_circle: true,
-                    use_taunt: true,
-                    use_agitate: false,
-                    use_cleave: false,
-                    use_explosion: false
-                },
-                Nlami: {
-                    is_solo: false,
-                    looter: character.name,
-                    farm_area: null,
-                    do_circle: true,
-                    use_curse: false,
-                    use_mass_heal: true
-                },
-                MagicFotum: {
-                    is_solo: false,
-                    looter: character.name,
-                    farm_area: null,
-                    do_circle: true,
-                    use_burst: false,
-                    energize: true
-                }
-            },
-            is_active: true
-        },
-        goobrawl: {
-            id: -3,
-            name: "goobrawl",
-            targets: ["pinkgoo", "bgoo"],
-            wait_resp: true,
-            summon: false,
-            to: "goobrawl",
-            characters: {
-                Shalfey: {
-                    is_solo: false,
-                    looter: character.name,
-                    healer: null,
-                    farm_area: null,
-                    do_circle: true,
-                    use_taunt: true,
-                    use_agitate: true,
-                    use_cleave: true,
-                    use_explosion: true
-                },
-                Nlami: {
-                    is_solo: false,
-                    looter: character.name,
-                    farm_area: null,
-                    do_circle: true,
-                    use_curse: true,
-                    use_mass_heal: true
-                },
-                MagicFotum: {
-                    is_solo: false,
-                    looter: character.name,
-                    farm_area: null,
-                    do_circle: true,
-                    use_burst: true,
-                    energize: true
-                }
-            },
-            is_active: true
-        },
-        icegolem: {
-            id: -4,
-            name: "icegolem",
-            targets: ["icegolem"],
-            wait_resp: false,
-            summon: false,
-            to: "icegolem",
-            characters: {
-                Shalfey: {
-                    is_solo: false,
-                    looter: character.name,
-                    healer: null,
-                    farm_area: null,
-                    do_circle: false,
-                    use_taunt: true,
-                    use_agitate: false,
-                    use_cleave: false,
-                    use_explosion: false
-                },
-                Nlami: {
-                    is_solo: false,
-                    looter: character.name,
-                    farm_area: null,
-                    do_circle: false,
-                    use_curse: true,
-                    use_mass_heal: true
-                },
-                MagicFotum: {
-                    is_solo: false,
-                    looter: character.name,
-                    farm_area: null,
-                    do_circle: false,
-                    use_burst: true,
-                    energize: true
-                }
-            },
-            is_active: true
-        }
-    },
-
-    // Field bosses
-    field: {
-        phoenix: {
-            name: "phoenix",
-            targets: ["phoenix", "frog"],
-            last_check: null,
-            respawn: 35,
-            characters: {
-                Shalfey: {
-                    is_solo: false,
-                    looter: character.name,
-                    healer: null,
-                    farm_area: null,
-                    do_circle: true,
-                    use_taunt: true,
-                    use_agitate: false,
-                    use_cleave: false,
-                    use_explosion: false
-                },
-                Nlami: {
-                    is_solo: false,
-                    looter: character.name,
-                    farm_area: null,
-                    do_circle: true,
-                    use_curse: true,
-                    use_mass_heal: true
-                },
-                MagicFotum: {
-                    is_solo: false,
-                    looter: character.name,
-                    farm_area: null,
-                    do_circle: true,
-                    use_burst: true,
-                    energize: true
-                }
-            },
-            is_active: true
-        },
-        fvampire: {
-            name: "fvampire",
-            targets: ["fvampire"],
-            last_check: null,
-            respawn: 1440,
-            characters: {
-                Shalfey: {
-                    is_solo: false,
-                    looter: character.name,
-                    healer: "Nlami",
-                    farm_area: null,
-                    do_circle: true,
-                    use_taunt: true,
-                    use_agitate: false,
-                    use_cleave: false,
-                    use_explosion: false
-                },
-                Nlami: {
-                    is_solo: false,
-                    looter: character.name,
-                    farm_area: null,
-                    do_circle: true,
-                    use_curse: true,
-                    use_mass_heal: true
-                },
-                MagicFotum: {
-                    is_solo: false,
-                    looter: character.name,
-                    farm_area: null,
-                    do_circle: true,
-                    use_burst: true,
-                    energize: true
-                }
-            },
-            is_active: true
-        },
-        mvampire: {
-            name: "mvampire",
-            targets: ["mvampire"],
-            last_check: null,
-            respawn: 1080,
-            characters: {
-                Shalfey: {
-                    is_solo: false,
-                    looter: character.name,
-                    healer: null,
-                    farm_area: null,
-                    do_circle: true,
-                    use_taunt: true,
-                    use_agitate: false,
-                    use_cleave: false,
-                    use_explosion: false
-                },
-                Nlami: {
-                    is_solo: false,
-                    looter: character.name,
-                    farm_area: null,
-                    do_circle: true,
-                    use_curse: true,
-                    use_mass_heal: true
-                },
-                MagicFotum: {
-                    is_solo: false,
-                    looter: character.name,
-                    farm_area: null,
-                    do_circle: true,
-                    use_burst: true,
-                    energize: true
-                }
-            },
-            is_active: true
-        },
-        jr: {
-            name: "jr",
-            targets: ["jr"],
-            last_check: null,
-            respawn: 25920,
-            characters: {
-                MagicFotum: {
-                    is_solo: true,
-                    looter: character.name,
-                    farm_area: null,
-                    do_circle: true,
-                    use_burst: true,
-                    energize: true
-                }
-            },
-            is_active: true
-        },
-        greenjr: {
-            name: "greenjr",
-            targets: ["greenjr"],
-            last_check: null,
-            respawn: 51840,
-            characters: {
-                Shalfey: {
-                    is_solo: false,
-                    looter: character.name,
-                    healer: null,
-                    farm_area: null,
-                    do_circle: true,
-                    use_taunt: true,
-                    use_agitate: false,
-                    use_cleave: false,
-                    use_explosion: false
-                },
-                Nlami: {
-                    is_solo: false,
-                    looter: character.name,
-                    farm_area: null,
-                    do_circle: true,
-                    use_curse: true,
-                    use_mass_heal: true
-                },
-                MagicFotum: {
-                    is_solo: false,
-                    looter: character.name,
-                    farm_area: null,
-                    do_circle: true,
-                    use_burst: true,
-                    energize: true
-                }
-            },
-            is_active: true
-        }
-    }
-};
-
-const BOSS_CHECK_ROUTE = [
-    {name: "phoenix", map: "main", x: 1188,  y: -193},
-    {name: "phoenix", map: "main", x: 641,  y: 1803},
-    {name: "phoenix", map: "main", x: -1184,  y: 781},
-    {name: "phoenix", map: "halloween", x: 8,  y: 631},
-    {name: "fvampire", map: "halloween", x: -406,  y: -1643},
-    {name: "greenjr", map: "halloween", x: -569,  y: -512},
-    {name: "phoenix", map: "cave", x: -181,  y: -1164},
-    {name: "mvampire", map: "cave", x: -181,  y: -1164},
-    // {name: "mvampire", map: "cave", x: -191,  y: -1177}
-    {name: "mvampire", map: "cave", x: 1244,  y: -23},
-    {name: "jr", map: "spookytown", x: -784,  y: -301}
-];
-
-
 var MAP_GRAPH_LIST = {
     [character.map]: initialize_graph(character.map)
 };
@@ -502,22 +22,24 @@ function on_party_invite(name) {
 function on_magiport(name) {
     if (name !== "MagicFotum") return;
 
-    if (smart.moving) stop("smart");
-    stop("teleport");
-    stop("move");
-
-    accept_magiport(name);
+    accept_magiport(name)
+        .then(async () => {
+            await sleep(500);
+            if (smart.moving) stop("smart");
+            if (character.moving) stop("move");
+            stop("teleport");
+        });
 }
 
 function restoreCharacterState() {
-    character.current_state = get(character.name)?.currState;
-    character.current_event = get(character.name)?.currEvent;
-    character.farm_options = get(character.name)?.farmOptions;
+    let localInfo = get(character.name);
 
-    let savedQueue = get(character.name)?.actionQueue;
+    character.state = localInfo?.state;
+
+    let savedQueue = localInfo?.actionQueue;
     if (savedQueue) character.action_queue = savedQueue.map((sq) => Object.assign(new Task, sq));
 
-    set_message(character.current_state);
+    set_message(character?.state?.name);
 }
 
 async function updateCharacterInfoLoop() {
@@ -549,10 +71,8 @@ async function updateCharacterInfoLoop() {
         myInfo.mpPots = num_items((i) => i && i.name === "mpot1");
 
         // Character state and queue
-        myInfo.currState = character.current_state;
-        myInfo.currEvent = character.current_event;
+        myInfo.state = character.state;
         myInfo.actionQueue = character.action_queue;
-        myInfo.farmOptions = character.farm_options;
 
         set(character.name, myInfo);
     } catch (e) {
@@ -653,9 +173,7 @@ function notifyCharactersOfEvent(event, characters) {
     } else {
         event.summon = false;
         let toNotify = characters.filter((c) => onlineOnServer.includes(c));
-        for (let char of toNotify) {
-            send_cm(char, event);
-        }
+        send_cm(toNotify, event);
     }
 }
 
@@ -698,7 +216,12 @@ function calculateStatsByLevel(ctype, level) {
     return playerStats;
 }
 
-//Returns the number of items in your inventory for a given item name;
+// Emit functions
+function acquireHolidayBuff() {
+    parent.socket.emit("interaction", {type: "newyear_tree"});
+}
+
+// Returns the number of items in your inventory for a given item name;
 function num_items(filtCondition) {
     return character.items
         .filter(filtCondition)
@@ -707,8 +230,11 @@ function num_items(filtCondition) {
         }, 0);
 }
 
-function find_desired_item(item) {
-    if (!item) return [-1];
+function find_desired_item(item, start) {
+    if (!item) return -1;
+    if (!start) start = 0;
+
+    if (start < 0) return -1;
 
     let itemName = item;
     let itemLevel = undefined;
@@ -717,17 +243,15 @@ function find_desired_item(item) {
         itemLevel = item?.level;
     }
 
-    if (!itemName) return [-1];
-
-    let result = [];
-    for (let i = 0; i < character.items.length; i++) {
+    if (!itemName) return -1;
+    for (let i = start; i < character.items.length; i++) {
         let invItem = character.items[i];
         if (invItem && itemName === invItem.name && (!itemLevel || itemLevel === invItem.level)) {
-            result.push(i);
+            return i;
         }
     }
 
-    return result;
+    return -1;
 }
 
 function shuffle(array) {
@@ -771,7 +295,7 @@ function ts_msince(ts, ref) {
 }
 
 // Geometry functions
-function getRectVertices(maxX, maxY, minX, minY) {  
+function getRectVertices(minX, minY, maxX, maxY) {  
     return {
         topLeft: {x: minX, y: minY},
         topRight: {x: maxX, y: minY},

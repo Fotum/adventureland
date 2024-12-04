@@ -1,194 +1,10 @@
-class HealerController {
-    #actionCheckerLoopFlg = false;
-    #actionExecutorLoopFlg = false;
-
-    // Current action
-    #current_task = null;
-
-    constructor(options, strategy) {
-        if (!character.action_queue) character.action_queue = [];
-
-        this.options = options;
-        this.strategy = strategy;
-
-        this.actionCheckerLoop();
-        this.actionExecutorLoop();
-    }
-
-    enable() {
-        this.#actionCheckerLoopFlg = true;
-        this.#actionExecutorLoopFlg = true;
-    }
-
-    disable() {
-        this.#actionCheckerLoopFlg = false;
-        this.#actionExecutorLoopFlg = false;
-    }
-
-    // ----------------- ACTION QUEUE HANDLERS SECTION ------------------ //
-    async actionCheckerLoop() {
-        if (!this.#actionCheckerLoopFlg || character.rip) {
-            setTimeout(this.actionCheckerLoop.bind(this), 1000);
-            return;
-        }
-
-        // Check and push return to spot
-        if (character.current_state === "farming" && !character.action_queue.some((t) => t.name === "return") && this.strategy.options.farm_area) {
-            let farm_area = this.strategy.options.farm_area;
-            if (!get_targeted_monster() && farm_area.position && (farm_area.position.map !== character.map || distance(character, farm_area.area) > (farm_area.area.d * 2))) {
-                game_log(`Pushing "return to spot" task to queue`, LOG_COLORS.blue);
-                
-                let returnTask = Task.getReturnTask(farm_area);
-                character.action_queue.push(returnTask);
-            }
-        }
-
-        if ((!character.current_state || character.current_state !== "farming") && character.action_queue.length === 0) {
-            game_log(`Pushing "farming" task to queue`, LOG_COLORS.blue);
-
-            let farmStateTask = new Task("farming");
-            farmStateTask.pushAction("change_state", null, "farming");
-            character.action_queue.push(farmStateTask);
-        }
-
-        setTimeout(this.actionCheckerLoop.bind(this), 1000);
-    }
-
-    async actionExecutorLoop() {
-		if (!this.#actionExecutorLoopFlg || character.rip) {
-			setTimeout(this.actionExecutorLoop.bind(this), 500);
-			return;
-		}
-
-		// Execute from queue
-		if (!this.#current_task && character.action_queue.length > 0) {
-            this.#current_task = character.action_queue[0];
-            try {
-                while (!this.#current_task.isComplete()) {
-                    try {
-                        let action = this.#current_task.getCurrentAction();
-                        game_log(`Executing "${action.type}" step`, LOG_COLORS.blue);
-                        await this.executeActionStep(action);
-                        game_log(`Finished "${action.type}" step`, LOG_COLORS.blue);
-                    } catch (ex) {
-                        console.error("actionExecutorLoop.action", ex);
-                    } finally {
-                        this.#current_task.actionComplete();
-                    }
-                }
-            } catch (ex) {
-                console.error("actionExecutorLoop", ex);
-            } finally {
-                character.action_queue.splice(0, 1);
-                this.#current_task = null;
-            }
-		}
-
-		setTimeout(this.actionExecutorLoop.bind(this), 100);
-	}
-
-    async executeActionStep(action) {
-        let actionType = action.type;
-        if (actionType === "change_state") {
-            game_log(`Changing state to: ${action.arg}`, LOG_COLORS.blue);
-            character.current_state = action.arg;
-            return set_message(action.arg);
-        }
-
-        if (actionType === "call") {
-            let splitted = action.name.split(".");
-            let context = splitted[0];
-            let funcName = splitted[1];
-            let arg = action.arg;
-
-            game_log(`Calling ${action.name} function`, LOG_COLORS.blue);
-            console.log("Function call: ", action.name, arg);
-            if (context === "window") {
-                if (arg) return window[funcName](arg);
-                else return window[funcName]();
-            }
-
-            if (context === "this") {
-                if (arg) return this[funcName](arg);
-                else return this[funcName]();
-            }
-
-            if (context === "strat") {
-                if (arg) return this.strategy[funcName](arg);
-                else return this.strategy[funcName]();
-            }
-        }
-    }
-
-    // ------------------------ ACTION ROUTINES ------------------------- //
-    pushFarmBossActions(event) {
-        if (character.action_queue.some((t) => t.id === event.id)) return;
-
-        game_log(`Pushing "boss_farm" event to queue`, LOG_COLORS.blue);
-        let bossFarmTask = Task.getFarmBossTask(event);
-        
-        if (event.type === "global" && character.action_queue.length > 0) character.action_queue.splice(1, 0, bossFarmTask);
-        else character.action_queue.push(bossFarmTask);
-    }
-
-    async changeOptions(event) {
-        if (event && event.name) {
-            let bossInfo = BOSS_INFO[event.type][event.name];
-            let bossFarmArea = FARM_AREAS.event;
-            bossFarmArea.farm_monsters = [...bossInfo.targets];
-    
-            let bossFarmOptions = bossInfo.characters[character.name];
-            bossFarmOptions.farm_area = bossFarmArea;
-
-            event.targets = bossInfo.targets;
-            event.options = bossFarmOptions;
-    
-            this.strategy.options = bossFarmOptions;
-            character.current_event = event;
-        } else {
-            this.strategy.options = character.farm_options;
-            character.current_event = null;
-        }
-    }
-
-    async awaitCompletion() {
-        let targets = character.current_event.targets;
-        let targetsAround = await waitForTargets(targets, 5);
-        if (targetsAround.length === 0) return;
-
-        let waitForRespawn = character.current_event && character.current_event.wait_resp;
-        let lastCheckTs = Date.now();
-
-        let lastHpChange = Date.now();
-        let targetsHp = targetsAround.reduce((partial, t) => partial + t.hp, 0);
-        while (ts_msince(lastHpChange) < 1) {
-            await sleep(1000);
-
-            targetsAround = Object.values(parent.entities).filter((m) => m.type === "monster" && targets.includes(m.mtype));
-            let targetsLastHp = targetsAround.reduce((partial, t) => partial + t.hp, 0);
-            let isFullGuard = targetsAround.some((t) => t.s.fullguardx);
-            if (targetsHp !== targetsLastHp || isFullGuard) {
-                lastHpChange = Date.now();
-                targetsHp = targetsLastHp;
-            }
-            // Nowait respawn logic
-            if (targetsAround.length === 0 && !waitForRespawn) return;
-
-            // Wait respawn logic
-            if (targetsAround.length > 0) lastCheckTs = Date.now();
-            if (targetsAround.length === 0 && ts_ssince(lastCheckTs) >= 10) return;
-        }
-    }
-}
-
-
 class HealerBehaviour {
     #USE_HP_AT_RATIO = 0.75;
     #USE_MP_AT_RATIO = 0.9;
 
     // General settings
-    #USE_HEAL_AT_RATIO = 0.8;
-    #USE_MASS_HEAL_AT_RATIO = 0.5;
+    #USE_HEAL_AT_RATIO = 0.85;
+    #USE_MASS_HEAL_AT_RATIO = 0.6;
     #KEEP_MP = character.mp_cost * 15;
 
     // States
@@ -200,11 +16,10 @@ class HealerBehaviour {
     #targetChooseFlag = false;
     #moveFlag = false;
 
-    constructor(options) {
-        this.options = options;
-        character.farm_options = options;
-
-        if (character.current_event) this.options = character.current_event.options;
+    constructor(solo, farm_location) {
+        this.solo = solo;
+        this.farm_area = farm_location.farm_area;
+        this.farm_options = farm_location.farm_options[character.name];
 
         this.regenLoop();
         this.lootLoop();
@@ -267,7 +82,7 @@ class HealerBehaviour {
         }
 
         try {
-            if (!this.options.is_solo) {
+            if (!this.solo) {
                 await this.targetChooseParty();
             } else {
                 await this.targetChooseSolo();
@@ -282,40 +97,39 @@ class HealerBehaviour {
     async targetChooseParty() {
         let tank_character = parent.entities["Shalfey"];
 
-        let target = get_targeted_monster();
+        let target = get_target();
+        let entityTarget = target ? parent.entities[target.id] : null;
         let tanks_target = get_target_of(tank_character);
         let lowestHealth = this.lowest_health_partymember();
         let targetingMe = Object.values(parent.entities).find((e) => e.type === "monster" && e.target === character.name);
 
         if (lowestHealth.health_ratio < this.#USE_HEAL_AT_RATIO) {
-            await change_target(lowestHealth);
-        } else if (target && tanks_target && target.id !== tanks_target.id) {
-            await change_target(tanks_target);
-        } else if (tanks_target) {
-            await change_target(tanks_target);
-        } else if (targetingMe) {
+            if (!target || (target && target.id !== lowestHealth.id)) await change_target(lowestHealth);
+        } else if (targetingMe && (!target || (target.id !== targetingMe.id))) {
             await change_target(targetingMe);
-        } else {
+        } else if (tanks_target && (!target || (target.id !== tanks_target.id))) {
+            await change_target(tanks_target);
+        } else if (!target) {
             await change_target(tank_character);
+        } else if (target && !entityTarget) {
+            await change_target(null);
         }
     }
     
     async targetChooseSolo() {
         // Check if we have some monster in target
         let target = get_targeted_monster();
+        let entityTarget = target ? parent.entities[target.id] : null;
         // Check if we have some party member with low hp
         let lowestHealth = this.lowest_health_partymember();
 
-        if (target && !parent.entities[target.id]) {
-            await change_target(null);
-            target = null;
-        }
-
         if (lowestHealth.health_ratio < this.#USE_HEAL_AT_RATIO) {
-            await change_target(lowestHealth);
+            if (!target || (target && target.id !== lowestHealth.id)) await change_target(lowestHealth);
         } else if (!target) {
             target = this.find_viable_targets()[0];
             if (target) await change_target(target);
+        } else if (target && !entityTarget) {
+            await change_target(null);
         }
     }
 
@@ -335,22 +149,21 @@ class HealerBehaviour {
             let characterVector = new Vector(character.real_x, character.real_y);
             let avoidanceVector = getEntityAvoidanceVector(characterVector, rangeBuffer, characterMaxRange, entityScale);
             if (target && target.name !== character.name) {
-                let targetVector = getTargetVector(target, target.range + 50, characterMaxRange);
-                let moveVector = targetVector.clone().add(avoidanceVector).limit(50);
-                let pathVector = characterVector.clone().add(moveVector);
-
-                let secondAvoidanceVector = getEntityAvoidanceVector(pathVector, rangeBuffer, characterMaxRange, entityScale);
-                if (Math.abs(avoidanceVector.toAngles() - secondAvoidanceVector.toAngles()) > 0.087266) moveVector.add(avoidanceVector).limit(50);
-
-                pathVector = characterVector.clone().add(moveVector);
-
-                let canMoveTo = can_move_to(pathVector.x, pathVector.y);
-                if (distance2D(pathVector.x, pathVector.y) > 10 && canMoveTo) {
+                if (can_move_to(target.x, target.y)) {
                     this.#move_by_graph = false;
-                    move(pathVector.x, pathVector.y);
-                } else if (!this.#move_by_graph && !canMoveTo) {
+                    let targetVector = getTargetVector(target, target.range + 50, characterMaxRange);
+
+                    let moveVector = targetVector.clone().add(avoidanceVector).limit(50);
+                    let pathVector = characterVector.clone().add(moveVector);
+
+                    let secondAvoidanceVector = getEntityAvoidanceVector(pathVector, rangeBuffer, characterMaxRange, entityScale);
+                    if (Math.abs(avoidanceVector.toAngles() - secondAvoidanceVector.toAngles()) > 0.087266) moveVector.add(avoidanceVector).limit(50);
+
+                    pathVector = characterVector.clone().add(moveVector);
+                    if (distance2D(pathVector.x, pathVector.y) > 10) move(pathVector.x, pathVector.y);
+                } else if (!this.#move_by_graph) {
                     this.#move_by_graph = true;
-                    this.moveByGraph(characterVector.add(targetVector));
+                    this.moveByGraph(target);
                 }
             } else if (avoidanceVector.length() > 10) {
                 let evadeMove = characterVector.add(avoidanceVector.limit(50));
@@ -403,10 +216,10 @@ class HealerBehaviour {
     priestSkills() {
         let allPromises = [];
 
-        if (this.options?.use_mass_heal) allPromises.push(this.partyHeal());
+        if (this.farm_options?.use_mass_heal) allPromises.push(this.partyHeal());
 
         if (!smart.moving) {
-            if (this.options?.use_curse) allPromises.push(this.curse());
+            if (this.farm_options?.use_curse) allPromises.push(this.curse());
 
             allPromises.push(this.darkBlessing());
         }
@@ -507,8 +320,8 @@ class HealerBehaviour {
 
     async lootLoop() {
         try {
-            let looterNm = this.options.looter;
-            if (this.options.is_solo || !looterNm || looterNm === character.name || !parent.party_list.includes(looterNm) || get(looterNm).map !== character.map) {
+            let looterNm = this.farm_options.looter;
+            if (this.solo || !looterNm || looterNm === character.name || !parent.party_list.includes(looterNm) || get(looterNm).map !== character.map) {
                 loot();
             }
         } catch (ex) {
@@ -554,13 +367,13 @@ class HealerBehaviour {
                 e.is_boss_target = FARM_BOSSES.includes(e.mtype);
             });
 
-        if (this.options.farm_area) {
-            let farmable = this.options.farm_area.farm_monsters;
-            let blacklist = this.options.farm_area.blacklist_monsters;
+        if (this.farm_area) {
+            let farmable = this.farm_area.farm_monsters;
+            let blacklist = this.farm_area.blacklist_monsters;
 
             // Area filter
-            let area = this.options.farm_area.area;
-            if (area) monsters = monsters.filter((mob) => (!this.options.is_solo && mob.targeting_party) || mob.is_boss_target || parent.simple_distance(area, mob) <= area.d);
+            let area = this.farm_area.area;
+            if (area) monsters = monsters.filter((mob) => (!this.solo && mob.targeting_party) || mob.is_boss_target || parent.simple_distance(area, mob) <= area.d);
 
             // Whitelist/Blacklist filter
             monsters = monsters.filter((mob) => mob.targeting_party || mob.is_boss_target || (farmable.includes(mob.mtype) && !blacklist.includes(mob.mtype)));

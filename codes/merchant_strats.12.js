@@ -11,6 +11,7 @@ class MerchantUtils {
         "vitearring",
         "dexearring",
         "snowball",
+        "snowflakes",
         // "blade",
         // "staff",
         "hpbelt",
@@ -34,7 +35,7 @@ class MerchantUtils {
         "sword",
         "rapier",
         "dagger",
-        "basher",
+        "xmace",
         "pstem",
         "spear",
         "cupid",
@@ -45,6 +46,9 @@ class MerchantUtils {
         "carrotsword",
         "spores",
         "smoke",
+        "gslime",
+        "crossbow",
+        "mushroomstaff",
         // Temporary
         "wbook0",
     
@@ -54,6 +58,7 @@ class MerchantUtils {
         "bowofthedead",
         "swordofthedead",
         "staffofthedead",
+        "maceofthedead",
 
         // Wanderer
         "wcap",
@@ -66,7 +71,14 @@ class MerchantUtils {
         "coat1",
         "pants1",
         "gloves1",
-        "shoes1"
+        "shoes1",
+
+        // Basic
+        "helmet",
+        "shoes",
+        "gloves",
+        "coat",
+        "pants"
     ];
 
     static PONTY_BUY_LIST = [
@@ -105,28 +117,34 @@ class MerchantUtils {
     ];
 
     static EXCHANGE_ITEMS = [
-        "weaponbox",
-        "armorbox",
-        "gem0",
-        "greenenvelope",
-        "goldenegg",
-        "candycane",
-        "mistletoe",
-        "candy0",
-        "candy1",
-        "basketofeggs"
+        {name: "weaponbox", q: 1},
+        {name: "armorbox", q: 1},
+        {name: "gem0", q: 1},
+        {name: "gem1", q: 1},
+        {name: "greenenvelope", q: 1},
+        {name: "goldenegg", q: 1},
+        {name: "candycane", q: 1},
+        {name: "mistletoe", q: 1},
+        {name: "candy0", q: 1},
+        {name: "candy1", q: 1},
+        {name: "basketofeggs", q: 1},
+        {name: "ornament", q: 20}
     ];
 
     static STORE_ITEMS = [
         // Weapons
         {name: "fireblade", level: 6, bank_tab: "items3"},
         {name: "firestaff", level: 6, bank_tab: "items3"},
+        {name: "firebow", level: 6, bank_tab: "items3"},
         {name: "ololipop", level: 5, bank_tab: "items3"},
         {name: "glolipop", level: 5, bank_tab: "items3"},
         {name: "oozingterror", level: 5, bank_tab: "items3"},
         {name: "harbringer", level: 5, bank_tab: "items3"},
         {name: "bataxe", level: 5, bank_tab: "items3"},
-        {name: "xmace", level: 6, bank_tab: "items3"},
+        {name: "basher", level: 6, bank_tab: "items3"},
+
+        {name: "mshield", level: 0, bank_tab: "items3"},
+        {name: "mittens", level: 6, bank_tab: "items3"},
 
         // Armor
         {name: "hgloves", level: 5, bank_tab: "items3"},
@@ -146,14 +164,20 @@ class MerchantUtils {
         {name: "seashell", bank_tab: "items0"},
         {name: "carrot", bank_tab: "items0"},
         {name: "bwing", bank_tab: "items0"},
+        {name: "beewings", bank_tab: "items0"},
         {name: "essenceoffrost", bank_tab: "items0"},
         {name: "essenceoffire", bank_tab: "items0"},
         {name: "lotusf", bank_tab: "items0"},
-
-        {name: "funtoken", bank_tab: "items1"},
-        {name: "smoke", bank_tab: "items1"},
-
-        {name: "electronics", bank_tab: "items1"},
+        {name: "bfur", bank_tab: "items0"},
+        {name: "pleather", bank_tab: "items0"},
+        {name: "crabclaw", bank_tab: "items0"},
+        {name: "rattail", bank_tab: "items0"},
+        {name: "snakefang", bank_tab: "items0"},
+        {name: "shadowstone", bank_tab: "items0"},
+        {name: "smoke", bank_tab: "items0"},
+        {name: "cscale", bank_tab: "items0"},
+        {name: "spidersilk", bank_tab: "items0"},
+        {name: "poison", bank_tab: "items0"},
 
         {name: "offeringp", bank_tab: "items0"},
         {name: "offering", bank_tab: "items0"},
@@ -161,9 +185,25 @@ class MerchantUtils {
         {name: "vitscroll", bank_tab: "items0"},
         {name: "forscroll", bank_tab: "items0"},
 
+        {name: "electronics", bank_tab: "items1"},
+        {name: "funtoken", bank_tab: "items1"},
+        {name: "monstertoken", bank_tab: "items1"},
+
         // Consumables
         {name: "hotchocolate", bank_tab: "items1"},
-        {name: "pumpkinspice", bank_tab: "items1"}
+        {name: "pumpkinspice", bank_tab: "items1"},
+        {name: "eggnog", bank_tab: "items1"},
+
+        // Event items
+        {name: "x0", bank_tab: "items6"},
+        {name: "x1", bank_tab: "items6"},
+        {name: "x2", bank_tab: "items6"},
+        {name: "x3", bank_tab: "items6"},
+        {name: "x4", bank_tab: "items6"},
+        {name: "x5", bank_tab: "items6"},
+        {name: "x6", bank_tab: "items6"},
+        {name: "x7", bank_tab: "items6"},
+        {name: "x8", bank_tab: "items6"}
     ];
 
     static sellStuffFromList() {
@@ -198,32 +238,20 @@ class MerchantUtils {
         parent.socket.emit("secondhands");
     }
 
-    static async exchangeItems() {
-        if (character.q.exchange) return;
+    static async exchangeItem() {
+        if (character.q.exchange || character.esize === 0) return;
 
-        let itemsToExchange = MerchantUtils.getItemsToExchange();
-        if (itemsToExchange.length === 0 || character.esize === 0) return;
-
-        while (itemsToExchange.length > 0 && character.esize > 0) {
-            let item = itemsToExchange.pop();
-            for (let i = 0; i < item.q && character.esize > 0; i++) {
-                await exchange(item.ix);
-            }
-
-            itemsToExchange = MerchantUtils.getItemsToExchange();
-        }
-    }
-
-    static getItemsToExchange() {
-        let result = [];
+        // Find item to exchange
         for (let i = 0; i < character.items.length; i++) {
             let item = character.items[i];
-            if (item?.name && MerchantUtils.EXCHANGE_ITEMS.includes(item?.name)) {
-                result.push({ix: i, q: item.q});
+            if (!item) continue;
+
+            for (let exchItem of MerchantUtils.EXCHANGE_ITEMS) {
+                if (item.name === exchItem.name && item.q >= exchItem.q) {
+                    return exchange(i);
+                }
             }
         }
-    
-        return result;
     }
 
     static async buy_potions(type, amount) {
@@ -312,7 +340,7 @@ class MerchantUtils {
 
 class MerchantController {
     // AFK position logic
-    #afk_position = FARM_AREAS.moles.merchant_position;
+    #afk_position = null;
     #afk_positions = [];
 
     #actionCheckerLoopFlg = false;
@@ -327,10 +355,13 @@ class MerchantController {
     #bank_check = null;
 
     constructor(options, strategy) {
-        if (!character.action_queue) character.action_queue = [];
-
         this.options = options;
         this.strategy = strategy;
+
+        this.#afk_position = this.strategy.options.position;
+
+        if (!character.action_queue) character.action_queue = [];
+        if (!character.state) character.state = {name: "afk"};
 
         let fieldBossInfo = get("boss_info");
         if (fieldBossInfo) {
@@ -374,30 +405,32 @@ class MerchantController {
         }
 
         // Store stuff to bank
-        if (this.options.store_bank && !character.action_queue.some((t) => t.name === "bank") && (!this.#bank_check || ts_msince(this.#bank_check) >= 10)) {
+        if (this.options.store_bank && !character.action_queue.some((t) => t.name === "bank") && (!this.#bank_check || ts_msince(this.#bank_check) >= 5)) {
             this.pushBankStoreActions();
         }
 
-        // Check and push return to afk_position
-        if (character.current_state === "afk" && character.action_queue.length === 0 && (character.map !== this.#afk_position.map || parent.simple_distance(character, this.#afk_position) > 100)) {
-            game_log(`Pushing "return" task to queue`, LOG_COLORS.blue);
+        if (character.action_queue.length === 0) {
+            // Set state to afk if it is abscent
+            if (!character.state) {
+                game_log(`Pushing "afk" task to queue`, LOG_COLORS.blue);
 
-            let merchantReturnTask = new Task("return");
-            merchantReturnTask.pushAction("change_state", null, "return");
-            merchantReturnTask.pushAction("call", "window.moveTo", this.#afk_position);
-            merchantReturnTask.pushAction("change_state", null, null);
+                let afkStateTask = new Task("afk");
+                afkStateTask.pushAction("call", "this.applyState", "afk");
 
-            character.action_queue.push(merchantReturnTask);
-        }
+                character.action_queue.push(afkStateTask);
+            }
 
-        // Set state to AFK
-        if ((!character.current_state || character.current_state !== "afk") && character.action_queue.length === 0) {
-            game_log(`Pushing "afk" task to queue`, LOG_COLORS.blue);
+            // Check and push return to afk_position
+            if (character.state && character.state.name === "afk" && character.action_queue.length === 0 && (character.map !== this.#afk_position.map || parent.simple_distance(character, this.#afk_position) > 100)) {
+                game_log(`Pushing "return" task to queue`, LOG_COLORS.blue);
 
-            let afkStateTask = new Task("afk");
-            afkStateTask.pushAction("change_state", null, "afk");
+                let merchantReturnTask = new Task("return");
+                merchantReturnTask.pushAction("call", "window.set_message", "return");
+                merchantReturnTask.pushAction("call", "window.moveTo", this.#afk_position);
+                merchantReturnTask.pushAction("call", "window.set_message", character.state.name);
 
-            character.action_queue.push(afkStateTask);
+                character.action_queue.push(merchantReturnTask);
+            }
         }
 
         setTimeout(this.actionCheckerLoop.bind(this), 1000);
@@ -413,16 +446,18 @@ class MerchantController {
 		if (!this.#current_task && character.action_queue.length > 0) {
             this.#current_task = character.action_queue[0];
             try {
-                while (!this.#current_task.isComplete()) {
+                while (!this.#current_task.is_complete) {
                     try {
-                        let action = this.#current_task.getCurrentAction();
+                        let action = this.#current_task.getCurrentStep();
+                        if (action.is_complete) continue;
+
                         game_log(`Executing "${action.type}" step`, LOG_COLORS.blue);
                         await this.executeActionStep(action);
                         game_log(`Finished "${action.type}" step`, LOG_COLORS.blue);
                     } catch (ex) {
                         console.error("actionExecutorLoop.action", ex);
                     } finally {
-                        this.#current_task.actionComplete();
+                        this.#current_task.stepComplete();
                     }
                 }
             } catch (ex) {
@@ -437,82 +472,39 @@ class MerchantController {
 	}
 
     async executeActionStep(action) {
-        let actionType = action.type;
-        if (actionType === "change_state") {
-            game_log(`Changing state to: ${action.arg}`, LOG_COLORS.blue);
-            character.current_state = action.arg;
-            return set_message(action.arg);
+        let splitted = action.name.split(".");
+        let context = splitted[0];
+        let funcName = splitted[1];
+        let arg = action.arg;
+
+        game_log(`Calling ${action.name} function`, LOG_COLORS.blue);
+        console.log("Function call: ", action.name, arg);
+        if (context === "window") {
+            if (arg) return window[funcName](arg);
+            else return window[funcName]();
         }
 
-        if (actionType === "call") {
-            let splitted = action.name.split(".");
-            let context = splitted[0];
-            let funcName = splitted[1];
-            let arg = action.arg;
+        if (context === "this") {
+            if (arg) return this[funcName](arg);
+            else return this[funcName]();
+        }
 
-            game_log(`Calling ${action.name} function`, LOG_COLORS.blue);
-            console.log("Function call: ", action.name, arg);
-            if (context === "window") {
-                if (arg) return window[funcName](action.arg);
-                else return window[funcName]();
-            }
+        if (context === "strat") {
+            if (arg) return this.strategy[funcName](arg);
+            else return this.strategy[funcName]();
+        }
+    }
 
-            if (context === "this") {
-                if (arg) return this[funcName](action.arg);
-                else return this[funcName]();
-            }
+    applyState(state) {
+        if (!state) {
+            character.state = null;
+        } else {
+            character.state = {name: state};
+            set_message(state);
         }
     }
 
     // -------------------- RESUPPLY ROUTINE SECTION -------------------- //
-    // async rotateAfkPositionLoop() {
-    //     if (!this.options.resupply) {
-    //         setTimeout(this.rotateAfkPositionLoop.bind(this), 30000);
-    //         return;
-    //     }
-
-    //     try {
-    //         let onlineOnServer = getOnlineCharacters();
-    //         let currFarmAreas = new Set();
-    //         for (let member of onlineOnServer) {
-    //             let memberInfo = get(member);
-    //             let merchant_position = memberInfo.farmOptions?.farm_area?.merchant_position;
-    //             if (merchant_position) currFarmAreas.add(merchant_position);
-    //         }
-
-    //         let currFarmAreas = new Set(
-    //             onlineOnServer.map((c) => get(c)?.farmOptions?.farm_area?.merchant_position)
-    //                           .filter((a) => a)
-    //         );
-
-
-    //         if (this.#afk_positions.length !== currFarmAreas.length || this.#afk_positions.some((p) => !currFarmAreas.has(p.name)))
-    //             const newPositions = [];
-    //             currFarmAreas.forEach(function(area) {
-
-    //                 newPositions.push();
-    //             });
-
-    //             this.#afk_areas = currFarmAreas;
-    //             shuffle(this.#afk_areas);
-    //         }
-
-    //         if (this.#afk_position_list.length > 1) {
-    //             let areaName = this.#afk_areas.shift();
-
-    //             let afkPosition = FARM_AREAS[areaName].merchant_position;
-    //             if (!afkPosition) this.#afk_position = afkPosition;
-
-    //             this.#afk_areas.push(areaName);
-    //         }
-    //     } catch (ex) {
-    //         console.error(ex);
-    //         this.#afk_position = FARM_AREAS.event.merchant_position;
-    //     }
-
-    //     setTimeout(this.rotateAfkPositionLoop.bind(this), 300000);
-    // }
-
     async resupplyMembersLoop() {
         if (!this.options.resupply || character.rip) {
             setTimeout(this.resupplyMembersLoop.bind(this), 30000);
@@ -643,11 +635,11 @@ class MerchantController {
 
         let bcheckTask = new Task("bcheck");
 
-        bcheckTask.pushAction("change_state", null, "bcheck");
+        bcheckTask.pushAction("call", "this.applyState", "bcheck");
         for (let node of route) {
             bcheckTask.pushAction("call", "this.checkNode", node);
         }
-        bcheckTask.pushAction("change_state", null, null);
+        bcheckTask.pushAction("call", "this.applyState", null);
 
         character.action_queue.push(bcheckTask);
     }
@@ -670,19 +662,15 @@ class MerchantController {
         try {
             Object.keys(parent.S).forEach(function(key) {
                 let gEvent = BOSS_INFO.global[key];
-                if (gEvent && gEvent.is_active) {                   
+                if (gEvent && gEvent.is_active && (!("live" in parent.S[key]) || parent.S[key].live)) {                   
                     let event = {
                         id: gEvent.id,
                         name: gEvent.name,
                         type: "global",
                         wait_resp: gEvent.wait_resp,
-                        summon: gEvent.summon
+                        summon: gEvent.summon,
+                        destination: gEvent.destination
                     }
-
-                    if (gEvent.to) event.to = gEvent.to;
-                    if (gEvent.map) event.map = gEvent.map;
-                    if (gEvent.x) event.x = gEvent.x;
-                    if (gEvent.y) event.y = gEvent.y;
 
                     notifyCharactersOfEvent(event, Object.keys(gEvent.characters));
                 }
@@ -706,7 +694,7 @@ class MerchantController {
         for (let bossEntity of bossesAround) {
             let bossInfo = BOSS_INFO.field[bossEntity.mtype];
 
-            // Remove boss nodes from queue
+            // Set complete for found boss type
             if (this.#current_task && this.#current_task.name === "bcheck") {
                 let tasksActionList = this.#current_task.action_list;
                 for (let i = 0; i < tasksActionList.length; i++) {
@@ -714,13 +702,11 @@ class MerchantController {
                     let queuedEventArg = queuedEvent.arg;
     
                     if (!queuedEventArg || queuedEventArg.name !== bossInfo.name) continue;
-    
-                    this.#current_task.removeAction(i);
-                    i--;
+                    queuedEvent.is_complete = true;
                 }
             }
 
-            if (ts_ssince(bossInfo.last_check) >= 30) {
+            if (!bossInfo.last_check || ts_ssince(bossInfo.last_check) >= 30) {
                 game_log(`Found ${bossEntity.mtype} at map: ${character.map}, x: ${round(bossEntity.x)}, y: ${round(bossEntity.y)}`, LOG_COLORS.blue);
                 // Update check time
                 this.#boss_check = Date.now();
@@ -732,16 +718,18 @@ class MerchantController {
                     type: "field",
                     wait_resp: false,
                     summon: true,
-                    map: bossEntity.map,
-                    x: round(bossEntity.x),
-                    y: round(bossEntity.y)
+                    destination: {
+                        map: bossEntity.map,
+                        x: round(bossEntity.x),
+                        y: round(bossEntity.y)
+                    }
                 };
 
                 notifyCharactersOfEvent(event, Object.keys(bossInfo.characters));
             }
         }
 
-        setTimeout(this.checkBossesAroundLoop.bind(this), 3000);
+        setTimeout(this.checkBossesAroundLoop.bind(this), 1500);
     }
 
     // ------------------- CYBERLAND CHECKER SECTION -------------------- //
@@ -749,26 +737,32 @@ class MerchantController {
         game_log(`Pushing "cyberland check" task to queue`, LOG_COLORS.blue);
 
         let cyberlandTask = new Task("cyberland");
-        cyberlandTask.pushAction("change_state", null, "cyberland");
+        cyberlandTask.pushAction("call", "this.applyState", "cyberland");
         cyberlandTask.pushAction("call", "this.checkCyberlandCommand", null);
-        cyberlandTask.pushAction("change_state", null, null);
+        cyberlandTask.pushAction("call", "this.applyState", null);
 
         character.action_queue.push(cyberlandTask);
     }
 
     async checkCyberlandCommand() {
-        await smart_move("main");
-        await smart_move("cyberland");
-        // Wait for transport
-        await sleep(500);
+        try {
+            await smart_move("main");
+            await smart_move("cyberland");
+            // Wait for transport
+            await sleep(500);
 
-        this.#cyberland_check = Date.now();
-        parent.socket.emit("eval", {command: "give spares"});
-        while (character.map === "cyberland") {
-            loot();
-            await sleep(1000);
-            leave();
-            await sleep(1000);
+            this.#cyberland_check = Date.now();
+            parent.socket.emit("eval", {command: "give spares"});
+            await sleep(2000);
+        } catch (ex) {
+            console.error(ex);
+        } finally {
+            while (character.map === "cyberland") {
+                await leave();
+                await sleep(1000);
+                // TODO: Подумать почему он здесь виснет
+                await move(character.x, character.y + 15);
+            }
         }
     }
 
@@ -780,10 +774,10 @@ class MerchantController {
         game_log(`Pushing "bank store" task to queue`, LOG_COLORS.blue);
 
         let bankStoreTask = new Task("bank");
-        bankStoreTask.pushAction("change_state", null, "bank");
+        bankStoreTask.pushAction("call", "this.applyState", "bank");
         bankStoreTask.pushAction("call", "window.smart_move", "bank");
         bankStoreTask.pushAction("call", "this.storeItemsToBankCommand", null);
-        bankStoreTask.pushAction("change_state", null, null);
+        bankStoreTask.pushAction("call", "this.applyState", null);
 
         character.action_queue.push(bankStoreTask);
     }
@@ -795,7 +789,11 @@ class MerchantController {
         if (itemsToStore.length === 0) return;
 
         for (let toStore of itemsToStore) {
-            await bank_store(toStore.inv_ix, toStore.bank_tab);
+            try {
+                await bank_store(toStore.inv_ix, toStore.bank_tab);
+            } catch (ex) {
+                console.error("bank_store", ex);
+            }
         }
     }
 }
@@ -814,11 +812,11 @@ class MerchantBehaviour {
     #restockScrollsLoopFlg = false;
     #sellBuyLoopFlg = false;
 
-    constructor() {
-        character.farm_options = {};
+    constructor(options) {
+        this.options = options.farm_options[character.name];
 
         this.regenLoop();
-        // this.lootLoop();
+        this.lootLoop();
 
         this.useSkillsLoop();
         this.upgradeLoop();
@@ -874,21 +872,10 @@ class MerchantBehaviour {
 
     buffPlayersAround() {
         try {
-            let task = async function() {
-                let playersToBuff = Object.values(parent.entities)
-                    .filter(
-                        (ent) => (ent.type === "character" && ent.ctype !== "merchant" && (!ent.s.mluck || ent.s.mluck.f !== character.name))
-                    );
-
-                for (let playerToBuff of playersToBuff) {
-                    if (!is_on_cooldown("mluck") && is_in_range(playerToBuff, "mluck") && character.mp > 10) {
-                        await use_skill("mluck", playerToBuff)
-                            .then(reduce_cooldown("mluck", Math.min(...parent.pings)));
-                    }
-                }
-            };
-
-            return task();
+            let playerToBuff = Object.values(parent.entities).find((ent) => (ent.type === "character" && ent.ctype !== "merchant" && (!ent.s.mluck || ent.s.mluck.f !== character.name)));
+            if (!is_on_cooldown("mluck") && is_in_range(playerToBuff, "mluck") && character.mp > 10) {
+                return use_skill("mluck", playerToBuff).then(reduce_cooldown("mluck", Math.min(...parent.pings)));
+            }
         } catch (ex) {
             console.error("buffPlayersAroundLoop", ex);
         }
@@ -947,12 +934,15 @@ class MerchantBehaviour {
 
     async lootLoop() {
         try {
-            loot();
+            let looterNm = this.options.looter;
+            if (!looterNm || looterNm === character.name || !parent.party_list.includes(looterNm) || get(looterNm).map !== character.map) {
+                loot();
+            }
         } catch (ex) {
             console.error("lootLoop", ex);
         }
         
-        setTimeout(this.lootLoop.bind(this), 250);
+        setTimeout(this.lootLoop.bind(this), 500);
     }
 
     async upgradeLoop() {
@@ -1007,12 +997,12 @@ class MerchantBehaviour {
         }
 
         try {
-            MerchantUtils.exchangeItems();
+            await MerchantUtils.exchangeItem();
         } catch (ex) {
             console.error("exchangeLoop", ex);
         }
 
-        setTimeout(this.exchangeLoop.bind(this), 1000);
+        setTimeout(this.exchangeLoop.bind(this), 500);
     }
 
     async exchangeShellsLoop() {

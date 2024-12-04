@@ -11,14 +11,16 @@ continue_pathfinding = function() {}
 
 smart.curr_step = null;
 smart.blink_min = 200;
-smart.blink_mode = 1500;
+smart.blink_mode = 5000;
 smart.no_target = false;
 smart.unlocked_keys = [];
-smart.api_key = "";
+smart.api_key = "208795ac2e27e42190e9044b0de86d952e59b0136c451446494cb08d04868244";
 smart.use_town = true;
 smart.on_done = function (done, reason) {
     if (done) parent.resolve_deferreds("smart_move", {success: true});
     else parent.reject_deferreds("smart_move", {reason: reason});
+
+    smart.curr_step = null;
 };
 
 smart_move = function(destination) {
@@ -43,8 +45,6 @@ smart_move = function(destination) {
     if (preparationResult.success && typeof(preparationResult.action) === "function") {
         game_log("Joining event or event map", "#2b97ff");
         return preparationResult.action();
-
-        // return Promise.resolve(preparationResult.success, "joined");
     }
 
     if (smart.blink_mode && character.ctype !== "mage") smart.blink_mode = false;
@@ -79,7 +79,8 @@ function prepare_smart_move(destination) {
         }
 
         // We want to smart move to event that can be joined
-        if (G.events[destination.to] && parent.S[destination.to] && G.events[destination.to].join) {
+        // if (G.events[destination.to] && parent.S[destination.to] && G.events[destination.to].join) {
+        if (G.events[destination.to] && G.events[destination.to].join) {
             // Join and return, no need to walk anywhere
             return {
                 success: true,
@@ -311,7 +312,8 @@ smart_move_logic = async function() {
         game_log(`Transporting to ${smart.curr_step.map}`, "#2b97ff");
 
         try {
-            transport(smart.curr_step.map, smart.curr_step.spawn);
+            if (character.map !== "cyberland") transport(smart.curr_step.map, smart.curr_step.spawn);
+            else leave()
         } catch (ex) {
             console.error("Transport exception: ", ex);
         }
@@ -339,7 +341,6 @@ smart_move_logic = async function() {
                 game_log(`Blinking to: x: ${blinkNode.x}, y: ${blinkNode.y}`, "#2b97ff");
 
                 use_skill("blink", [blinkNode.x, blinkNode.y]);
-                // smart.curr_step.complete = true;
                 smart.curr_step = blinkNode;
 
                 smart.last_blink = new Date();

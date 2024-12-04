@@ -1,8 +1,8 @@
 const DO_NOT_SEND = [
 	{name: "firestaff", level: 9},
 	{name: "orbg", level: 2},
-	{name: "test_orb", level: 0},
-	{name: "jacko", level: 2}
+	{name: "jacko", level: 2},
+	{name: "pinkie", level: 8}
 ];
 
 
@@ -35,18 +35,14 @@ async function runCharacter() {
 	// Respawn if dead
     respawnLoop();
 
+	// Turn off town usage when smart moving
+	smart.use_town = false;
 	// Character behaviour
-	let currStrat = new MageBehaviour({
-		is_solo: false,
-		looter: "Nlami",
-		farm_area: FARM_AREAS.moles,
-		use_burst: false,
-		energize: true
-	});
+	let currStrat = new MageBehaviour(false, FARM_AREAS.bigbird);
 
 	// Character controller
 	controller = new MageController({
-		use_magiport: true
+		do_quests: true
 	}, currStrat);
 
 	controller.enable();
@@ -57,6 +53,9 @@ async function runCharacter() {
 runCharacter();
 
 async function initialize_character() {
+	// Constants
+    await load_module("constants");
+
 	// Pathfinding modules
 	await load_module("graph_mover");
 	await load_module("mover_module");
@@ -67,6 +66,7 @@ async function initialize_character() {
 	await load_module("event_task");
 
 	// Class specific functions
+	await load_module("character_controller");
 	await load_module("mage_strats");
 }
 
