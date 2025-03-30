@@ -1,4 +1,4 @@
-import { Constants, EntitiesData, Entity, Game, GetEntityFilters, ItemName, LocateItemFilters, Mage, MonsterName, PingCompensatedCharacter, SkillName, SlotType, Tools, Warrior, WeaponType } from "alclient"
+import { ActionData, Constants, EntitiesData, Entity, Game, GetEntityFilters, ItemName, LocateItemFilters, Mage, MonsterName, PingCompensatedCharacter, Player, SkillName, SlotType, Tools, Warrior, WeaponType } from "alclient"
 import { Loop, LoopName, Loops, Strategy, StrategyExecutor, StrategyName } from "./strategy_executor"
 import { sortPriority, sleep, filterExecutors, ignoreExceptions } from "../base/functions"
 import FastPriorityQueue from "fastpriorityqueue"
@@ -19,6 +19,8 @@ export type BaseAttackConfig = GetEntityFilters & {
     disableBasicAttack?: boolean
     disableIdleAttack?: boolean
     disableScare?: boolean
+    disableZapper?: boolean
+    disableKillSteal?: boolean
     enableGreedyAggro?: boolean | MonsterName[]
     ensureEquipped?: EnsureEquipped
     maximumTargets?: number
@@ -39,6 +41,7 @@ export class BaseAttackStrategy<T extends PingCompensatedCharacter> implements S
 
     private _name: StrategyName = "attack";
     private greedyOnEntities: (data: EntitiesData) => Promise<unknown>;
+    private stealOnAction: (data: ActionData) => Promise<unknown>;
 
     public constructor(executors: StrategyExecutor<PingCompensatedCharacter>[], config: BaseAttackConfig) {
         this.executors = executors;
@@ -46,6 +49,9 @@ export class BaseAttackStrategy<T extends PingCompensatedCharacter> implements S
 
         if (this.options.willDieToProjectiles === undefined)
             this.options.willDieToProjectiles = false;
+
+        if (!this.options.disableZapper)
+            this.interval.push("zapperzap");
 
         if (this.options.type) {
             this.options.typeList = [this.options.type];
@@ -68,11 +74,47 @@ export class BaseAttackStrategy<T extends PingCompensatedCharacter> implements S
         }
 
         this.botSort = sortPriority(bot, this.options.typeList);
+        if (!this.options.disableKillSteal && !this.options.disableZapper) {
+            this.stealOnAction = (data: ActionData) => {
+                if (!bot.canUse("zapperzap")) return;
+                if (bot.c.town) return;
+
+                let attacker: Player = bot.players.get(data.attacker);
+                if (!attacker) return;
+
+                let target: Entity = bot.entities.get(data.target);
+                if (!target || target.target || target.immune) return;
+                if (KILL_AVOID_MONSTERS.includes(target.type)) return;
+                if (Tools.distance(bot, target) > Game.G.skills.zapperzap.range) return;
+                if (!target.willDieToProjectiles(bot, bot.projectiles, bot.players, bot.entities)) return;
+
+                this.preventOverkill(bot, target);
+                return bot.zapperZap(data.target).catch(ignoreExceptions);
+            }
+
+            bot.socket.on("action", this.stealOnAction);
+        }
+
         if (this.options.enableGreedyAggro) {
             this.greedyOnEntities = (data: EntitiesData) => {
                 if (data.monsters.length == 0) return;
                 if (this.options.maximumTargets !== undefined && bot.targets >= this.options.maximumTargets) return;
                 if (!this.shouldAttack(bot)) return;
+
+                if (!this.options.disableZapper && bot.canUse("zapperzap")) {
+                    for (let monster of data.monsters) {
+                        if (monster.target) continue;
+                        // Check if target is in array of greedyAggro targets
+                        if (Array.isArray(this.options.enableGreedyAggro) && !this.options.enableGreedyAggro.includes(monster.type)) continue;
+                        // Check if target is in typeList of monsters we want to farm
+                        if (this.options.typeList && !this.options.typeList.includes(monster.type)) continue;
+                        if (Game.G.monsters[monster.type].immune) continue;
+                        // Check if not out of range
+                        if (Tools.distance(bot, monster) > Game.G.skills.zapperzap.range) continue;
+
+                        return bot.zapperZap(monster.id).catch(ignoreExceptions);
+                    }
+                }
 
                 // TODO: Refactor so this can be put in attack_warrior
                 if (bot.ctype == "warrior" && bot.canUse("taunt")) {
