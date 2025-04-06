@@ -6,10 +6,14 @@ export const INFINITE_PAST: Date = new Date("1900-01-01Z00:00:00:000");
 export const INFINITE_FUTURE: Date = new Date("2100-01-01Z00:00:00:000");
 
 export const MY_CHARACTERS: Map<string, CharacterType> = new Map<string, CharacterType>([
-    ["Shalfey", "warrior"],
-    ["MagicFotum", "mage"],
-    ["Flamme", "priest"],
-    ["Momental", "merchant"]
+    ["Warious", "warrior"],
+    ["arMAGEdon", "mage"],
+    ["Archealer", "priest"],
+    ["MerchanDiser", "merchant"],
+    ["aRanDonDon", "ranger"],
+    ["aRogDonDon", "rogue"],
+    ["RangerOver", "ranger"]
+
 ]);
 
 export const SPECIAL_MONSTERS: Set<SpecialName> = new Set(["phoenix", "frog", "fvampire", "mvampire", "jr", "greenjr", "skeletor"]);
@@ -18,7 +22,7 @@ export const EVENTS: Set<EventName> = new Set(["goobrawl", "dragold", "icegolem"
 export const KEEP_GOLD: number = 100_000_000;
 export const KEEP_ITEMS: Set<ItemName> = new Set<ItemName>([
     "hpot0", "hpot1", "mpot0", "mpot1", "tracker", "computer", "elixirluck",
-    "luckbooster", "supercomputer", "xpbooster", "xptome"
+    "luckbooster", "goldbooster", "supercomputer", "xpbooster", "xptome"
 ]);
 export type PotionName = "hpot0" | "hpot1" | "hpotx" | "mpot0" | "mpot1" | "mpotx";
 export const POTIONS_REPLENISH_RATIO: number = 0.9;
@@ -56,6 +60,7 @@ export const BUY_FROM_PONTY: Map<ItemName, number> = new Map<ItemName, number>([
     // Earrings
     ["intearring", 11_000_000],
     ["strearring", 11_000_000],
+    ["dexearring", 11_000_000],
     ["cearring", 10_500_000],
 
     // Rare items
