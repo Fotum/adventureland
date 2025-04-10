@@ -16,21 +16,21 @@ export const BLASTER: EnsureEquipped = {
 
 export const WARRIOR_DPS: EnsureEquipped = {
     mainhand: { name: "fireblade", filters: FILTER_HIGHEST },
-    offhand: { name: "fireblade", filters: FILTER_HIGHEST },
-    earring1: { name: "molesteeth", filters: FILTER_HIGHEST },
-    earring2: { name: "molesteeth", filters: FILTER_HIGHEST }
+    offhand: { name: "candycanesword", filters: FILTER_HIGHEST },
+    // earring1: { name: "molesteeth", filters: FILTER_HIGHEST },
+    // earring2: { name: "molesteeth", filters: FILTER_HIGHEST }
 };
 
 export const WARRIOR_AOE: EnsureEquipped = {
     mainhand: { name: "ololipop", filters: FILTER_HIGHEST },
     offhand: { name: "ololipop", filters: FILTER_HIGHEST },
-    earring1: { name: "strearring", filters: FILTER_HIGHEST },
-    earring2: { name: "strearring", filters: FILTER_HIGHEST }
+    // earring1: { name: "strearring", filters: FILTER_HIGHEST },
+    // earring2: { name: "strearring", filters: FILTER_HIGHEST }
 };
 
 export const MAGE_FAST: EnsureEquipped = {
-    mainhand: { name: "pinkie", filters: FILTER_HIGHEST },
-    offhand: { name: "exoarm", filters: FILTER_HIGHEST }
+    mainhand: { name: "wand", filters: FILTER_HIGHEST },
+    offhand: { name: "wbookhs", filters: FILTER_HIGHEST }
 };
 
 export const MAGE_DPS: EnsureEquipped = {
@@ -43,8 +43,8 @@ export const MAGE_AOE: EnsureEquipped = BLASTER;
 export const PRIEST_TANKY: EnsureEquipped = {
     offhand: { name: "exoarm", filters: FILTER_HIGHEST},
     helmet: { name: "hhelmet", filters: FILTER_HIGHEST},
-    chest: { name: "harmor", filters: FILTER_HIGHEST},
-    pants: { name: "hpants", filters: FILTER_HIGHEST},
+    chest: { name: "xarmor", filters: FILTER_HIGHEST},
+    pants: { name: "starkillers", filters: FILTER_HIGHEST},
     gloves: { name: "mittens", filters: FILTER_HIGHEST},
     shoes: { name: "wingedboots", filters: FILTER_HIGHEST},
     elixir: { name: "elixirluck", filters: { returnLowestQuantity: true }}
