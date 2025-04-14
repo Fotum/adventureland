@@ -98,6 +98,9 @@ export class CharacterController {
             root.bossTimers[name] = timer.lastCheck;
         }
 
+        // TO DO:
+        //add save in MongoDB
+
         fs.writeFileSync("../../settings/last_state.json", JSON.stringify(root), { encoding: "utf-8" });
     }
 }

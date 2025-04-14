@@ -15,6 +15,7 @@
     "dependencies": {
         "alclient": "^0.21.7",
         "bot-web-interface": "^2.0.14",
+        "dependencies": "^0.0.1",
         "fastpriorityqueue": "^0.7.5",
         "pretty-ms": "^9.2.0",
         "typescript": "^5.7.3"
