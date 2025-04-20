@@ -1,10 +1,11 @@
-import { Entity, IPosition, MonsterData, MonsterName, GData } from "alclient"
+import { Entity, IPosition, MonsterData, MonsterName, GData, Game } from "alclient"
 import { SpecialName } from "../configs/boss_configs"
 
 
 type BossPoint = {
     boss_name: SpecialName|MonsterName,
-    point: IPosition
+    point: IPosition,
+    last_seen?: number
 }
 
 
@@ -23,23 +24,49 @@ const BOSS_CHECK_ROUTE : BossPoint[] = [
 	{boss_name: "skeletor", point: {map: "arena", x: 247, y: -558}}
 ]
 
+const BOSSES_TO_CHECK: SpecialName|MonsterName[] = [
+    "phoenix", "greenjr", "fvampire", "mvampire", "jr", "stompy", "skeletor"
+]
+
 export class BossController {
     
 
-    let state 
+    private state: BossPoint[] 
     public constructor(){
-        
+        this.loadState()
     }
 
-    
-    public CheckBosses() {
-        // let state = {BossTimers: {}}
-        let respawn 
-        for(let i of state.BossTimers) {
-            if(state.BossTimers[i] && Date.now()-state.BossTimers[i]>respawn)
+    private loadState()
+    {
+        if(this.state.length<1)
+        {
+            for(let boss of BOSSES_TO_CHECK)
             {
-                
+                //try to load from JSON or Mongo
             }
+        }
+
+        this.CheckBosses()
+    }
+
+    public CheckBosses() {
+        
+        try{
+            for(let i of BOSS_CHECK_ROUTE) {
+                let boss_state = Object.values(this.state).filter(e => e.boss_name == i.boss_name && e.last_seen)
+                if(boss_state[0].last_seen && Date.now()-boss_state[0].last_seen>Game.G.monsters[i.boss_name].respawn)
+                {
+                    //smart_move i.point or add to schedule task
+                }
+            }
+        }
+        catch(ex)
+        {
+            console.error('Something goes wrong at checkBosses function \n'+ex)
+        }
+        finally
+        {
+            setTimeout(this.CheckBosses, 1000)
         }
     }
 
