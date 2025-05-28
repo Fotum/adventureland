@@ -5,6 +5,7 @@ import { BaseMoveStrategy, FarmingMoveStrategy, HoldPositionStrategy, MoveAround
 import { MAGE_AOE, PRIEST_MF, PRIEST_TANKY, WARRIOR_AOE } from "./equipment_setups";
 import { MageAttackStrategy } from "../strategies/mage/mage_attack_strategy";
 import { PriestAttackStrategy } from "../strategies/priest/priest_attack_strategy";
+import { RangerAttackStrategy } from "../strategies/ranger/ranger_attack_strategy";
 
 
 export type SpotName = "cave_first" | "cave_second" | "stoneworm" | "booboo" | "bees" | "crabs" | "crabxs" | 
