@@ -79,7 +79,8 @@ export class PriestAttackStrategy extends BaseAttackStrategy<Priest> {
         for (let entity of entities) targets.add(entity);
 
         let targetingMe = bot.calculateTargets();
-        if (!this.options.disableCurse) this.applyCurse(bot, targets.peek()).catch(ignoreExceptions);
+        let target_for_curse = entities.find(e => e.s.marked) || entities[0];
+        if (!this.options.disableCurse) this.applyCurse(bot, target_for_curse).catch(ignoreExceptions);
 
         while (targets.size) {
             let target: Entity = targets.poll();

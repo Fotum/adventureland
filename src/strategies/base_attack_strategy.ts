@@ -3,6 +3,7 @@ import { Loop, LoopName, Loops, Strategy, StrategyExecutor, StrategyName } from 
 import { sortPriority, sleep, filterExecutors, ignoreExceptions } from "../base/functions"
 import FastPriorityQueue from "fastpriorityqueue"
 import { generateEquipmentSetup } from "../configs/equipment_setups"
+import { Ranger } from "alclient";
 
 
 export type EquipInSlot = {
@@ -235,6 +236,8 @@ export class BaseAttackStrategy<T extends PingCompensatedCharacter> implements S
         }
 
         let targetingMe = bot.calculateTargets();
+        let week_target = entities.find(e => e.s.marked || e.s.cursed);
+        if (week_target) return bot.basicAttack(week_target.id);
         while (targets.size) {
             let target: Entity = targets.poll();
 

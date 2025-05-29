@@ -40,11 +40,25 @@ export class RangerAttackStrategy extends BaseAttackStrategy<Ranger> {
 
         await this.equipItems(bot);
 
+        if (!this.options.disableMark) await this.mark(bot).catch(ignoreExceptions);
         if (!this.options.disableMultishots) await this.multishot(bot).catch(ignoreExceptions);
+        if (!this.options.disablePierceshot) await this.piercingshot(bot).catch(ignoreExceptions);
+        if (this.options.disableMultishots) await this.supershot(bot).catch(ignoreExceptions);
         if (!this.options.disableBasicAttack) await this.basicAttack(bot, priority).catch(ignoreExceptions);
         if (!this.options.disableIdleAttack) await this.idleAttack(bot, priority).catch(ignoreExceptions);
 
         await this.equipItems(bot);
+    }
+
+    protected async mark(bot: Ranger): Promise<unknown> {
+        if (!bot.canUse("huntersmark", { ignoreMP: false })) return;
+
+        let entities: Entity[] = bot.getEntities({
+            withinRange: "attack",
+        });
+        if (entities.length === 0) return;
+        let target = entities.find(e => e.s.cursed) || entities[0];
+        await bot.huntersMark(target.id).catch(ignoreExceptions);
     }
 
     protected async multishot(bot: Ranger): Promise<unknown> {
@@ -62,99 +76,58 @@ export class RangerAttackStrategy extends BaseAttackStrategy<Ranger> {
         
         ///???
         let entities: Entity[] = bot.getEntities({
-            withinRange: "cleave",
-            canDamage: "cleave"
+            withinRange: "attack",
+            canDamage: "attack",
+            willBurnToDeath: false,
+            willDieToProjectiles: false
         });
-        if (entities.length == 0) return;
-        if (entities.length == 1 && bot.canKillInOneShot(entities[0])) return;
+        if (entities.length < 2) return;
 
-        let targetingMe = bot.calculateTargets();
-        let newTargets = 0;
-        for (let entity of entities) {
-            if ((this.options.targetingPartyMember || this.options.targetingPlayer) && !entity.target) return;
-            if (this.options.typeList && !this.options.typeList.includes(entity.type)) return;
-
-            if (entity.target) continue;
-            if (bot.canKillInOneShot(entity, "cleave")) continue;
-            switch (entity.damage_type) {
-                case "magical":
-                    if (bot.mcourage > targetingMe.magical) targetingMe.magical += 1;
-                    else return;
-                    break;
-                case "physical":
-                    if (bot.courage > targetingMe.physical) targetingMe.physical += 1;
-                    else return;
-                    break;
-                case "pure":
-                    if (bot.pcourage > targetingMe.pure) targetingMe.pure += 1;
-                    else return;
-                    break;
-            }
-            newTargets += 1;
-
-            if (this.options.maximumTargets && (newTargets + bot.targets) > this.options.maximumTargets) return;
+        if(entities.length >3 && bot.canUse("5shot"))
+        {
+            let targets_for_shot: string[] = (entities as unknown as Entity[]).map((target) => target.id).slice(0, 5);
+            await bot .fiveShot(targets_for_shot[0], targets_for_shot[1], targets_for_shot[2], targets_for_shot[3], targets_for_shot[4]).catch(ignoreExceptions);
         }
-
-        for (let entity of entities) {
-            if (bot.canKillInOneShot(entity, "cleave")) this.preventOverkill(bot, entity);
+        else if(entities.length > 1 && bot.canUse("3shot"))
+        {
+            let targets_for_shot: string[] = (entities as unknown as Entity[]).map((target) => target.id).slice(0, 3);
+            await bot.threeShot(targets_for_shot[0], targets_for_shot[1], targets_for_shot[2]).catch(ignoreExceptions);
         }
-
-        let mainhand: ItemData;
-        let offhand: ItemData;
-        if (this.options.enableEquipForCleave && !bot.isEquipped(["bataxe", "scythe"])) {
-            if (bot.slots.offhand) {
-                if (bot.esize <= 0) return;
-                offhand = { ...bot.slots.offhand };
-                await bot.unequip("offhand");
-            }
-
-            if (bot.slots.mainhand) mainhand = { ...bot.slots.mainhand };
-            await bot.equip(bot.locateItem(["bataxe", "scythe"], bot.items, FILTER_HIGHEST));
-            if (bot.s.penalty_cd) await sleep(bot.s.penalty_cd.ms);
-        }
-
-        await bot.cleave().catch(ignoreExceptions);
-
-        if (this.options.enableEquipForCleave) {
-            let equipBatch: { num: number; slot: SlotType }[] = [];
-
-            if (this.options.ensureEquipped.mainhand && !this.options.ensureEquipped.mainhand.unequip) {
-                let num: number = bot.locateItem(
-                    this.options.ensureEquipped.mainhand.name,
-                    bot.items,
-                    this.options.ensureEquipped.mainhand.filters
-                );
-                if (num !== undefined) equipBatch.push({ num, slot: "mainhand" });
-            } else if (mainhand) {
-                let num: number = bot.locateItem(mainhand.name, bot.items, {
-                    level: mainhand.level,
-                    special: mainhand.p,
-                    statType: mainhand.stat_type
-                });
-                if (num !== undefined) equipBatch.push({ num, slot: "mainhand" });
-            } else {
-                await bot.unequip("mainhand");
-            }
-
-            if (this.options.ensureEquipped.offhand && !this.options.ensureEquipped.offhand.unequip) {
-                let num: number = bot.locateItem(
-                    this.options.ensureEquipped.offhand.name,
-                    bot.items,
-                    this.options.ensureEquipped.offhand.filters
-                );
-                if (num !== undefined) equipBatch.push({ num, slot: "offhand" });
-            } else if (offhand) {
-                let num = bot.locateItem(offhand.name, bot.items, {
-                    level: offhand.level,
-                    special: offhand.p,
-                    statType: offhand.stat_type
-                });
-                if (num !== undefined) equipBatch.push({ num, slot: "offhand" });
-            }
-
-            if (equipBatch.length) await bot.equipBatch(equipBatch);
-        }
+        
     }
 
+    protected async piercingshot(bot: Ranger): Promise<unknown> {
+        if (!bot.canUse("piercingshot", { ignoreMP: false })) return;
 
+        let target = bot.getTargetEntity();
+        if (!target) 
+        {
+            let entities: Entity[] = bot.getEntities({
+                withinRange: "attack",
+                canDamage: "attack",
+            });
+            if(entities.length === 0) return;
+            target = entities[0];
+        }
+        await bot.piercingShot(target.id).catch(ignoreExceptions);
+    }
+
+    protected async supershot(bot: Ranger): Promise<unknown> {
+        if (!bot.canUse("supershot", { ignoreMP: false })) return;
+
+        let target = bot.getTargetEntity();
+        if (!target) 
+        {
+
+            let entities: Entity[] = bot.getEntities({
+                withinRange: "attack",
+                canDamage: "attack",
+            });
+            if(entities.length === 0) return;
+            target = entities[0];
+        }
+        
+        await bot.superShot(target.id).catch(ignoreExceptions);
+    }
+        
 }
