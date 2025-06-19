@@ -8,7 +8,7 @@ export type TaskTarget = {
     position?: IPosition
 }
 export type TaskStep = {
-    fn: (bot: PingCompensatedCharacter, task: Task) => Promise<unknown>
+    fn: (bot: PingCompensatedCharacter, task: Task, cancelToken: { cancelled: boolean }) => Promise<unknown>
     needWait: boolean
     isComplete: boolean
 }
@@ -22,10 +22,18 @@ export class Task {
     private _isComplete: boolean = false;
 
     private actionList: TaskStep[] = [];
+    private currentCancelToken: { cancelled: boolean } | null = null;
 
-    constructor(name: TaskName, target: TaskTarget = { name: name }) {
+    private _priority: number;
+
+    constructor(name: TaskName, target: TaskTarget = { name: name }, priority: number) {
         this._name = name;
         this._target = target;
+        this._priority = priority;
+    }
+
+    public getTaskPriority() : number {
+        return this._priority
     }
 
     public pushActionStep(step: TaskStep): void {
@@ -78,5 +86,28 @@ export class Task {
 
     public get isComplete(): boolean {
         return this._isComplete;
+    }
+
+    /**
+     * Запускает текущий шаг задачи и возвращает cancelToken для отмены.
+     */
+    public async runCurrentStep(bot: PingCompensatedCharacter): Promise<{ cancelToken: { cancelled: boolean }, result: Promise<unknown> }> {
+        const step = this.getCurrentActionStep();
+        if (!step) throw new Error("No current step");
+        // Создаём новый токен отмены
+        const cancelToken = { cancelled: false };
+        this.currentCancelToken = cancelToken;
+        // Запускаем fn с токеном
+        const result = step.fn(bot, this, cancelToken);
+        return { cancelToken, result };
+    }
+
+    /**
+     * Отменяет выполнение текущего шага (если он ещё выполняется)
+     */
+    public cancelCurrentStep(): void {
+        if (this.currentCancelToken) {
+            this.currentCancelToken.cancelled = true;
+        }
     }
 }
