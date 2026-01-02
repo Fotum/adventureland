@@ -1,5 +1,5 @@
 import { IPosition, Merchant, MonsterName, Pathfinder, PingCompensatedCharacter, SmartMoveOptions } from "alclient";
-import { Loop, LoopName, Loops, Strategy, StrategyName } from "../strategy_executor";
+import { Loop, LoopName, Loops, Strategy, StrategyName } from "../character_runner";
 import { SpecialName } from "../../configs/boss_configs";
 
 

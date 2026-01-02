@@ -1,5 +1,5 @@
 import { PingCompensatedCharacter, Priest } from "alclient";
-import { Loop, LoopName, Loops, Strategy, StrategyExecutor, StrategyName } from "../strategy_executor";
+import { Loop, LoopName, Loops, Strategy, CharacterRunner, StrategyName } from "../character_runner";
 import { filterExecutors, ignoreExceptions } from "../../base/functions";
 
 
@@ -23,10 +23,10 @@ export class PartyHealStrategy implements Strategy<Priest> {
     public loops: Loops<Priest> = new Map<LoopName, Loop<Priest>>;
 
     private _name: StrategyName = "party_heal";
-    private executors: StrategyExecutor<PingCompensatedCharacter>[];
+    private executors: CharacterRunner<PingCompensatedCharacter>[];
     private options: PartyHealConfig;
 
-    constructor(executors: StrategyExecutor<PingCompensatedCharacter>[], options: PartyHealConfig = DEFUALT_PARTY_HEAL_CONFIG) {
+    constructor(executors: CharacterRunner<PingCompensatedCharacter>[], options: PartyHealConfig = DEFUALT_PARTY_HEAL_CONFIG) {
         this.executors = executors;
 
         if (options.when.hp === undefined && options.when.hpMissing === undefined && options.when.hpRatio === undefined) this.options = DEFUALT_PARTY_HEAL_CONFIG;

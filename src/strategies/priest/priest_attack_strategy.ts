@@ -2,7 +2,7 @@ import { Entity, Game, PingCompensatedCharacter, Player, Priest, Tools } from "a
 import { BaseAttackConfig, BaseAttackStrategy } from "../base_attack_strategy";
 import FastPriorityQueue from "fastpriorityqueue";
 import { ignoreExceptions } from "../../base/functions";
-import { StrategyExecutor } from "../strategy_executor";
+import { CharacterRunner } from "../character_runner";
 
 
 export type PriestAttackConfig = BaseAttackConfig & {
@@ -15,18 +15,19 @@ export type PriestAttackConfig = BaseAttackConfig & {
 }
 
 export class PriestAttackStrategy extends BaseAttackStrategy<Priest> {
-    protected options: PriestAttackConfig;
+    protected config: PriestAttackConfig;
     protected healPriority: (a: PingCompensatedCharacter, b: PingCompensatedCharacter) => boolean;
     
-    public constructor(executors: StrategyExecutor<PingCompensatedCharacter>[], options: PriestAttackConfig) {
+    public constructor(executors: CharacterRunner<PingCompensatedCharacter>[], options: PriestAttackConfig) {
         super(executors, options);
 
-        if (!this.options.disableCurse) this.interval.push("curse");
-        if (!this.options.disableDarkBlessing) this.interval.push("darkblessing");
+        if (!this.config.disableCurse) this.interval.push("curse");
+        if (!this.config.disableDarkBlessing) this.interval.push("darkblessing");
     }
 
     public onApply(bot: Priest): void {
         super.onApply(bot);
+
         this.healPriority = (a: PingCompensatedCharacter | Player, b: PingCompensatedCharacter | Player) => {
             let firstIsOurs = a.owner && a.owner == bot.owner;
             let scndIsOurs = b.owner && b.owner == bot.owner;
@@ -49,7 +50,7 @@ export class PriestAttackStrategy extends BaseAttackStrategy<Priest> {
 
     protected async attack(bot: Priest): Promise<void> {
         await this.healSomeone(bot).catch(ignoreExceptions);
-        if (!this.options.disableDarkBlessing) this.applyDarkBlessing(bot).catch(ignoreExceptions);
+        if (!this.config.disableDarkBlessing) this.applyDarkBlessing(bot).catch(ignoreExceptions);
 
         if (!this.shouldAttack(bot)) {
             this.defensiveAttack(bot).catch(ignoreExceptions);
@@ -58,9 +59,9 @@ export class PriestAttackStrategy extends BaseAttackStrategy<Priest> {
 
         await this.equipItems(bot);
 
-        if (!this.options.disableBasicAttack) await this.basicAttack(bot, this.botSort).catch(ignoreExceptions);
-        if (!this.options.disableIdleAttack) await this.idleAttack(bot, this.botSort).catch(ignoreExceptions);
-        if (!this.options.disableAbsorb) await this.absorbTargets(bot).catch(ignoreExceptions);
+        if (!this.config.disableBasicAttack) await this.basicAttack(bot, this.botSort).catch(ignoreExceptions);
+        if (!this.config.disableIdleAttack) await this.idleAttack(bot, this.botSort).catch(ignoreExceptions);
+        if (!this.config.disableAbsorb) await this.absorbTargets(bot).catch(ignoreExceptions);
 
         await this.equipItems(bot);
     }
@@ -69,7 +70,7 @@ export class PriestAttackStrategy extends BaseAttackStrategy<Priest> {
         if (!bot.canUse("attack")) return;
 
         let entities: Entity[] = bot.getEntities({
-            ...this.options,
+            ...this.config,
             canDamage: "attack",
             withinRange: "attack"
         });
@@ -79,12 +80,12 @@ export class PriestAttackStrategy extends BaseAttackStrategy<Priest> {
         for (let entity of entities) targets.add(entity);
 
         let targetingMe = bot.calculateTargets();
-        if (!this.options.disableCurse) this.applyCurse(bot, targets.peek()).catch(ignoreExceptions);
+        if (!this.config.disableCurse) this.applyCurse(bot, targets.peek()).catch(ignoreExceptions);
 
         while (targets.size) {
             let target: Entity = targets.poll();
             if (!target.target) {
-                if (bot.targets >= this.options.maximumTargets) continue;
+                if (bot.targets >= this.config.maximumTargets) continue;
                 switch (target.damage_type) {
                     case "magical":
                         if (bot.mcourage <= targetingMe.magical) continue;
@@ -109,16 +110,16 @@ export class PriestAttackStrategy extends BaseAttackStrategy<Priest> {
         if (!bot.canUse("heal")) return;
 
         let players = new FastPriorityQueue<PingCompensatedCharacter | Player>(this.healPriority);
-        if (bot.hp / bot.max_hp <= this.options.startHealingAtRatio) players.add(bot);
+        if (bot.hp / bot.max_hp <= this.config.startHealingAtRatio) players.add(bot);
 
         let viablePlayers: Player[] = bot.getPlayers({
             isDead: false,
-            isFriendly: this.options.enableHealStrangers ? undefined : true,
+            isFriendly: this.config.enableHealStrangers ? undefined : true,
             isNPC: false,
             withinRange: "heal"
         });
         for (let player of viablePlayers) {
-            if (player.hp / player.max_hp > this.options.startHealingAtRatio) continue;
+            if (player.hp / player.max_hp > this.config.startHealingAtRatio) continue;
             players.add(player);
         }
 
@@ -130,15 +131,17 @@ export class PriestAttackStrategy extends BaseAttackStrategy<Priest> {
         if (!bot.canUse("absorb")) return;
 
         let entity: Entity = null;
-        if (this.options.enableGreedyAggro) {
+        if (this.config.enableGreedyAggro) {
             entity = bot.getEntity({
-                ...this.options,
+                ...this.config,
                 isCooperative: true,
                 targetingPartyMember: false
             });
-        } else if (this.options.enableAbsorbToTank) {
+        }
+
+        if (this.config.enableAbsorbToTank && !entity) {
             entity = bot.getEntity({
-                ...this.options,
+                ...this.config,
                 targetingMe: false,
                 targetingPartyMember: true
             });
@@ -166,7 +169,7 @@ export class PriestAttackStrategy extends BaseAttackStrategy<Priest> {
     protected async applyDarkBlessing(bot: Priest): Promise<unknown> {
         if (bot.s.darkblessing) return;
         if (!bot.canUse("darkblessing")) return;
-        if (!bot.getEntity(this.options)) return;
+        if (!bot.getEntity(this.config)) return;
 
         return bot.darkBlessing();
     }

@@ -1,5 +1,5 @@
 import { IPosition, PingCompensatedCharacter, CharacterType } from "alclient";
-import { Strategy, StrategyExecutor } from "../strategies/strategy_executor";
+import { Strategy, CharacterRunner } from "../strategies/character_runner";
 import { WarriorAttackStrategy } from "../strategies/warrior/warrior_attack_strategy";
 import { BaseMoveStrategy, FarmingMoveStrategy, HoldPositionStrategy, MoveAroundStrategy } from "../strategies/move_strategy";
 import { MAGE_AOE, PRIEST_MF, PRIEST_TANKY, WARRIOR_AOE } from "./equipment_setups";
@@ -24,7 +24,7 @@ export type SpotConfig = {
     }
 }
 
-export function getSpotConfig(spotName: SpotName, executors: StrategyExecutor<PingCompensatedCharacter>[]): SpotConfig {
+export function getSpotConfig(spotName: SpotName, executors: CharacterRunner<PingCompensatedCharacter>[]): SpotConfig {
     let defaultEnergize = {
         onMpRatio: 0.8,
         when: { 
@@ -43,20 +43,22 @@ export function getSpotConfig(spotName: SpotName, executors: StrategyExecutor<Pi
                     warrior: {
                         attack: new WarriorAttackStrategy(executors, {
                             typeList: ["bat", "goldenbat", "phoenix", "mvampire"],
-                            enableGreedyAggro: true,
-                            maximumTargets: 5,
+                            enableGreedyAggro: false,
+                            maximumTargets: 15,
                             ensureEquipped: WARRIOR_AOE,
+                            disableStomp: false,
                             enableEquipForCleave: true,
-                            enableEquipForStomp: true
+                            enableEquipForStomp: false
                         }),
                         move: new BaseMoveStrategy(["bat", "goldenbat", "phoenix", "mvampire"])
                     },
                     mage: {
                         attack: new MageAttackStrategy(executors, {
                             typeList: ["bat", "goldenbat", "phoenix", "mvampire"],
-                            enableGreedyAggro: true,
-                            maximumTargets: 5,
+                            enableGreedyAggro: ["goldenbat"],
+                            maximumTargets: 10,
                             ensureEquipped: MAGE_AOE,
+                            disableCburst: false,
                             energize: defaultEnergize
                         }),
                         move: new BaseMoveStrategy(["bat", "goldenbat", "phoenix", "mvampire"])
@@ -65,8 +67,9 @@ export function getSpotConfig(spotName: SpotName, executors: StrategyExecutor<Pi
                         attack: new PriestAttackStrategy(executors, {
                             typeList: ["bat", "goldenbat", "phoenix", "mvampire"],
                             enableGreedyAggro: true,
-                            maximumTargets: 10,
+                            maximumTargets: 15,
                             ensureEquipped: PRIEST_MF,
+                            disableCurse: true,
                             enableAbsorbToTank: true,
                             startHealingAtRatio: 0.8
                         }),

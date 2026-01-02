@@ -1,5 +1,5 @@
 import { HitData, PingCompensatedCharacter } from "alclient";
-import { Strategy, StrategyName } from "./strategy_executor";
+import { Strategy, StrategyName } from "./character_runner";
 import { ignoreExceptions } from "../base/functions";
 
 
@@ -14,8 +14,8 @@ export class UnstuckStrategy<T extends PingCompensatedCharacter> implements Stra
             if (data.id !== bot.id) return;
             if (data.stacked && !data.stacked.includes(bot.id)) return;
             
-            let x: number = -25 + Math.round(50 * Math.random());
-            let y: number = -25 + Math.round(50 * Math.random());
+            let x: number = -15 + Math.round(30 * Math.random());
+            let y: number = -15 + Math.round(30 * Math.random());
             await bot.move(bot.x + x, bot.y + y).catch(ignoreExceptions);
         }
 

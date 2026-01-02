@@ -1,30 +1,35 @@
-import { CharacterType, ItemData, ItemName, MonsterName, PingCompensatedCharacter } from "alclient";
+import { CharacterType, ItemData, ItemName } from "alclient";
 import { EventName, SpecialName } from "../configs/boss_configs";
 
+
+export type PotionName = "hpot0" | "hpot1" | "hpotx" | "mpot0" | "mpot1" | "mpotx";
 
 export const INFINITE_PAST: Date = new Date("1900-01-01Z00:00:00:000");
 export const INFINITE_FUTURE: Date = new Date("2100-01-01Z00:00:00:000");
 
+// export const MY_CHARACTERS: Map<string, CharacterType> = new Map<string, CharacterType>([
+//     ["Shalfey", "warrior"],
+//     ["Flamme", "priest"],
+//     ["MagicFotum", "mage"],
+//     ["Momental", "merchant"]
+// ]);
 export const MY_CHARACTERS: Map<string, CharacterType> = new Map<string, CharacterType>([
-    ["Shalfey", "warrior"],
-    ["MagicFotum", "mage"],
-    ["Flamme", "priest"],
-    ["Momental", "merchant"]
+    ["Ardy", "warrior"],
+    ["NIami", "priest"],
+    ["Memph1s", "mage"],
+    // ["Fotum", "merchant"]
 ]);
+export const FRIENDLY_CHARACTERS: string[] = [];
 
 export const SPECIAL_MONSTERS: Set<SpecialName> = new Set(["phoenix", "frog", "fvampire", "mvampire", "jr", "greenjr", "skeletor"]);
 export const EVENTS: Set<EventName> = new Set(["goobrawl", "dragold", "icegolem", "valentines", "snowman"]);
 
-export const KEEP_GOLD: number = 100_000_000;
+export const SEND_TO_NAME: string = "Momental";
+export const KEEP_GOLD: number = 1_000_000;
+export const SEND_GOLD_AT: number = 1.5;
 export const KEEP_ITEMS: Set<ItemName> = new Set<ItemName>([
     "hpot0", "hpot1", "mpot0", "mpot1", "tracker", "computer", "elixirluck",
     "luckbooster", "supercomputer", "xpbooster", "xptome"
-]);
-export type PotionName = "hpot0" | "hpot1" | "hpotx" | "mpot0" | "mpot1" | "mpotx";
-export const POTIONS_REPLENISH_RATIO: number = 0.9;
-export const KEEP_POTIONS: Map<PotionName, number> = new Map<PotionName, number>([
-    ["hpot1", 5000],
-    ["mpot1", 5000]
 ]);
 
 export const EXCHANGE_ITMES: Set<ItemName> = new Set<ItemName>([
@@ -179,8 +184,6 @@ export const MERCHANT_UPGRADE: Map<ItemName, UpgradeConfig> = new Map<ItemName, 
 
     // Amulets
     ["intamulet", { level: 4, offeringAt: 3 }],
-    ["stramulet", { level: 4, offeringAt: 3 }],
-
     ["stramulet", { level: 4, offeringAt: 3 }],
 
     ["t2stramulet", { level: 3, offeringAt: 2 }],

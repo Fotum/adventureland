@@ -1,5 +1,5 @@
 import { InviteData, PingCompensatedCharacter } from "alclient"
-import { Loop, LoopName, Strategy, StrategyName } from "./strategy_executor"
+import { Loop, LoopName, Strategy, StrategyName } from "./character_runner"
 
 
 export type PartyConfig = {

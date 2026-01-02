@@ -1,8 +1,8 @@
-import { ActionData, ActionDataRay, Entity, GItem, Game, Mage, MonsterName, PingCompensatedCharacter, Player, SlotType, Tools, TradeItemInfo, TradeSlotType } from "alclient";
+import { ActionData, ActionDataRay, EntitiesData, Entity, GItem, Game, Mage, MonsterName, PingCompensatedCharacter, Player, SlotType, Tools, TradeItemInfo, TradeSlotType } from "alclient";
 import { BaseAttackConfig, BaseAttackStrategy } from "../base_attack_strategy";
 import { filterExecutors, ignoreExceptions } from "../../base/functions";
 import FastPriorityQueue from "fastpriorityqueue";
-import { StrategyExecutor } from "../strategy_executor";
+import { CharacterRunner } from "../character_runner";
 
 
 export type MageAttackConfig = BaseAttackConfig & {
@@ -21,20 +21,87 @@ export type MageAttackConfig = BaseAttackConfig & {
 export const DO_NOT_KILL_STEAL: MonsterName[] = ["kitty1", "kitty2", "kitty3", "kitty4", "puppy1", "puppy2", "puppy3", "puppy4"];
 
 export class MageAttackStrategy extends BaseAttackStrategy<Mage> {
-    protected options: MageAttackConfig;
+    protected config: MageAttackConfig;
     protected stealOnActionCburst: (data: ActionData) => void
 
-    public constructor(executors: StrategyExecutor<PingCompensatedCharacter>[], options?: MageAttackConfig) {
+    public constructor(executors: CharacterRunner<PingCompensatedCharacter>[], options?: MageAttackConfig) {
         super(executors, options);
 
-        if (this.options.disableCburst) this.interval.push("cburst");
-        if (this.options.energize) this.interval.push("energize");
+        if (this.config.disableCburst) this.interval.push("cburst");
+        if (this.config.energize) this.interval.push("energize");
     }
 
     public onApply(bot: Mage): void {
         super.onApply(bot);
 
-        if (!this.options.disableCburst && !this.options.disableKillSteal) {
+        if (this.config.enableGreedyAggro) {
+            // Remove old listener, just in case
+            bot.socket.off("entities", this.greedyOnEntities);
+
+            this.greedyOnEntities = async (data: EntitiesData) => {
+                if (data.monsters.length == 0) return;
+                if (this.config.maximumTargets !== undefined && bot.targets >= this.config.maximumTargets) return;
+                if (!this.shouldAttack(bot)) return;
+
+                if (!this.config.disableZapper && bot.canUse("zapperzap")) {
+                    for (let monster of data.monsters) {
+                        if (monster.target) continue;
+                        // Check if target is in array of greedyAggro targets
+                        if (Array.isArray(this.config.enableGreedyAggro) && !this.config.enableGreedyAggro.includes(monster.type)) continue;
+                        // Check if target is in typeList of monsters we want to farm
+                        if (this.config.typeList && !this.config.typeList.includes(monster.type)) continue;
+                        if (Game.G.monsters[monster.type].immune) continue;
+                        // Check if not out of range
+                        if (Tools.distance(bot, monster) > Game.G.skills.zapperzap.range) continue;
+
+                        bot.nextSkill.set("zapperzap", new Date(Date.now() - bot.ping * 2));
+                        return bot.zapperZap(monster.id).catch(console.error);
+                    }
+                }
+
+                if (bot.canUse("cburst")) {
+                    const cbursts: [string, number][] = [];
+                    for (const monster of data.monsters) {
+                        if (monster.target) continue;
+                        if (Array.isArray(this.config.enableGreedyAggro) && !this.config.enableGreedyAggro.includes(monster.type)) continue;
+                        if (this.config.typeList && !this.config.typeList.includes(monster.type)) continue;
+                        if (Tools.distance(bot, monster) > Game.G.skills.cburst.range) continue;
+
+                        cbursts.push([monster.id, 1]);
+                    }
+
+                    for (const monster of bot.getEntities({
+                        hasTarget: false,
+                        typeList: this.config.typeList,
+                        withinRange: "cburst"
+                    })) {
+                        if (cbursts.some((cburst) => cburst[0] == monster.id)) continue;
+                        cbursts.push([monster.id, 1]);
+                    }
+
+                    if (cbursts.length) {
+                        bot.nextSkill.set("cburst", new Date(Date.now() + bot.ping * 2));
+                        return bot.cburst(cbursts).catch(console.error);
+                    }
+                }
+
+                if (bot.canUse("attack")) {
+                    for (const monster of data.monsters) {
+                        if (monster.target) continue;
+                        if (Array.isArray(this.config.enableGreedyAggro) && !this.config.enableGreedyAggro.includes(monster.type)) continue;
+                        if (this.config.typeList && !this.config.typeList.includes(monster.type)) continue;
+                        if (Tools.distance(bot, monster) > bot.range) continue;
+
+                        bot.nextSkill.set("attack", new Date(Date.now() + bot.ping * 2));
+                        return bot.basicAttack(monster.id).catch(console.error);
+                    }
+                }
+            }
+
+            bot.socket.on("entities", this.greedyOnEntities)
+        }
+
+        if (!this.config.disableCburst && !this.config.disableKillSteal) {
             this.stealOnActionCburst = (data: ActionData) => {
                 if (!bot.canUse("cburst")) return;
                 if ((data as ActionDataRay).instant) return;
@@ -73,13 +140,13 @@ export class MageAttackStrategy extends BaseAttackStrategy<Mage> {
         
         await this.equipItems(bot);
 
-        if (!this.options.disableCburst) {
+        if (!this.config.disableCburst) {
             await this.cburstHumanoids(bot).catch(ignoreExceptions);
             await this.cburstAttack(bot, priority).catch(ignoreExceptions);
         }
-        if (!this.options.disableBasicAttack) await this.basicAttack(bot, priority).catch(ignoreExceptions);
-        if (!this.options.disableIdleAttack) await this.idleAttack(bot, priority).catch(ignoreExceptions);
-        if (this.options.energize) await this.energizePartyMember(bot);
+        if (!this.config.disableBasicAttack) await this.basicAttack(bot, priority).catch(ignoreExceptions);
+        if (!this.config.disableIdleAttack) await this.idleAttack(bot, priority).catch(ignoreExceptions);
+        if (this.config.energize) await this.energizePartyMember(bot);
 
         await this.equipItems(bot);
     }
@@ -99,7 +166,7 @@ export class MageAttackStrategy extends BaseAttackStrategy<Mage> {
         }
 
         let entities: Entity[] = bot.getEntities({
-            ...this.options,
+            ...this.config,
             canDamage: "cburst",
             withinRange: "cburst"
         });
@@ -126,17 +193,17 @@ export class MageAttackStrategy extends BaseAttackStrategy<Mage> {
         if (mpPool <= 0) return;
 
         let toCburst = new Map<string, number>();
-        if (this.options.enableGreedyAggro) {
+        if (this.config.enableGreedyAggro) {
             let entities: Entity[] = bot.getEntities({
                 canDamage: "cburst",
                 hasTarget: false,
-                typeList: Array.isArray(this.options.enableGreedyAggro)
-                    ? this.options.enableGreedyAggro
-                    : this.options.typeList,
+                typeList: Array.isArray(this.config.enableGreedyAggro)
+                    ? this.config.enableGreedyAggro
+                    : this.config.typeList,
                 withinRange: "cburst"
             });
 
-            if (entities.length && !(this.options.maximumTargets && bot.targets >= this.options.maximumTargets)) {
+            if (entities.length && !(this.config.maximumTargets && bot.targets >= this.config.maximumTargets)) {
                 for (let entity of entities) {
                     if ((mpPool - 5) < 0) break;
                     mpPool -= 5;
@@ -146,7 +213,7 @@ export class MageAttackStrategy extends BaseAttackStrategy<Mage> {
         }
 
         let entities: Entity[] = bot.getEntities({
-            ...this.options,
+            ...this.config,
             canDamage: "cburst",
             withinRange: "cburst",
             couldDieToProjectiles: false
@@ -185,9 +252,9 @@ export class MageAttackStrategy extends BaseAttackStrategy<Mage> {
 
     protected async energizePartyMember(bot: Mage): Promise<unknown> {
         if (bot.rip) return;
-        if ((bot.mp / bot.max_mp) < this.options.energize.onMpRatio) return;
+        if ((bot.mp / bot.max_mp) < this.config.energize.onMpRatio) return;
 
-        let executors = filterExecutors(this.executors, { serverData: bot.serverData });
+        let executors = filterExecutors(this.runners, { serverData: bot.serverData });
 
         if (bot.s.energized) return;
         for (let executor of executors) {
@@ -198,12 +265,12 @@ export class MageAttackStrategy extends BaseAttackStrategy<Mage> {
             if (Tools.squaredDistance(bot, friend) > bot.G.skills.energize.range) continue;
             if (bot.isOnCooldown("energize")) continue;
 
-            if ((this.options.energize.when.mp && friend.mp < this.options.energize.when.mp) ||
-                (this.options.energize.when.mpMissing && (friend.max_mp - friend.mp) > this.options.energize.when.mpMissing) ||
-                (this.options.energize.when.mpRatio && (friend.mp / friend.max_mp) < this.options.energize.when.mpRatio)
+            if ((this.config.energize.when.mp && friend.mp < this.config.energize.when.mp) ||
+                (this.config.energize.when.mpMissing && (friend.max_mp - friend.mp) > this.config.energize.when.mpMissing) ||
+                (this.config.energize.when.mpRatio && (friend.mp / friend.max_mp) < this.config.energize.when.mpRatio)
             ) {
                 let rechargeAmount: number = friend.max_mp - friend.mp;
-                let canRechargeAmount: number = bot.mp - (bot.max_mp * this.options.energize.onMpRatio);
+                let canRechargeAmount: number = bot.mp - (bot.max_mp * this.config.energize.onMpRatio);
                 return bot.energize(friend.id, Math.min(canRechargeAmount, rechargeAmount));
             }
         }
