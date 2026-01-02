@@ -1,8 +1,7 @@
 import { Character, Constants, GItem, Game, IPosition, Item, ItemData, ItemName, Merchant, Pathfinder, PingCompensatedCharacter, Player, Tools } from "alclient";
-import { Loop, LoopName, Strategy, StrategyExecutor, StrategyName } from "../strategy_executor";
-import { BUY_FROM_PONTY, DISMANTLE_ITEMS, EXCHANGE_ITMES, KEEP_GOLD, KEEP_POTIONS, MERCHANT_KEEP_ITEMS, MERCHANT_REPLENISHABLES, MERCHANT_REPLENISH_RATIO, POTIONS_REPLENISH_RATIO, SELL_ITMES, KEEP_ITEMS, WARRIOR_KEEP_ITEMS, MAGE_KEEP_ITEMS, PRIEST_KEEP_ITEMS } from "../../base/constants";
+import { BUY_FROM_PONTY, DISMANTLE_ITEMS, EXCHANGE_ITMES, KEEP_GOLD, KEEP_ITEMS, MAGE_KEEP_ITEMS, MERCHANT_KEEP_ITEMS, MERCHANT_REPLENISHABLES, MERCHANT_REPLENISH_RATIO, PRIEST_KEEP_ITEMS, SELL_ITMES, WARRIOR_KEEP_ITEMS } from "../../base/constants";
 import { filterExecutors, ignoreExceptions } from "../../base/functions";
-import { PotionName } from "../../base/constants";
+import { CharacterRunner, Loop, LoopName, Strategy, StrategyName } from "../character_runner";
 
 
 export type MerchantConfig = {
@@ -18,10 +17,6 @@ export type MerchantConfig = {
         others?: boolean
         travel?: boolean
     }
-    enableResupply?: {
-        replenishRatio: number
-        keepPotions: Map<PotionName, number>
-    }
     goldToHold: number
     itemsToHold: Set<ItemName>
 }
@@ -35,10 +30,6 @@ export const DEFAULT_MERCHANT_CONFIG: MerchantConfig = {
         executors: true,
         others: true
     },
-    enableResupply: {
-        replenishRatio: POTIONS_REPLENISH_RATIO,
-        keepPotions: KEEP_POTIONS
-    },
     goldToHold: KEEP_GOLD,
     itemsToHold: MERCHANT_KEEP_ITEMS
 };
@@ -49,9 +40,9 @@ export class MerchantStrategy implements Strategy<Merchant> {
     private options: MerchantConfig;
     private _name: StrategyName = "utility";
 
-    protected executors: StrategyExecutor<PingCompensatedCharacter>[];
+    protected executors: CharacterRunner<PingCompensatedCharacter>[];
 
-    public constructor(executors: StrategyExecutor<PingCompensatedCharacter>[], options: MerchantConfig = DEFAULT_MERCHANT_CONFIG) {
+    public constructor(executors: CharacterRunner<PingCompensatedCharacter>[], options: MerchantConfig = DEFAULT_MERCHANT_CONFIG) {
         this.executors = executors;
         this.options = options;
 
@@ -69,14 +60,6 @@ export class MerchantStrategy implements Strategy<Merchant> {
                     await this.buyFromPonty(bot).catch(ignoreExceptions);
                 },
                 interval: 3000
-            });
-        }
-        if (this.options.enableResupply) {
-            this.loops.set("resuppply", {
-                fn: async (bot: Merchant) => {
-                    await this.resupplyOthers(bot).catch(ignoreExceptions);
-                },
-                interval: 1000
             });
         }
         this.loops.set("inventory", {
@@ -143,11 +126,11 @@ export class MerchantStrategy implements Strategy<Merchant> {
 
         for (let [slot, item] of bot.getItems()) {
             if ((!item.level || item.level == 0) && !item.l && SELL_ITMES.has(item.name))
-                bot.sell(slot, 9999);
+                bot.sell(slot, item.q || 1).catch(ignoreExceptions);
             else if (this.options.enableExchange && bot.esize > 1 && this.checkExchange(item) && !bot.isExchanging())
-                bot.exchange(slot);
+                bot.exchange(slot).catch(ignoreExceptions);
             else if (this.options.enableDismantle && DISMANTLE_ITEMS.has(item.name))
-                bot.dismantle(slot);
+                bot.dismantle(slot).catch(ignoreExceptions);
         }
     }
 
@@ -174,44 +157,11 @@ export class MerchantStrategy implements Strategy<Merchant> {
         }
     }
 
-    protected async resupplyOthers(bot: Merchant): Promise<void> {
-        if (bot.rip || bot.map == "bank") return;
-
-        let filteredExecs: StrategyExecutor<PingCompensatedCharacter>[] = filterExecutors(this.executors, { serverData: bot.serverData });
-        for (let executor of filteredExecs) {
-            let myBot: PingCompensatedCharacter = executor.bot;
-            if (myBot.id != bot.id && Tools.squaredDistance(myBot, bot) > Constants.NPC_INTERACTION_DISTANCE_SQUARED) continue;
-
-            for (let [pot, amount] of this.options.enableResupply.keepPotions) {
-                let currPotsAmount: number = myBot.countItem(pot, myBot.items);
-                let replenishAt: number = Math.round(amount * (1 - this.options.enableResupply.replenishRatio));
-
-                // We still have enough potions, no need to send
-                if (currPotsAmount > replenishAt) continue;
-
-                let toSend: number = amount - currPotsAmount;
-                let currHave: number = bot.countItem(pot, bot.items);
-                // If we will be left with less potions than replenishAt -> buy potions to send
-                if ((currHave - toSend) <= replenishAt) {
-                    // Can't buy
-                    if (!bot.canBuy(pot, { quantity: toSend })) continue;
-                    await bot.buy(pot, toSend);
-                }
-
-                // Send item if we bought it not for ourselves
-                if (myBot.id != bot.id) {
-                    let potSlotPos: number = bot.locateItem(pot, bot.items, { quantityGreaterThan: toSend - 1 });
-                    if (potSlotPos) await bot.sendItem(bot.id, potSlotPos, toSend);
-                }
-            }
-        }
-    }
-
     protected async handleOtherInventories(bot: Merchant): Promise<void> {
         // TODO: Remove esize check, coz we can still send stackable items
         if (bot.rip || bot.map == "bank" || bot.esize <= 0) return;
 
-        let filteredExecs: StrategyExecutor<PingCompensatedCharacter>[] = filterExecutors(this.executors, { serverData: bot.serverData });
+        let filteredExecs: CharacterRunner<PingCompensatedCharacter>[] = filterExecutors(this.executors, { serverData: bot.serverData });
         for (let executor of filteredExecs) {
             let myBot: PingCompensatedCharacter = executor.bot;
             if (myBot.id == bot.id) continue;

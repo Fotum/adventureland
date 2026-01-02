@@ -1,5 +1,5 @@
 import { CMData, Mage, Pathfinder, PingCompensatedCharacter, Tools } from "alclient";
-import { Loop, LoopName, Strategy, StrategyExecutor, StrategyName } from "../strategy_executor";
+import { Loop, LoopName, Strategy, CharacterRunner, StrategyName } from "../character_runner";
 import { filterExecutors } from "../../base/functions";
 
 
@@ -19,10 +19,10 @@ export class MagiportSmartMovingStrategy implements Strategy<Mage> {
     private static recentlyMagiported = new Map<string, number>();
 
     private _name: StrategyName = "magiport";
-    private executors: StrategyExecutor<PingCompensatedCharacter>[];
+    private executors: CharacterRunner<PingCompensatedCharacter>[];
     private options: MagiportConfig;
 
-    public constructor(executors: StrategyExecutor<PingCompensatedCharacter>[], options: MagiportConfig = DEFAULT_MAGIPORT_CONFIG) {
+    public constructor(executors: CharacterRunner<PingCompensatedCharacter>[], options: MagiportConfig = DEFAULT_MAGIPORT_CONFIG) {
         this.executors = executors;
         this.options = options;
 

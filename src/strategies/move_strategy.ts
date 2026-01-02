@@ -1,5 +1,5 @@
 import { Entity, IPosition, MonsterName, Pathfinder, PingCompensatedCharacter, Player, Tools } from "alclient";
-import { Loop, LoopName, Strategy, StrategyExecutor, StrategyName } from "./strategy_executor";
+import { Loop, LoopName, Strategy, CharacterRunner, StrategyName } from "./character_runner";
 import { ignoreExceptions, sortTypeThenClosest } from "../base/functions";
 import { getEntityAvoidanceVector, getRandomAngle, getVector } from "../geometry/functions";
 import { Vector } from "../geometry/vector";
@@ -50,9 +50,9 @@ export class FollowMoveStrategy implements Strategy<PingCompensatedCharacter> {
     public loops = new Map<LoopName, Loop<PingCompensatedCharacter>>;
 
     private _name: StrategyName = "move";
-    private friendToFollow: StrategyExecutor<PingCompensatedCharacter>;
+    private friendToFollow: CharacterRunner<PingCompensatedCharacter>;
 
-    public constructor(friendToFollow: StrategyExecutor<PingCompensatedCharacter>) {
+    public constructor(friendToFollow: CharacterRunner<PingCompensatedCharacter>) {
         if (!friendToFollow) throw new Error("No follow target specified");
         this.friendToFollow = friendToFollow;
 
@@ -221,13 +221,6 @@ export class FarmingMoveStrategy implements Strategy<PingCompensatedCharacter> {
                     return entities.length > 0;
                 }
             }).catch(ignoreExceptions);
-        }
-    }
-
-    protected async moveToFriend(bot: PingCompensatedCharacter, friend: Player): Promise<void> {
-        let priest: Player = bot.getPlayer({ isDead: false, isPartyMember: true, ctype: "priest", returnNearest: true });
-        if (priest && Tools.distance(bot, priest) > priest.range) {
-            bot.smartMove(priest, { getWithin: priest.range - 25 }).catch(ignoreExceptions);
         }
     }
 }

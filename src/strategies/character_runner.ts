@@ -7,9 +7,8 @@ export type Loop<T> = {
 }
 export type Loops<T> = Map<LoopName, Loop<T>>;
 
-// export type StrategyName = LoopName | "base";
 export type StrategyName = "base" | "attack" | "move" | "party" | "party_heal" | "magiport" | "upgrade" | "utility";
-export type LoopName = "attack" | "move" | "use_pots" | "loot" | "respawn" | "party" | "party_heal" | "magiport" | "mluck" | "upgrade" | "ponty" | "inventory" | "resuppply";
+export type LoopName = "attack" | "move" | "use_pots" | "buy_pots" | "loot" | "respawn" | "party" | "party_heal" | "magiport" | "mluck" | "upgrade" | "ponty" | "inventory" | "resuppply";
 
 export interface Strategy<T> {
     name: StrategyName
@@ -25,7 +24,7 @@ type ExecLoop<T> = Loop<T> & {
 }
 type ExecLoops<T> = Map<string, ExecLoop<T>>;
 
-export class StrategyExecutor<T extends PingCompensatedCharacter> {
+export class CharacterRunner<T extends PingCompensatedCharacter> {
     public bot: T;
 
     private started: Date;
@@ -42,15 +41,15 @@ export class StrategyExecutor<T extends PingCompensatedCharacter> {
 
     public applyStrategy(strategy: Strategy<T>): void {
         if (!strategy) return;
+
         if (this.strategies.has(strategy.name))
             this.removeStrategy(strategy.name);
-
-        this.strategies.set(strategy.name, strategy);
 
         if (strategy.onApply)
             strategy.onApply(this.bot);
 
         if (!strategy.loops) return;
+
         for (const [name, loop] of strategy.loops) {
             if (!loop) {
                 // Stop loop
@@ -114,6 +113,8 @@ export class StrategyExecutor<T extends PingCompensatedCharacter> {
                 newLoop().catch(console.error);
             }
         }
+
+        this.strategies.set(strategy.name, strategy);
     }
 
     public applyStrategies(strategies: Strategy<T>[]): void {
@@ -384,10 +385,9 @@ export class StrategyExecutor<T extends PingCompensatedCharacter> {
         this.bot.socket.on("disconnect", () => this.reconnect());
         this.started = new Date();
 
-        for (let strategy of this.strategies) {
-            let strat: Strategy<T> = strategy[1];
-            if (strat.onApply) {
-                strat.onApply(newBot);
+        for (let [, strategy] of this.strategies) {
+            if (strategy.onApply) {
+                strategy.onApply(newBot);
             }
         }
     }
@@ -422,6 +422,6 @@ export class StrategyExecutor<T extends PingCompensatedCharacter> {
     }
 
     public uptime(): number {
-        return this.isReady ? Date.now() - this.started.getTime() : 0;
+        return this.isReady() ? Date.now() - this.started.getTime() : 0;
     }
 }

@@ -1,5 +1,5 @@
-import { PingCompensatedCharacter } from "alclient";
-import { StrategyExecutor } from "./strategies/strategy_executor";
+import { Entity, PingCompensatedCharacter } from "alclient";
+import { CharacterRunner } from "./strategies/character_runner";
 import BotWebInterface from "bot-web-interface";
 import prettyMilliseconds from "pretty-ms";
 
@@ -38,11 +38,11 @@ export class BWIReporter {
     private statBeatIntrval: number;
     private bwiInstance: BotWebInterface;
     private statisticsInterval: NodeJS.Timeout;
-    private executors: StrategyExecutor<PingCompensatedCharacter>[];
+    private executors: CharacterRunner<PingCompensatedCharacter>[];
 
     private botDataSources = new Map<string, BWIDataSource>();
 
-    public constructor(executors: StrategyExecutor<PingCompensatedCharacter>[], port: number = 924, statBeatInterval: number = 500) {
+    public constructor(executors: CharacterRunner<PingCompensatedCharacter>[], port: number = 924, statBeatInterval: number = 500) {
         this.statBeatIntrval = statBeatInterval;
         this.executors = executors;
 
@@ -54,6 +54,7 @@ export class BWIReporter {
 
         for (let executor of executors) {
             let bot: PingCompensatedCharacter = executor.bot;
+
             let dataSourceObj: BWIDataSource = {
                 name: bot.id,
                 realm: `${bot.serverData.region}${bot.serverData.name}`,
@@ -70,7 +71,7 @@ export class BWIReporter {
                 gold: bot.gold,
                 party: bot.party,
                 status: "Doing something",
-                target: bot.target,
+                target: "None",
                 cc: bot.cc,
                 xpPh: 0,
                 xpHisto: [],
@@ -105,7 +106,7 @@ export class BWIReporter {
             dataSource.esize = bot.esize;
             dataSource.gold = bot.gold;
             dataSource.party = bot.party;
-            dataSource.target = bot.target;
+            dataSource.target = bot.getTargetEntity()?.name ?? "None";
             dataSource.cc = bot.cc;
 
             dataSource.goldHisto.push(bot.gold);

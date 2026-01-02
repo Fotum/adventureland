@@ -9,23 +9,14 @@ export const UNEQUIP: EquipInSlot = {
     unequip: true
 };
 
-export const BLASTER: EnsureEquipped = {
-    mainhand: { name: "gstaff", filters: FILTER_HIGHEST },
-    offhand: UNEQUIP
-};
-
 export const WARRIOR_DPS: EnsureEquipped = {
     mainhand: { name: "fireblade", filters: FILTER_HIGHEST },
-    offhand: { name: "fireblade", filters: FILTER_HIGHEST },
-    earring1: { name: "molesteeth", filters: FILTER_HIGHEST },
-    earring2: { name: "molesteeth", filters: FILTER_HIGHEST }
+    offhand: { name: "fireblade", filters: FILTER_HIGHEST }
 };
 
 export const WARRIOR_AOE: EnsureEquipped = {
     mainhand: { name: "ololipop", filters: FILTER_HIGHEST },
-    offhand: { name: "ololipop", filters: FILTER_HIGHEST },
-    earring1: { name: "strearring", filters: FILTER_HIGHEST },
-    earring2: { name: "strearring", filters: FILTER_HIGHEST }
+    offhand: { name: "ololipop", filters: FILTER_HIGHEST }
 };
 
 export const MAGE_FAST: EnsureEquipped = {
@@ -38,7 +29,10 @@ export const MAGE_DPS: EnsureEquipped = {
     offhand: { name: "exoarm", filters: FILTER_HIGHEST }
 };
 
-export const MAGE_AOE: EnsureEquipped = BLASTER;
+export const MAGE_AOE: EnsureEquipped = {
+    mainhand: { name: "gstaff", filters: FILTER_HIGHEST },
+    offhand: UNEQUIP
+};
 
 export const PRIEST_TANKY: EnsureEquipped = {
     offhand: { name: "exoarm", filters: FILTER_HIGHEST},
@@ -48,7 +42,7 @@ export const PRIEST_TANKY: EnsureEquipped = {
     gloves: { name: "mittens", filters: FILTER_HIGHEST},
     shoes: { name: "wingedboots", filters: FILTER_HIGHEST},
     elixir: { name: "elixirluck", filters: { returnLowestQuantity: true }}
-}
+};
 
 export const PRIEST_MF: EnsureEquipped = {
     offhand: { name: "mshield", filters: FILTER_HIGHEST},
@@ -129,4 +123,4 @@ export function generateEquipmentSetup(bot: PingCompensatedCharacter, override?:
     }
 
     return ensureEquipped;
-}
+};

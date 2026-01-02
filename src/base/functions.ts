@@ -1,5 +1,5 @@
 import { Character, Entity, Game, IPosition, MonsterName, PingCompensatedCharacter, ServerData, Tools } from "alclient"
-import { StrategyExecutor } from "../strategies/strategy_executor"
+import { CharacterRunner } from "../strategies/character_runner"
 import { SPECIAL_MONSTERS } from "./constants"
 import { SpecialName } from "../configs/boss_configs"
 
@@ -9,8 +9,8 @@ export type FilterBotsOptions = {
     serverData?: ServerData
 }
 
-export function filterExecutors(executors: StrategyExecutor<PingCompensatedCharacter>[], filters: FilterBotsOptions = {}): StrategyExecutor<PingCompensatedCharacter>[] {
-    let filteredExecutors: StrategyExecutor<PingCompensatedCharacter>[] = [];
+export function filterExecutors(executors: CharacterRunner<PingCompensatedCharacter>[], filters: FilterBotsOptions = {}): CharacterRunner<PingCompensatedCharacter>[] {
+    let filteredExecutors: CharacterRunner<PingCompensatedCharacter>[] = [];
     for (let executor of executors) {
         if (!executor.isReady()) continue;
         if (filters.owner && executor.bot.owner !== filters.owner) continue;

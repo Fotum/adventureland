@@ -13,13 +13,13 @@
     "author": "Fotum",
     "license": "MIT",
     "dependencies": {
-        "alclient": "^0.21.7",
+        "alclient": "^0.22.7",
         "bot-web-interface": "^2.0.14",
         "fastpriorityqueue": "^0.7.5",
-        "pretty-ms": "^9.2.0",
-        "typescript": "^5.7.3"
+        "pretty-ms": "^9.3.0",
+        "typescript": "^5.9.3"
     },
     "devDependencies": {
-        "tsx": "^4.19.2"
+        "tsx": "^4.21.0"
     }
 }

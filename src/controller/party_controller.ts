@@ -1,5 +1,5 @@
 import { Game, PingCompensatedCharacter } from "alclient";
-import { StrategyExecutor } from "../strategies/strategy_executor";
+import { CharacterRunner } from "../strategies/character_runner";
 import { SpecialName } from "../configs/boss_configs";
 import { INFINITE_PAST, SPECIAL_MONSTERS } from "../base/constants";
 import fs from "fs";
@@ -12,16 +12,16 @@ type BossTimer = {
     respawn: number
 }
 
-export class CharacterController {
+export class PartyController {
     private defaultSpot: SpotConfig;
 
-    private executors: StrategyExecutor<PingCompensatedCharacter>[];
+    private executors: CharacterRunner<PingCompensatedCharacter>[];
     private bossTimers = new Map<SpecialName, BossTimer>();
 
     private states = new Map<string, TaskTarget>();
     private actionQueues = new Map<string, Task[]>();
 
-    public constructor(executors: StrategyExecutor<PingCompensatedCharacter>[], defaultSpot: SpotName) {
+    public constructor(executors: CharacterRunner<PingCompensatedCharacter>[], defaultSpot: SpotName) {
         this.executors = executors;
         this.defaultSpot = getSpotConfig(defaultSpot, executors);
 

@@ -1,5 +1,5 @@
 import { CharacterType, Mage, Merchant, PingCompensatedCharacter, Priest, Warrior } from "alclient";
-import { Strategy, StrategyExecutor } from "../strategies/strategy_executor";
+import { Strategy, CharacterRunner } from "../strategies/character_runner";
 import { WarriorAttackStrategy } from "../strategies/warrior/warrior_attack_strategy";
 import { BaseMoveStrategy } from "../strategies/move_strategy";
 import { MAGE_AOE, MAGE_DPS, MAGE_FAST, PRIEST_GF, PRIEST_MF, PRIEST_TANKY, WARRIOR_AOE, WARRIOR_DPS } from "./equipment_setups";
@@ -23,7 +23,7 @@ export type EventConfig = {
 }
 
 
-export function getEventConfig(eventName: SpecialName | EventName, executors: StrategyExecutor<PingCompensatedCharacter>[]): EventConfig {
+export function getEventConfig(eventName: SpecialName | EventName, executors: CharacterRunner<PingCompensatedCharacter>[]): EventConfig {
     let defaultEnergize = {
         onMpRatio: 0.8,
         when: { 
