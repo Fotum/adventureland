@@ -1,7 +1,8 @@
 import { Character, Constants, GItem, Game, IPosition, Item, ItemData, ItemName, Merchant, Pathfinder, PingCompensatedCharacter, Player, Tools } from "alclient";
 import { BUY_FROM_PONTY, DISMANTLE_ITEMS, EXCHANGE_ITMES, KEEP_GOLD, KEEP_ITEMS, MAGE_KEEP_ITEMS, MERCHANT_KEEP_ITEMS, MERCHANT_REPLENISHABLES, MERCHANT_REPLENISH_RATIO, PRIEST_KEEP_ITEMS, SELL_ITMES, WARRIOR_KEEP_ITEMS } from "../../base/constants";
-import { filterExecutors, ignoreExceptions } from "../../base/functions";
+import { filterRunners, ignoreExceptions } from "../../base/functions";
 import { CharacterRunner, Loop, LoopName, Strategy, StrategyName } from "../character_runner";
+import { PartyController } from "../../controller/party_controller";
 
 
 export type MerchantConfig = {
@@ -40,10 +41,10 @@ export class MerchantStrategy implements Strategy<Merchant> {
     private options: MerchantConfig;
     private _name: StrategyName = "utility";
 
-    protected executors: CharacterRunner<PingCompensatedCharacter>[];
+    protected partyController: PartyController;
 
-    public constructor(executors: CharacterRunner<PingCompensatedCharacter>[], options: MerchantConfig = DEFAULT_MERCHANT_CONFIG) {
-        this.executors = executors;
+    public constructor(partyController: PartyController, options: MerchantConfig = DEFAULT_MERCHANT_CONFIG) {
+        this.partyController = partyController;
         this.options = options;
 
         if (this.options.enableMluck) {
@@ -95,7 +96,7 @@ export class MerchantStrategy implements Strategy<Merchant> {
         };
 
         let mluckTargets = [
-            ...(this.options.enableMluck.executors ? filterExecutors(this.executors, { serverData: bot.serverData }).map((v) => v.bot) : []),
+            ...(this.options.enableMluck.executors ? filterRunners(this.partyController.getRunners(), { serverData: bot.serverData }).map((v) => v.bot) : []),
             ...(this.options.enableMluck.others ? bot.getPlayers({ isNPC: false, withinRange: "mluck" }) : [])
         ];
 
@@ -161,7 +162,7 @@ export class MerchantStrategy implements Strategy<Merchant> {
         // TODO: Remove esize check, coz we can still send stackable items
         if (bot.rip || bot.map == "bank" || bot.esize <= 0) return;
 
-        let filteredExecs: CharacterRunner<PingCompensatedCharacter>[] = filterExecutors(this.executors, { serverData: bot.serverData });
+        let filteredExecs: CharacterRunner<PingCompensatedCharacter>[] = filterRunners(this.partyController.getRunners(), { serverData: bot.serverData });
         for (let executor of filteredExecs) {
             let myBot: PingCompensatedCharacter = executor.bot;
             if (myBot.id == bot.id) continue;

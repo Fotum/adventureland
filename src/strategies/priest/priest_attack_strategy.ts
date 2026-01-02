@@ -1,8 +1,8 @@
 import { Entity, Game, PingCompensatedCharacter, Player, Priest, Tools } from "alclient";
-import { BaseAttackConfig, BaseAttackStrategy } from "../base_attack_strategy";
 import FastPriorityQueue from "fastpriorityqueue";
 import { ignoreExceptions } from "../../base/functions";
-import { CharacterRunner } from "../character_runner";
+import { PartyController } from "../../controller/party_controller";
+import { BaseAttackConfig, BaseAttackStrategy } from "../base_attack_strategy";
 
 
 export type PriestAttackConfig = BaseAttackConfig & {
@@ -18,8 +18,8 @@ export class PriestAttackStrategy extends BaseAttackStrategy<Priest> {
     protected config: PriestAttackConfig;
     protected healPriority: (a: PingCompensatedCharacter, b: PingCompensatedCharacter) => boolean;
     
-    public constructor(executors: CharacterRunner<PingCompensatedCharacter>[], options: PriestAttackConfig) {
-        super(executors, options);
+    public constructor(partyController: PartyController, options: PriestAttackConfig) {
+        super(partyController, options);
 
         if (!this.config.disableCurse) this.interval.push("curse");
         if (!this.config.disableDarkBlessing) this.interval.push("darkblessing");

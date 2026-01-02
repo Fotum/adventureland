@@ -1,6 +1,7 @@
-import { PingCompensatedCharacter, Priest } from "alclient";
-import { Loop, LoopName, Loops, Strategy, CharacterRunner, StrategyName } from "../character_runner";
-import { filterExecutors, ignoreExceptions } from "../../base/functions";
+import { Priest } from "alclient";
+import { filterRunners, ignoreExceptions } from "../../base/functions";
+import { PartyController } from "../../controller/party_controller";
+import { Loop, LoopName, Loops, Strategy, StrategyName } from "../character_runner";
 
 
 export type PartyHealConfig = {
@@ -23,11 +24,11 @@ export class PartyHealStrategy implements Strategy<Priest> {
     public loops: Loops<Priest> = new Map<LoopName, Loop<Priest>>;
 
     private _name: StrategyName = "party_heal";
-    private executors: CharacterRunner<PingCompensatedCharacter>[];
+    private partyController: PartyController;
     private options: PartyHealConfig;
 
-    constructor(executors: CharacterRunner<PingCompensatedCharacter>[], options: PartyHealConfig = DEFUALT_PARTY_HEAL_CONFIG) {
-        this.executors = executors;
+    constructor(partyController: PartyController, options: PartyHealConfig = DEFUALT_PARTY_HEAL_CONFIG) {
+        this.partyController = partyController;
 
         if (options.when.hp === undefined && options.when.hpMissing === undefined && options.when.hpRatio === undefined) this.options = DEFUALT_PARTY_HEAL_CONFIG;
         else this.options = options;
@@ -50,7 +51,7 @@ export class PartyHealStrategy implements Strategy<Priest> {
         if (!bot.canUse("partyheal")) return;
         if (!bot.party) return;
 
-        let nearbyExecutors = filterExecutors(this.executors, { serverData: bot.serverData });
+        let nearbyExecutors = filterRunners(this.partyController, { serverData: bot.serverData });
         for (let executor of nearbyExecutors) {
             let myBot = executor.bot;
 

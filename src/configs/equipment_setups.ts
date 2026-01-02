@@ -1,5 +1,5 @@
 import { Game, ItemData, LocateItemFilters, PingCompensatedCharacter, SlotType, WeaponType } from "alclient";
-import { EnsureEquipped, EquipInSlot } from "../strategies/base_attack_strategy";
+import { EquipmentSet, EquipInSlot } from "../strategies/base_attack_strategy";
 
 
 export const FILTER_HIGHEST: LocateItemFilters = { returnHighestLevel: true };
@@ -9,32 +9,32 @@ export const UNEQUIP: EquipInSlot = {
     unequip: true
 };
 
-export const WARRIOR_DPS: EnsureEquipped = {
+export const WARRIOR_DPS: EquipmentSet = {
     mainhand: { name: "fireblade", filters: FILTER_HIGHEST },
     offhand: { name: "fireblade", filters: FILTER_HIGHEST }
 };
 
-export const WARRIOR_AOE: EnsureEquipped = {
+export const WARRIOR_AOE: EquipmentSet = {
     mainhand: { name: "ololipop", filters: FILTER_HIGHEST },
     offhand: { name: "ololipop", filters: FILTER_HIGHEST }
 };
 
-export const MAGE_FAST: EnsureEquipped = {
+export const MAGE_FAST: EquipmentSet = {
     mainhand: { name: "pinkie", filters: FILTER_HIGHEST },
     offhand: { name: "exoarm", filters: FILTER_HIGHEST }
 };
 
-export const MAGE_DPS: EnsureEquipped = {
+export const MAGE_DPS: EquipmentSet = {
     mainhand: { name: "firestaff", filters: FILTER_HIGHEST },
     offhand: { name: "exoarm", filters: FILTER_HIGHEST }
 };
 
-export const MAGE_AOE: EnsureEquipped = {
+export const MAGE_AOE: EquipmentSet = {
     mainhand: { name: "gstaff", filters: FILTER_HIGHEST },
     offhand: UNEQUIP
 };
 
-export const PRIEST_TANKY: EnsureEquipped = {
+export const PRIEST_TANKY: EquipmentSet = {
     offhand: { name: "exoarm", filters: FILTER_HIGHEST},
     helmet: { name: "hhelmet", filters: FILTER_HIGHEST},
     chest: { name: "harmor", filters: FILTER_HIGHEST},
@@ -44,7 +44,7 @@ export const PRIEST_TANKY: EnsureEquipped = {
     elixir: { name: "elixirluck", filters: { returnLowestQuantity: true }}
 };
 
-export const PRIEST_MF: EnsureEquipped = {
+export const PRIEST_MF: EquipmentSet = {
     offhand: { name: "mshield", filters: FILTER_HIGHEST},
     helmet: { name: "wcap", filters: FILTER_HIGHEST},
     chest: { name: "wattire", filters: FILTER_HIGHEST},
@@ -54,7 +54,7 @@ export const PRIEST_MF: EnsureEquipped = {
     elixir: { name: "elixirluck", filters: { returnLowestQuantity: true }}
 };
 
-export const PRIEST_GF: EnsureEquipped = {
+export const PRIEST_GF: EquipmentSet = {
     offhand: { name: "mshield", filters: FILTER_HIGHEST},
     helmet: { name: "wcap", filters: FILTER_HIGHEST},
     chest: { name: "wattire", filters: FILTER_HIGHEST},
@@ -64,8 +64,8 @@ export const PRIEST_GF: EnsureEquipped = {
     elixir: { name: "elixirluck", filters: { returnLowestQuantity: true }}
 };
 
-export function generateEquipmentSetup(bot: PingCompensatedCharacter, override?: EnsureEquipped): EnsureEquipped {
-    let ensureEquipped: EnsureEquipped = {};
+export function generateEquipmentSetup(bot: PingCompensatedCharacter, override?: EquipmentSet): EquipmentSet {
+    let currentSet: EquipmentSet = {};
 
     for (let currSlot in bot.slots) {
         let slotName: SlotType = (currSlot as SlotType);
@@ -73,7 +73,7 @@ export function generateEquipmentSetup(bot: PingCompensatedCharacter, override?:
 
         if (!slotInfo || slotName.startsWith("trade")) continue;
         let equipInSlot: EquipInSlot = { name: slotInfo.name, filters: FILTER_HIGHEST };
-        ensureEquipped[slotName] = equipInSlot;
+        currentSet[slotName] = equipInSlot;
     }
 
     if (override) {
@@ -83,14 +83,14 @@ export function generateEquipmentSetup(bot: PingCompensatedCharacter, override?:
 
             // Unequip this slot
             if (equipItem.unequip) {
-                ensureEquipped[slotName] = equipItem;
+                currentSet[slotName] = equipItem;
                 continue;
             }
             
             // Dont have this item
             if (!bot.isEquipped(equipItem.name) && !bot.hasItem(equipItem.name, bot.items, equipItem.filters)) continue;
 
-            ensureEquipped[slotName] = equipItem;
+            currentSet[slotName] = equipItem;
         }
     }
 
@@ -99,8 +99,8 @@ export function generateEquipmentSetup(bot: PingCompensatedCharacter, override?:
         let slot1Current: ItemData = bot.slots[slot1];
         let slot2Current: ItemData = bot.slots[slot2];
 
-        let slot1ToEquip: EquipInSlot = ensureEquipped[slot1];
-        let slot2ToEquip: EquipInSlot = ensureEquipped[slot2];
+        let slot1ToEquip: EquipInSlot = currentSet[slot1];
+        let slot2ToEquip: EquipInSlot = currentSet[slot2];
 
         // Swap slots
         if (slot1Current && slot2Current
@@ -109,18 +109,18 @@ export function generateEquipmentSetup(bot: PingCompensatedCharacter, override?:
             && slot1Current.name === slot2ToEquip.name
             && slot2Current.name === slot1ToEquip.name
         ) {
-            let temp = ensureEquipped[slot1];
-            ensureEquipped[slot1] = ensureEquipped[slot2];
-            ensureEquipped[slot2] = temp;
+            let temp = currentSet[slot1];
+            currentSet[slot1] = currentSet[slot2];
+            currentSet[slot2] = temp;
         }
     }
 
     // Double hand logic
     let equippableDoublehand: WeaponType[] = Object.keys(Game.G.classes[bot.ctype].doublehand) as WeaponType[];
-    if (ensureEquipped["mainhand"]) {
-        let mainhandType = Game.G.items[ensureEquipped["mainhand"].name].wtype;
-        if (equippableDoublehand.includes(mainhandType)) ensureEquipped["offhand"] = UNEQUIP;
+    if (currentSet["mainhand"]) {
+        let mainhandType = Game.G.items[currentSet["mainhand"].name].wtype;
+        if (equippableDoublehand.includes(mainhandType)) currentSet["offhand"] = UNEQUIP;
     }
 
-    return ensureEquipped;
+    return currentSet;
 };

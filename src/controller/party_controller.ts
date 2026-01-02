@@ -1,103 +1,155 @@
-import { Game, PingCompensatedCharacter } from "alclient";
+import { PingCompensatedCharacter, ServerIdentifier, ServerRegion } from "alclient";
+import { SpotName } from "../configs/spot_configs";
 import { CharacterRunner } from "../strategies/character_runner";
-import { SpecialName } from "../configs/boss_configs";
-import { INFINITE_PAST, SPECIAL_MONSTERS } from "../base/constants";
-import fs from "fs";
-import { SpotConfig, SpotName, getSpotConfig } from "../configs/spot_configs";
-import { Task, TaskTarget } from "./bot_task";
 
-
-type BossTimer = {
-    lastCheck: Date
-    respawn: number
-}
 
 export class PartyController {
-    private defaultSpot: SpotConfig;
+    private homeServerName: ServerRegion;
+    private homeServerId: ServerIdentifier;
 
-    private executors: CharacterRunner<PingCompensatedCharacter>[];
-    private bossTimers = new Map<SpecialName, BossTimer>();
+    private defaultSpot: SpotName;
 
-    private states = new Map<string, TaskTarget>();
-    private actionQueues = new Map<string, Task[]>();
+    private partyLeader: string;
+    private partyAllow: string[];
 
-    public constructor(executors: CharacterRunner<PingCompensatedCharacter>[], defaultSpot: SpotName) {
-        this.executors = executors;
-        this.defaultSpot = getSpotConfig(defaultSpot, executors);
+    private activeRunners: Map<string, CharacterRunner<PingCompensatedCharacter>>;
 
-        this.restoreState();
+    private pTarget: string = undefined;
+
+    constructor(homeServerName: ServerRegion, homeServerId: ServerIdentifier, defaultSpot: SpotName, partyLeader: string, partyAllow: string[]) {
+        this.homeServerName = homeServerName;
+        this.homeServerId = homeServerId;
+
+        this.defaultSpot = defaultSpot;
+
+        this.partyLeader = partyLeader;
+        this.partyAllow = partyAllow;
+
+        this.activeRunners = new Map<string, CharacterRunner<PingCompensatedCharacter>>();
     }
 
-    private async stateControlLoop(): Promise<void> {
-        for (let executor of this.executors) {
-            let bot: PingCompensatedCharacter = executor.bot;
-            if (bot.rip) continue;
-
-            let currState: TaskTarget = this.states.get(bot.id);
-            let botTasks: Task[] = this.actionQueues.get(bot.id);
-            
-        }
-
-        setTimeout(this.stateControlLoop, 500);
+    public getRunners(): CharacterRunner<PingCompensatedCharacter>[] {
+        return Array.from(this.activeRunners.values());
     }
 
-    private async taskExecuteLoop(): Promise<void> {
-
+    public addRunner(runner: CharacterRunner<PingCompensatedCharacter>): void {
+        this.activeRunners.set(runner.bot.id, runner);
     }
 
-    private restoreState(): void {
-        let loadedSettings = this.loadStates();
-        for (let executor of this.executors) {
-            let botName: string = executor.bot.id;
-            let state: TaskTarget = loadedSettings.states[botName];
-
-            if (state) this.states.set(botName, state);
-            else this.states.set(botName, { name: "afk" });
-        }
-
-        // Restore action queue
-
-        for (let specialNm of SPECIAL_MONSTERS) {
-            let respawnTime: number = Game.G.monsters[specialNm].respawn;
-            let savedTimer: Date = loadedSettings.bossTimers[specialNm];
-
-            if (savedTimer) this.bossTimers.set(specialNm, { lastCheck: savedTimer, respawn: respawnTime });
-            else this.bossTimers.set(specialNm, { lastCheck: INFINITE_PAST, respawn: respawnTime });
-        }
+    public getRunner(botId: string): CharacterRunner<PingCompensatedCharacter> | undefined {
+        return this.activeRunners.get(botId);
     }
 
-    private loadStates(): { states: {}, bossTimers: {} } {
-        let result = { states: {}, bossTimers: {} };
-        let loadPath: string = "../../settings/last_state.json";
-        if (fs.existsSync(loadPath)) {
-            let root = JSON.parse(fs.readFileSync(loadPath, { encoding: "utf-8" }));
-            for (let key in root.states) {
-                result.states[key] = root.states[key];
-            }
-
-            // Restore action queue
-
-            for (let key in root.bossTimers) {
-                result.bossTimers[key] = root.bossTimers[key];
-            }
+    public removeRunner(botId: string): void {
+        let runner: CharacterRunner<PingCompensatedCharacter> = this.activeRunners.get(botId);
+        if (runner && !runner.isStopped()) {
+            runner.stop();
         }
 
-        fs.unlinkSync(loadPath);
-        return result;
+        this.activeRunners.delete(botId);
     }
 
-    private saveStates(): void {
-        let root = { states: {}, bossTimers: {} };
-        for (let [name, state] of this.states) {
-            root.states[name] = state;
-        }
+    public get target(): string {
+        return this.pTarget;
+    }
 
-        // Save action queue
-
-        for (let [name, timer] of this.bossTimers) {
-            root.bossTimers[name] = timer.lastCheck;
-        }
-
-        fs.writeFileSync("../../settings/last_state.json", JSON.stringify(root), { encoding: "utf-8" });
+    public set target(newTarget: string) {
+        this.pTarget = newTarget;
     }
 }
+
+
+// type BossTimer = {
+//     lastCheck: Date
+//     respawn: number
+// }
+
+// export class PartyController {
+//     private defaultSpot: SpotConfig;
+
+//     private executors: CharacterRunner<PingCompensatedCharacter>[];
+//     private bossTimers = new Map<SpecialName, BossTimer>();
+
+//     private states = new Map<string, TaskTarget>();
+//     private actionQueues = new Map<string, Task[]>();
+
+//     public constructor(executors: CharacterRunner<PingCompensatedCharacter>[], defaultSpot: SpotName) {
+//         this.executors = executors;
+//         this.defaultSpot = getSpotConfig(defaultSpot, executors);
+
+//         this.restoreState();
+//     }
+
+//     private async stateControlLoop(): Promise<void> {
+//         for (let executor of this.executors) {
+//             let bot: PingCompensatedCharacter = executor.bot;
+//             if (bot.rip) continue;
+
+//             let currState: TaskTarget = this.states.get(bot.id);
+//             let botTasks: Task[] = this.actionQueues.get(bot.id);
+            
+//         }
+
+//         setTimeout(this.stateControlLoop, 500);
+//     }
+
+//     private async taskExecuteLoop(): Promise<void> {
+
+//     }
+
+//     private restoreState(): void {
+//         let loadedSettings = this.loadStates();
+//         for (let executor of this.executors) {
+//             let botName: string = executor.bot.id;
+//             let state: TaskTarget = loadedSettings.states[botName];
+
+//             if (state) this.states.set(botName, state);
+//             else this.states.set(botName, { name: "afk" });
+//         }
+
+//         // Restore action queue
+
+//         for (let specialNm of SPECIAL_MONSTERS) {
+//             let respawnTime: number = Game.G.monsters[specialNm].respawn;
+//             let savedTimer: Date = loadedSettings.bossTimers[specialNm];
+
+//             if (savedTimer) this.bossTimers.set(specialNm, { lastCheck: savedTimer, respawn: respawnTime });
+//             else this.bossTimers.set(specialNm, { lastCheck: INFINITE_PAST, respawn: respawnTime });
+//         }
+//     }
+
+//     private loadStates(): { states: {}, bossTimers: {} } {
+//         let result = { states: {}, bossTimers: {} };
+//         let loadPath: string = "../../settings/last_state.json";
+//         if (fs.existsSync(loadPath)) {
+//             let root = JSON.parse(fs.readFileSync(loadPath, { encoding: "utf-8" }));
+//             for (let key in root.states) {
+//                 result.states[key] = root.states[key];
+//             }
+
+//             // Restore action queue
+
+//             for (let key in root.bossTimers) {
+//                 result.bossTimers[key] = root.bossTimers[key];
+//             }
+//         }
+
+//         fs.unlinkSync(loadPath);
+//         return result;
+//     }
+
+//     private saveStates(): void {
+//         let root = { states: {}, bossTimers: {} };
+//         for (let [name, state] of this.states) {
+//             root.states[name] = state;
+//         }
+
+//         // Save action queue
+
+//         for (let [name, timer] of this.bossTimers) {
+//             root.bossTimers[name] = timer.lastCheck;
+//         }
+
+//         fs.writeFileSync("../../settings/last_state.json", JSON.stringify(root), { encoding: "utf-8" });
+//     }
+// }

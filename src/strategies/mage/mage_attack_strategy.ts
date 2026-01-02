@@ -1,8 +1,8 @@
 import { ActionData, ActionDataRay, EntitiesData, Entity, GItem, Game, Mage, MonsterName, PingCompensatedCharacter, Player, SlotType, Tools, TradeItemInfo, TradeSlotType } from "alclient";
-import { BaseAttackConfig, BaseAttackStrategy } from "../base_attack_strategy";
-import { filterExecutors, ignoreExceptions } from "../../base/functions";
 import FastPriorityQueue from "fastpriorityqueue";
-import { CharacterRunner } from "../character_runner";
+import { filterRunners, ignoreExceptions } from "../../base/functions";
+import { PartyController } from "../../controller/party_controller";
+import { BaseAttackConfig, BaseAttackStrategy } from "../base_attack_strategy";
 
 
 export type MageAttackConfig = BaseAttackConfig & {
@@ -24,8 +24,8 @@ export class MageAttackStrategy extends BaseAttackStrategy<Mage> {
     protected config: MageAttackConfig;
     protected stealOnActionCburst: (data: ActionData) => void
 
-    public constructor(executors: CharacterRunner<PingCompensatedCharacter>[], options?: MageAttackConfig) {
-        super(executors, options);
+    public constructor(partyController: PartyController, options?: MageAttackConfig) {
+        super(partyController, options);
 
         if (this.config.disableCburst) this.interval.push("cburst");
         if (this.config.energize) this.interval.push("energize");
@@ -254,7 +254,7 @@ export class MageAttackStrategy extends BaseAttackStrategy<Mage> {
         if (bot.rip) return;
         if ((bot.mp / bot.max_mp) < this.config.energize.onMpRatio) return;
 
-        let executors = filterExecutors(this.runners, { serverData: bot.serverData });
+        let executors = filterRunners(this.partyController.getRunners(), { serverData: bot.serverData });
 
         if (bot.s.energized) return;
         for (let executor of executors) {

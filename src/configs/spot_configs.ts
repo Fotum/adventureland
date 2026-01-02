@@ -1,10 +1,11 @@
-import { IPosition, PingCompensatedCharacter, CharacterType } from "alclient";
-import { Strategy, CharacterRunner } from "../strategies/character_runner";
-import { WarriorAttackStrategy } from "../strategies/warrior/warrior_attack_strategy";
-import { BaseMoveStrategy, FarmingMoveStrategy, HoldPositionStrategy, MoveAroundStrategy } from "../strategies/move_strategy";
-import { MAGE_AOE, PRIEST_MF, PRIEST_TANKY, WARRIOR_AOE } from "./equipment_setups";
+import { CharacterType, IPosition, PingCompensatedCharacter } from "alclient";
+import { PartyController } from "../controller/party_controller";
+import { Strategy } from "../strategies/character_runner";
 import { MageAttackStrategy } from "../strategies/mage/mage_attack_strategy";
+import { BaseMoveStrategy, FarmingMoveStrategy, HoldPositionStrategy, MoveAroundStrategy } from "../strategies/move_strategy";
 import { PriestAttackStrategy } from "../strategies/priest/priest_attack_strategy";
+import { WarriorAttackStrategy } from "../strategies/warrior/warrior_attack_strategy";
+import { MAGE_AOE, PRIEST_MF, PRIEST_TANKY, WARRIOR_AOE } from "./equipment_setups";
 
 
 export type SpotName = "cave_first" | "cave_second" | "stoneworm" | "booboo" | "bees" | "crabs" | "crabxs" | 
@@ -24,7 +25,7 @@ export type SpotConfig = {
     }
 }
 
-export function getSpotConfig(spotName: SpotName, executors: CharacterRunner<PingCompensatedCharacter>[]): SpotConfig {
+export function getSpotConfig(spotName: SpotName, partyController: PartyController): SpotConfig {
     let defaultEnergize = {
         onMpRatio: 0.8,
         when: { 
@@ -41,11 +42,11 @@ export function getSpotConfig(spotName: SpotName, executors: CharacterRunner<Pin
                 },
                 farmOptions: {
                     warrior: {
-                        attack: new WarriorAttackStrategy(executors, {
+                        attack: new WarriorAttackStrategy(partyController, {
                             typeList: ["bat", "goldenbat", "phoenix", "mvampire"],
                             enableGreedyAggro: false,
                             maximumTargets: 15,
-                            ensureEquipped: WARRIOR_AOE,
+                            equipmentSet: WARRIOR_AOE,
                             disableStomp: false,
                             enableEquipForCleave: true,
                             enableEquipForStomp: false
@@ -53,22 +54,22 @@ export function getSpotConfig(spotName: SpotName, executors: CharacterRunner<Pin
                         move: new BaseMoveStrategy(["bat", "goldenbat", "phoenix", "mvampire"])
                     },
                     mage: {
-                        attack: new MageAttackStrategy(executors, {
+                        attack: new MageAttackStrategy(partyController, {
                             typeList: ["bat", "goldenbat", "phoenix", "mvampire"],
                             enableGreedyAggro: ["goldenbat"],
                             maximumTargets: 10,
-                            ensureEquipped: MAGE_AOE,
+                            equipmentSet: MAGE_AOE,
                             disableCburst: false,
                             energize: defaultEnergize
                         }),
                         move: new BaseMoveStrategy(["bat", "goldenbat", "phoenix", "mvampire"])
                     },
                     priest: {
-                        attack: new PriestAttackStrategy(executors, {
+                        attack: new PriestAttackStrategy(partyController, {
                             typeList: ["bat", "goldenbat", "phoenix", "mvampire"],
                             enableGreedyAggro: true,
                             maximumTargets: 15,
-                            ensureEquipped: PRIEST_MF,
+                            equipmentSet: PRIEST_MF,
                             disableCurse: true,
                             enableAbsorbToTank: true,
                             startHealingAtRatio: 0.8
@@ -88,32 +89,32 @@ export function getSpotConfig(spotName: SpotName, executors: CharacterRunner<Pin
                 },
                 farmOptions: {
                     warrior: {
-                        attack: new WarriorAttackStrategy(executors, {
+                        attack: new WarriorAttackStrategy(partyController, {
                             typeList: ["bat", "goldenbat", "phoenix", "mvampire"],
                             enableGreedyAggro: true,
                             maximumTargets: 5,
-                            ensureEquipped: WARRIOR_AOE,
+                            equipmentSet: WARRIOR_AOE,
                             enableEquipForCleave: true,
                             enableEquipForStomp: true
                         }),
                         move: new BaseMoveStrategy(["bat", "goldenbat", "phoenix", "mvampire"])
                     },
                     mage: {
-                        attack: new MageAttackStrategy(executors, {
+                        attack: new MageAttackStrategy(partyController, {
                             typeList: ["bat", "goldenbat", "phoenix", "mvampire"],
                             enableGreedyAggro: true,
                             maximumTargets: 5,
-                            ensureEquipped: MAGE_AOE,
+                            equipmentSet: MAGE_AOE,
                             energize: defaultEnergize
                         }),
                         move: new BaseMoveStrategy(["bat", "goldenbat", "phoenix", "mvampire"])
                     },
                     priest: {
-                        attack: new PriestAttackStrategy(executors, {
+                        attack: new PriestAttackStrategy(partyController, {
                             typeList: ["bat", "goldenbat", "phoenix", "mvampire"],
                             enableGreedyAggro: true,
                             maximumTargets: 10,
-                            ensureEquipped: PRIEST_MF,
+                            equipmentSet: PRIEST_MF,
                             enableAbsorbToTank: true,
                             startHealingAtRatio: 0.8
                         }),
@@ -129,32 +130,32 @@ export function getSpotConfig(spotName: SpotName, executors: CharacterRunner<Pin
                 },
                 farmOptions: {
                     warrior: {
-                        attack: new WarriorAttackStrategy(executors, {
+                        attack: new WarriorAttackStrategy(partyController, {
                             type: "stoneworm",
                             enableGreedyAggro: true,
                             maximumTargets: 5,
-                            ensureEquipped: WARRIOR_AOE,
+                            equipmentSet: WARRIOR_AOE,
                             enableEquipForCleave: true,
                             enableEquipForStomp: true
                         }),
                         move: new BaseMoveStrategy(["stoneworm"])
                     },
                     mage: {
-                        attack: new MageAttackStrategy(executors, {
+                        attack: new MageAttackStrategy(partyController, {
                             type: "stoneworm",
                             enableGreedyAggro: true,
                             maximumTargets: 5,
-                            ensureEquipped: MAGE_AOE,
+                            equipmentSet: MAGE_AOE,
                             energize: defaultEnergize
                         }),
                         move: new BaseMoveStrategy(["stoneworm"])
                     },
                     priest: {
-                        attack: new PriestAttackStrategy(executors, {
+                        attack: new PriestAttackStrategy(partyController, {
                             type: "stoneworm",
                             enableGreedyAggro: true,
                             maximumTargets: 10,
-                            ensureEquipped: PRIEST_MF,
+                            equipmentSet: PRIEST_MF,
                             enableAbsorbToTank: true,
                             startHealingAtRatio: 0.8
                         }),
@@ -170,32 +171,32 @@ export function getSpotConfig(spotName: SpotName, executors: CharacterRunner<Pin
                 },
                 farmOptions: {
                     warrior: {
-                        attack: new WarriorAttackStrategy(executors, {
+                        attack: new WarriorAttackStrategy(partyController, {
                             type: "booboo",
                             enableGreedyAggro: true,
                             maximumTargets: 5,
-                            ensureEquipped: WARRIOR_AOE,
+                            equipmentSet: WARRIOR_AOE,
                             enableEquipForCleave: true,
                             enableEquipForStomp: true
                         }),
                         move: new BaseMoveStrategy(["booboo"])
                     },
                     mage: {
-                        attack: new MageAttackStrategy(executors, {
+                        attack: new MageAttackStrategy(partyController, {
                             type: "booboo",
                             enableGreedyAggro: true,
                             maximumTargets: 5,
-                            ensureEquipped: MAGE_AOE,
+                            equipmentSet: MAGE_AOE,
                             energize: defaultEnergize
                         }),
                         move: new BaseMoveStrategy(["booboo"])
                     },
                     priest: {
-                        attack: new PriestAttackStrategy(executors, {
+                        attack: new PriestAttackStrategy(partyController, {
                             type: "booboo",
                             enableGreedyAggro: true,
                             maximumTargets: 10,
-                            ensureEquipped: PRIEST_MF,
+                            equipmentSet: PRIEST_MF,
                             enableAbsorbToTank: true,
                             startHealingAtRatio: 0.8
                         }),
@@ -211,32 +212,32 @@ export function getSpotConfig(spotName: SpotName, executors: CharacterRunner<Pin
                 },
                 farmOptions: {
                     warrior: {
-                        attack: new WarriorAttackStrategy(executors, {
+                        attack: new WarriorAttackStrategy(partyController, {
                             typeList: ["bee", "cutebee"],
                             enableGreedyAggro: true,
                             maximumTargets: 5,
-                            ensureEquipped: WARRIOR_AOE,
+                            equipmentSet: WARRIOR_AOE,
                             enableEquipForCleave: true,
                             enableEquipForStomp: true
                         }),
                         move: new BaseMoveStrategy(["bee", "cutebee"])
                     },
                     mage: {
-                        attack: new MageAttackStrategy(executors, {
+                        attack: new MageAttackStrategy(partyController, {
                             typeList: ["bee", "cutebee"],
                             enableGreedyAggro: true,
                             maximumTargets: 5,
-                            ensureEquipped: MAGE_AOE,
+                            equipmentSet: MAGE_AOE,
                             energize: defaultEnergize
                         }),
                         move: new BaseMoveStrategy(["bee", "cutebee"])
                     },
                     priest: {
-                        attack: new PriestAttackStrategy(executors, {
+                        attack: new PriestAttackStrategy(partyController, {
                             typeList: ["bee", "cutebee"],
                             enableGreedyAggro: true,
                             maximumTargets: 10,
-                            ensureEquipped: PRIEST_MF,
+                            equipmentSet: PRIEST_MF,
                             enableAbsorbToTank: true,
                             startHealingAtRatio: 0.8
                         }),
@@ -252,32 +253,32 @@ export function getSpotConfig(spotName: SpotName, executors: CharacterRunner<Pin
                 },
                 farmOptions: {
                     warrior: {
-                        attack: new WarriorAttackStrategy(executors, {
+                        attack: new WarriorAttackStrategy(partyController, {
                             typeList: ["crab", "phoenix"],
                             enableGreedyAggro: true,
                             maximumTargets: 5,
-                            ensureEquipped: WARRIOR_AOE,
+                            equipmentSet: WARRIOR_AOE,
                             enableEquipForCleave: true,
                             enableEquipForStomp: true
                         }),
                         move: new BaseMoveStrategy(["crab", "phoenix"])
                     },
                     mage: {
-                        attack: new MageAttackStrategy(executors, {
+                        attack: new MageAttackStrategy(partyController, {
                             typeList: ["crab", "phoenix"],
                             enableGreedyAggro: true,
                             maximumTargets: 5,
-                            ensureEquipped: MAGE_AOE,
+                            equipmentSet: MAGE_AOE,
                             energize: defaultEnergize
                         }),
                         move: new BaseMoveStrategy(["crab", "phoenix"])
                     },
                     priest: {
-                        attack: new PriestAttackStrategy(executors, {
+                        attack: new PriestAttackStrategy(partyController, {
                             typeList: ["crab", "phoenix"],
                             enableGreedyAggro: true,
                             maximumTargets: 10,
-                            ensureEquipped: PRIEST_MF,
+                            equipmentSet: PRIEST_MF,
                             enableAbsorbToTank: true,
                             startHealingAtRatio: 0.8
                         }),
@@ -293,32 +294,32 @@ export function getSpotConfig(spotName: SpotName, executors: CharacterRunner<Pin
                 },
                 farmOptions: {
                     warrior: {
-                        attack: new WarriorAttackStrategy(executors, {
+                        attack: new WarriorAttackStrategy(partyController, {
                             typeList: ["crabx", "phoenix"],
                             enableGreedyAggro: true,
                             maximumTargets: 5,
-                            ensureEquipped: WARRIOR_AOE,
+                            equipmentSet: WARRIOR_AOE,
                             enableEquipForCleave: true,
                             enableEquipForStomp: true
                         }),
                         move: new BaseMoveStrategy(["crabx", "phoenix"])
                     },
                     mage: {
-                        attack: new MageAttackStrategy(executors, {
+                        attack: new MageAttackStrategy(partyController, {
                             typeList: ["crabx", "phoenix"],
                             enableGreedyAggro: true,
                             maximumTargets: 5,
-                            ensureEquipped: MAGE_AOE,
+                            equipmentSet: MAGE_AOE,
                             energize: defaultEnergize
                         }),
                         move: new BaseMoveStrategy(["crabx", "phoenix"])
                     },
                     priest: {
-                        attack: new PriestAttackStrategy(executors, {
+                        attack: new PriestAttackStrategy(partyController, {
                             typeList: ["crabx", "phoenix"],
                             enableGreedyAggro: true,
                             maximumTargets: 10,
-                            ensureEquipped: PRIEST_MF,
+                            equipmentSet: PRIEST_MF,
                             enableAbsorbToTank: true,
                             startHealingAtRatio: 0.8
                         }),
@@ -334,32 +335,32 @@ export function getSpotConfig(spotName: SpotName, executors: CharacterRunner<Pin
                 },
                 farmOptions: {
                     warrior: {
-                        attack: new WarriorAttackStrategy(executors, {
+                        attack: new WarriorAttackStrategy(partyController, {
                             typeList: ["squig", "squigtoad", "frog", "phoenix"],
                             enableGreedyAggro: true,
                             maximumTargets: 5,
-                            ensureEquipped: WARRIOR_AOE,
+                            equipmentSet: WARRIOR_AOE,
                             enableEquipForCleave: true,
                             enableEquipForStomp: true
                         }),
                         move: new BaseMoveStrategy(["squig", "squigtoad", "frog", "phoenix"])
                     },
                     mage: {
-                        attack: new MageAttackStrategy(executors, {
+                        attack: new MageAttackStrategy(partyController, {
                             typeList: ["squig", "squigtoad", "frog", "phoenix"],
                             enableGreedyAggro: true,
                             maximumTargets: 5,
-                            ensureEquipped: MAGE_AOE,
+                            equipmentSet: MAGE_AOE,
                             energize: defaultEnergize
                         }),
                         move: new BaseMoveStrategy(["squig", "squigtoad", "frog", "phoenix"])
                     },
                     priest: {
-                        attack: new PriestAttackStrategy(executors, {
+                        attack: new PriestAttackStrategy(partyController, {
                             typeList: ["squig", "squigtoad", "frog", "phoenix"],
                             enableGreedyAggro: true,
                             maximumTargets: 10,
-                            ensureEquipped: PRIEST_MF,
+                            equipmentSet: PRIEST_MF,
                             enableAbsorbToTank: true,
                             startHealingAtRatio: 0.8
                         }),
@@ -375,32 +376,32 @@ export function getSpotConfig(spotName: SpotName, executors: CharacterRunner<Pin
                 },
                 farmOptions: {
                     warrior: {
-                        attack: new WarriorAttackStrategy(executors, {
+                        attack: new WarriorAttackStrategy(partyController, {
                             typeList: ["tortoise", "frog", "phoenix"],
                             enableGreedyAggro: true,
                             maximumTargets: 5,
-                            ensureEquipped: WARRIOR_AOE,
+                            equipmentSet: WARRIOR_AOE,
                             enableEquipForCleave: true,
                             enableEquipForStomp: true
                         }),
                         move: new BaseMoveStrategy(["tortoise", "frog", "phoenix"])
                     },
                     mage: {
-                        attack: new MageAttackStrategy(executors, {
+                        attack: new MageAttackStrategy(partyController, {
                             typeList: ["tortoise", "frog", "phoenix"],
                             enableGreedyAggro: true,
                             maximumTargets: 5,
-                            ensureEquipped: MAGE_AOE,
+                            equipmentSet: MAGE_AOE,
                             energize: defaultEnergize
                         }),
                         move: new BaseMoveStrategy(["tortoise", "frog", "phoenix"])
                     },
                     priest: {
-                        attack: new PriestAttackStrategy(executors, {
+                        attack: new PriestAttackStrategy(partyController, {
                             typeList: ["tortoise", "frog", "phoenix"],
                             enableGreedyAggro: true,
                             maximumTargets: 10,
-                            ensureEquipped: PRIEST_MF,
+                            equipmentSet: PRIEST_MF,
                             enableAbsorbToTank: true,
                             startHealingAtRatio: 0.8
                         }),
@@ -416,32 +417,32 @@ export function getSpotConfig(spotName: SpotName, executors: CharacterRunner<Pin
                 },
                 farmOptions: {
                     warrior: {
-                        attack: new WarriorAttackStrategy(executors, {
+                        attack: new WarriorAttackStrategy(partyController, {
                             typeList: ["croc", "phoenix"],
                             enableGreedyAggro: true,
                             maximumTargets: 5,
-                            ensureEquipped: WARRIOR_AOE,
+                            equipmentSet: WARRIOR_AOE,
                             enableEquipForCleave: true,
                             enableEquipForStomp: true
                         }),
                         move: new BaseMoveStrategy(["croc", "phoenix"])
                     },
                     mage: {
-                        attack: new MageAttackStrategy(executors, {
+                        attack: new MageAttackStrategy(partyController, {
                             typeList: ["croc", "phoenix"],
                             enableGreedyAggro: true,
                             maximumTargets: 5,
-                            ensureEquipped: MAGE_AOE,
+                            equipmentSet: MAGE_AOE,
                             energize: defaultEnergize
                         }),
                         move: new BaseMoveStrategy(["croc", "phoenix"])
                     },
                     priest: {
-                        attack: new PriestAttackStrategy(executors, {
+                        attack: new PriestAttackStrategy(partyController, {
                             typeList: ["croc", "phoenix"],
                             enableGreedyAggro: true,
                             maximumTargets: 10,
-                            ensureEquipped: PRIEST_MF,
+                            equipmentSet: PRIEST_MF,
                             enableAbsorbToTank: true,
                             startHealingAtRatio: 0.8
                         }),
@@ -457,32 +458,32 @@ export function getSpotConfig(spotName: SpotName, executors: CharacterRunner<Pin
                 },
                 farmOptions: {
                     warrior: {
-                        attack: new WarriorAttackStrategy(executors, {
+                        attack: new WarriorAttackStrategy(partyController, {
                             typeList: ["armadillo", "phoenix"],
                             enableGreedyAggro: true,
                             maximumTargets: 5,
-                            ensureEquipped: WARRIOR_AOE,
+                            equipmentSet: WARRIOR_AOE,
                             enableEquipForCleave: true,
                             enableEquipForStomp: true
                         }),
                         move: new BaseMoveStrategy(["armadillo", "phoenix"])
                     },
                     mage: {
-                        attack: new MageAttackStrategy(executors, {
+                        attack: new MageAttackStrategy(partyController, {
                             typeList: ["armadillo", "phoenix"],
                             enableGreedyAggro: true,
                             maximumTargets: 5,
-                            ensureEquipped: MAGE_AOE,
+                            equipmentSet: MAGE_AOE,
                             energize: defaultEnergize
                         }),
                         move: new BaseMoveStrategy(["armadillo", "phoenix"])
                     },
                     priest: {
-                        attack: new PriestAttackStrategy(executors, {
+                        attack: new PriestAttackStrategy(partyController, {
                             typeList: ["armadillo", "phoenix"],
                             enableGreedyAggro: true,
                             maximumTargets: 10,
-                            ensureEquipped: PRIEST_MF,
+                            equipmentSet: PRIEST_MF,
                             enableAbsorbToTank: true,
                             startHealingAtRatio: 0.8
                         }),
@@ -498,32 +499,32 @@ export function getSpotConfig(spotName: SpotName, executors: CharacterRunner<Pin
                 },
                 farmOptions: {
                     warrior: {
-                        attack: new WarriorAttackStrategy(executors, {
+                        attack: new WarriorAttackStrategy(partyController, {
                             type: "rat",
                             enableGreedyAggro: true,
                             maximumTargets: 5,
-                            ensureEquipped: WARRIOR_AOE,
+                            equipmentSet: WARRIOR_AOE,
                             enableEquipForCleave: true,
                             enableEquipForStomp: true
                         }),
                         move: new BaseMoveStrategy(["rat"])
                     },
                     mage: {
-                        attack: new MageAttackStrategy(executors, {
+                        attack: new MageAttackStrategy(partyController, {
                             type: "rat",
                             enableGreedyAggro: true,
                             maximumTargets: 5,
-                            ensureEquipped: MAGE_AOE,
+                            equipmentSet: MAGE_AOE,
                             energize: defaultEnergize
                         }),
                         move: new BaseMoveStrategy(["rat"])
                     },
                     priest: {
-                        attack: new PriestAttackStrategy(executors, {
+                        attack: new PriestAttackStrategy(partyController, {
                             type: "rat",
                             enableGreedyAggro: true,
                             maximumTargets: 10,
-                            ensureEquipped: PRIEST_MF,
+                            equipmentSet: PRIEST_MF,
                             enableAbsorbToTank: true,
                             startHealingAtRatio: 0.8
                         }),
@@ -539,35 +540,35 @@ export function getSpotConfig(spotName: SpotName, executors: CharacterRunner<Pin
                 },
                 farmOptions: {
                     warrior: {
-                        attack: new WarriorAttackStrategy(executors, {
+                        attack: new WarriorAttackStrategy(partyController, {
                             type: "mole",
                             notType: "wabbit",
                             enableGreedyAggro: true,
                             maximumTargets: 5,
-                            ensureEquipped: WARRIOR_AOE,
+                            equipmentSet: WARRIOR_AOE,
                             enableEquipForCleave: true,
                             enableEquipForStomp: true
                         }),
                         move: new BaseMoveStrategy(["mole"])
                     },
                     mage: {
-                        attack: new MageAttackStrategy(executors, {
+                        attack: new MageAttackStrategy(partyController, {
                             type: "mole",
                             notType: "wabbit",
                             enableGreedyAggro: true,
                             maximumTargets: 5,
-                            ensureEquipped: MAGE_AOE,
+                            equipmentSet: MAGE_AOE,
                             energize: defaultEnergize
                         }),
                         move: new BaseMoveStrategy(["mole"])
                     },
                     priest: {
-                        attack: new PriestAttackStrategy(executors, {
+                        attack: new PriestAttackStrategy(partyController, {
                             type: "mole",
                             notType: "wabbit",
                             enableGreedyAggro: true,
                             maximumTargets: 5,
-                            ensureEquipped: PRIEST_TANKY,
+                            equipmentSet: PRIEST_TANKY,
                             enableAbsorbToTank: true,
                             startHealingAtRatio: 0.8
                         }),
@@ -586,23 +587,23 @@ export function getSpotConfig(spotName: SpotName, executors: CharacterRunner<Pin
                 },
                 farmOptions: {
                     mage: {
-                        attack: new MageAttackStrategy(executors, {
+                        attack: new MageAttackStrategy(partyController, {
                             type: "porcupine",
                             notType: "plantoid",
                             enableGreedyAggro: true,
                             maximumTargets: 5,
-                            ensureEquipped: MAGE_AOE,
+                            equipmentSet: MAGE_AOE,
                             energize: defaultEnergize
                         }),
                         move: new BaseMoveStrategy(["porcupine"])
                     },
                     priest: {
-                        attack: new PriestAttackStrategy(executors, {
+                        attack: new PriestAttackStrategy(partyController, {
                             type: "porcupine",
                             notType: "plantoid",
                             enableGreedyAggro: true,
                             maximumTargets: 5,
-                            ensureEquipped: PRIEST_MF,
+                            equipmentSet: PRIEST_MF,
                             enableAbsorbToTank: true,
                             startHealingAtRatio: 0.8
                         }),
@@ -621,30 +622,30 @@ export function getSpotConfig(spotName: SpotName, executors: CharacterRunner<Pin
                 },
                 farmOptions: {
                     warrior: {
-                        attack: new WarriorAttackStrategy(executors, {
+                        attack: new WarriorAttackStrategy(partyController, {
                             type: "goo",
                             enableGreedyAggro: true,
                             maximumTargets: 5,
-                            ensureEquipped: WARRIOR_AOE,
+                            equipmentSet: WARRIOR_AOE,
                             enableEquipForCleave: true,
                             enableEquipForStomp: true
                         }),
                         move: new BaseMoveStrategy(["goo"])
                     },
                     mage: {
-                        attack: new MageAttackStrategy(executors, {
+                        attack: new MageAttackStrategy(partyController, {
                             type: "goo",
-                            ensureEquipped: MAGE_AOE,
+                            equipmentSet: MAGE_AOE,
                             energize: defaultEnergize
                         }),
                         move: new BaseMoveStrategy(["goo"])
                     },
                     priest: {
-                        attack: new PriestAttackStrategy(executors, {
+                        attack: new PriestAttackStrategy(partyController, {
                             type: "goo",
                             enableGreedyAggro: true,
                             maximumTargets: 5,
-                            ensureEquipped: PRIEST_MF,
+                            equipmentSet: PRIEST_MF,
                             enableAbsorbToTank: true,
                             startHealingAtRatio: 0.8
                         }),
@@ -663,32 +664,32 @@ export function getSpotConfig(spotName: SpotName, executors: CharacterRunner<Pin
                 },
                 farmOptions: {
                     warrior: {
-                        attack: new WarriorAttackStrategy(executors, {
+                        attack: new WarriorAttackStrategy(partyController, {
                             type: "snake",
                             enableGreedyAggro: true,
                             maximumTargets: 5,
-                            ensureEquipped: WARRIOR_AOE,
+                            equipmentSet: WARRIOR_AOE,
                             enableEquipForCleave: true,
                             enableEquipForStomp: true
                         }),
                         move: new BaseMoveStrategy(["snake"])
                     },
                     mage: {
-                        attack: new MageAttackStrategy(executors, {
+                        attack: new MageAttackStrategy(partyController, {
                             type: "snake",
                             enableGreedyAggro: true,
                             maximumTargets: 5,
-                            ensureEquipped: MAGE_AOE,
+                            equipmentSet: MAGE_AOE,
                             energize: defaultEnergize
                         }),
                         move: new BaseMoveStrategy(["snake"])
                     },
                     priest: {
-                        attack: new PriestAttackStrategy(executors, {
+                        attack: new PriestAttackStrategy(partyController, {
                             type: "snake",
                             enableGreedyAggro: true,
                             maximumTargets: 5,
-                            ensureEquipped: PRIEST_MF,
+                            equipmentSet: PRIEST_MF,
                             enableAbsorbToTank: true,
                             startHealingAtRatio: 0.8
                         }),
@@ -707,32 +708,32 @@ export function getSpotConfig(spotName: SpotName, executors: CharacterRunner<Pin
                 },
                 farmOptions: {
                     warrior: {
-                        attack: new WarriorAttackStrategy(executors, {
+                        attack: new WarriorAttackStrategy(partyController, {
                             type: "cgoo",
                             enableGreedyAggro: true,
                             maximumTargets: 5,
-                            ensureEquipped: WARRIOR_AOE,
+                            equipmentSet: WARRIOR_AOE,
                             enableEquipForCleave: true,
                             enableEquipForStomp: true
                         }),
                         move: new BaseMoveStrategy(["cgoo"])
                     },
                     mage: {
-                        attack: new MageAttackStrategy(executors, {
+                        attack: new MageAttackStrategy(partyController, {
                             type: "cgoo",
                             enableGreedyAggro: true,
                             maximumTargets: 5,
-                            ensureEquipped: MAGE_AOE,
+                            equipmentSet: MAGE_AOE,
                             energize: defaultEnergize
                         }),
                         move: new BaseMoveStrategy(["cgoo"])
                     },
                     priest: {
-                        attack: new PriestAttackStrategy(executors, {
+                        attack: new PriestAttackStrategy(partyController, {
                             type: "cgoo",
                             enableGreedyAggro: true,
                             maximumTargets: 5,
-                            ensureEquipped: PRIEST_MF,
+                            equipmentSet: PRIEST_MF,
                             enableAbsorbToTank: true,
                             startHealingAtRatio: 0.8
                         }),
@@ -748,32 +749,32 @@ export function getSpotConfig(spotName: SpotName, executors: CharacterRunner<Pin
                 },
                 farmOptions: {
                     warrior: {
-                        attack: new WarriorAttackStrategy(executors, {
+                        attack: new WarriorAttackStrategy(partyController, {
                             type: "iceroamer",
                             enableGreedyAggro: true,
                             maximumTargets: 5,
-                            ensureEquipped: WARRIOR_AOE,
+                            equipmentSet: WARRIOR_AOE,
                             enableEquipForCleave: true,
                             enableEquipForStomp: true
                         }),
                         move: new BaseMoveStrategy(["iceroamer"])
                     },
                     mage: {
-                        attack: new MageAttackStrategy(executors, {
+                        attack: new MageAttackStrategy(partyController, {
                             type: "iceroamer",
                             enableGreedyAggro: true,
                             maximumTargets: 5,
-                            ensureEquipped: MAGE_AOE,
+                            equipmentSet: MAGE_AOE,
                             energize: defaultEnergize
                         }),
                         move: new BaseMoveStrategy(["iceroamer"])
                     },
                     priest: {
-                        attack: new PriestAttackStrategy(executors, {
+                        attack: new PriestAttackStrategy(partyController, {
                             type: "iceroamer",
                             enableGreedyAggro: true,
                             maximumTargets: 5,
-                            ensureEquipped: PRIEST_MF,
+                            equipmentSet: PRIEST_MF,
                             enableAbsorbToTank: true,
                             startHealingAtRatio: 0.8
                         }),
@@ -789,32 +790,32 @@ export function getSpotConfig(spotName: SpotName, executors: CharacterRunner<Pin
                 },
                 farmOptions: {
                     warrior: {
-                        attack: new WarriorAttackStrategy(executors, {
+                        attack: new WarriorAttackStrategy(partyController, {
                             type: "osnake",
                             enableGreedyAggro: true,
                             maximumTargets: 5,
-                            ensureEquipped: WARRIOR_AOE,
+                            equipmentSet: WARRIOR_AOE,
                             enableEquipForCleave: true,
                             enableEquipForStomp: true
                         }),
                         move: new BaseMoveStrategy(["osnake"])
                     },
                     mage: {
-                        attack: new MageAttackStrategy(executors, {
+                        attack: new MageAttackStrategy(partyController, {
                             type: "osnake",
                             enableGreedyAggro: true,
                             maximumTargets: 5,
-                            ensureEquipped: MAGE_AOE,
+                            equipmentSet: MAGE_AOE,
                             energize: defaultEnergize
                         }),
                         move: new BaseMoveStrategy(["osnake"])
                     },
                     priest: {
-                        attack: new PriestAttackStrategy(executors, {
+                        attack: new PriestAttackStrategy(partyController, {
                             type: "osnake",
                             enableGreedyAggro: true,
                             maximumTargets: 5,
-                            ensureEquipped: PRIEST_MF,
+                            equipmentSet: PRIEST_MF,
                             enableAbsorbToTank: true,
                             startHealingAtRatio: 0.8
                         }),
@@ -833,32 +834,32 @@ export function getSpotConfig(spotName: SpotName, executors: CharacterRunner<Pin
                 },
                 farmOptions: {
                     warrior: {
-                        attack: new WarriorAttackStrategy(executors, {
+                        attack: new WarriorAttackStrategy(partyController, {
                             typeList: ["minimush", "phoenix"],
                             enableGreedyAggro: true,
                             maximumTargets: 5,
-                            ensureEquipped: WARRIOR_AOE,
+                            equipmentSet: WARRIOR_AOE,
                             enableEquipForCleave: true,
                             enableEquipForStomp: true
                         }),
                         move: new BaseMoveStrategy(["minimush", "phoenix"])
                     },
                     mage: {
-                        attack: new MageAttackStrategy(executors, {
+                        attack: new MageAttackStrategy(partyController, {
                             typeList: ["minimush", "phoenix"],
                             enableGreedyAggro: true,
                             maximumTargets: 5,
-                            ensureEquipped: MAGE_AOE,
+                            equipmentSet: MAGE_AOE,
                             energize: defaultEnergize
                         }),
                         move: new BaseMoveStrategy(["minimush", "phoenix"])
                     },
                     priest: {
-                        attack: new PriestAttackStrategy(executors, {
+                        attack: new PriestAttackStrategy(partyController, {
                             typeList: ["minimush", "phoenix"],
                             enableGreedyAggro: true,
                             maximumTargets: 5,
-                            ensureEquipped: PRIEST_MF,
+                            equipmentSet: PRIEST_MF,
                             enableAbsorbToTank: true,
                             startHealingAtRatio: 0.8
                         }),
@@ -877,32 +878,32 @@ export function getSpotConfig(spotName: SpotName, executors: CharacterRunner<Pin
                 },
                 farmOptions: {
                     warrior: {
-                        attack: new WarriorAttackStrategy(executors, {
+                        attack: new WarriorAttackStrategy(partyController, {
                             type: "bigbird",
                             enableGreedyAggro: true,
                             maximumTargets: 5,
-                            ensureEquipped: WARRIOR_AOE,
+                            equipmentSet: WARRIOR_AOE,
                             enableEquipForCleave: true,
                             enableEquipForStomp: true
                         }),
                         move: new BaseMoveStrategy(["bigbird"])
                     },
                     mage: {
-                        attack: new MageAttackStrategy(executors, {
+                        attack: new MageAttackStrategy(partyController, {
                             type: "bigbird",
                             enableGreedyAggro: true,
                             maximumTargets: 5,
-                            ensureEquipped: MAGE_AOE,
+                            equipmentSet: MAGE_AOE,
                             energize: defaultEnergize
                         }),
                         move: new BaseMoveStrategy(["bigbird"])
                     },
                     priest: {
-                        attack: new PriestAttackStrategy(executors, {
+                        attack: new PriestAttackStrategy(partyController, {
                             type: "bigbird",
                             enableGreedyAggro: true,
                             maximumTargets: 5,
-                            ensureEquipped: PRIEST_MF,
+                            equipmentSet: PRIEST_MF,
                             enableAbsorbToTank: true,
                             startHealingAtRatio: 0.8
                         }),
@@ -921,29 +922,29 @@ export function getSpotConfig(spotName: SpotName, executors: CharacterRunner<Pin
                 },
                 farmOptions: {
                     warrior: {
-                        attack: new WarriorAttackStrategy(executors, {
+                        attack: new WarriorAttackStrategy(partyController, {
                             typeList: ["scorpion", "phoenix"],
                             enableGreedyAggro: true,
-                            ensureEquipped: WARRIOR_AOE,
+                            equipmentSet: WARRIOR_AOE,
                             enableEquipForCleave: true,
                             enableEquipForStomp: true
                         }),
                         move: new FarmingMoveStrategy(["phoenix", "scorpion"], { x: 1309, y: -215, map: "main" })
                     },
                     mage: {
-                        attack: new MageAttackStrategy(executors, {
+                        attack: new MageAttackStrategy(partyController, {
                             typeList: ["scorpion", "phoenix"],
                             enableGreedyAggro: true,
-                            ensureEquipped: MAGE_AOE,
+                            equipmentSet: MAGE_AOE,
                             disableCburst: true,
                             energize: defaultEnergize
                         }),
                         move: new FarmingMoveStrategy(["phoenix", "scorpion"], { x: 1309, y: -215, map: "main" })
                     },
                     priest: {
-                        attack: new PriestAttackStrategy(executors, {
+                        attack: new PriestAttackStrategy(partyController, {
                             typeList: ["scorpion", "phoenix"],
-                            ensureEquipped: PRIEST_MF,
+                            equipmentSet: PRIEST_MF,
                             enableAbsorbToTank: true,
                             disableScare: true,
                             startHealingAtRatio: 0.8
@@ -966,29 +967,29 @@ export function getSpotConfig(spotName: SpotName, executors: CharacterRunner<Pin
                 },
                 farmOptions: {
                     warrior: {
-                        attack: new WarriorAttackStrategy(executors, {
+                        attack: new WarriorAttackStrategy(partyController, {
                             typeList: ["spider", "phoenix"],
                             enableGreedyAggro: true,
-                            ensureEquipped: WARRIOR_AOE,
+                            equipmentSet: WARRIOR_AOE,
                             enableEquipForCleave: true,
                             enableEquipForStomp: true
                         }),
                         move: new FarmingMoveStrategy(["phoenix", "spider"], { x: 1309, y: -215, map: "main" })
                     },
                     mage: {
-                        attack: new MageAttackStrategy(executors, {
+                        attack: new MageAttackStrategy(partyController, {
                             typeList: ["spider", "phoenix"],
                             enableGreedyAggro: true,
-                            ensureEquipped: MAGE_AOE,
+                            equipmentSet: MAGE_AOE,
                             disableCburst: true,
                             energize: defaultEnergize
                         }),
                         move: new FarmingMoveStrategy(["phoenix", "spider"], { x: 1309, y: -215, map: "main" })
                     },
                     priest: {
-                        attack: new PriestAttackStrategy(executors, {
+                        attack: new PriestAttackStrategy(partyController, {
                             typeList: ["spider", "phoenix"],
-                            ensureEquipped: PRIEST_MF,
+                            equipmentSet: PRIEST_MF,
                             enableAbsorbToTank: true,
                             disableScare: true,
                             startHealingAtRatio: 0.8

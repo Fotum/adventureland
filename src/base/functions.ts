@@ -1,7 +1,9 @@
-import { Character, Entity, Game, IPosition, MonsterName, PingCompensatedCharacter, ServerData, Tools } from "alclient"
+import { Character, CharacterType, Entity, Game, IPosition, Mage, Merchant, MonsterName, Paladin, PingCompensatedCharacter, Priest, Ranger, Rogue, ServerData, ServerIdentifier, ServerRegion, Tools, Warrior } from "alclient"
+import { SpecialName } from "../configs/boss_configs"
+import { PartyController } from "../controller/party_controller"
 import { CharacterRunner } from "../strategies/character_runner"
 import { SPECIAL_MONSTERS } from "./constants"
-import { SpecialName } from "../configs/boss_configs"
+import { BaseStrategy } from "../strategies/base_strategy"
 
 
 export type FilterBotsOptions = {
@@ -9,7 +11,7 @@ export type FilterBotsOptions = {
     serverData?: ServerData
 }
 
-export function filterExecutors(executors: CharacterRunner<PingCompensatedCharacter>[], filters: FilterBotsOptions = {}): CharacterRunner<PingCompensatedCharacter>[] {
+export function filterRunners(executors: CharacterRunner<PingCompensatedCharacter>[], filters: FilterBotsOptions = {}): CharacterRunner<PingCompensatedCharacter>[] {
     let filteredExecutors: CharacterRunner<PingCompensatedCharacter>[] = [];
     for (let executor of executors) {
         if (!executor.isReady()) continue;
@@ -52,10 +54,6 @@ export function sortPriority(bot: Character, types?: MonsterName[]): (a: Entity,
 
             if (a_special && !b_special) return true
             else if (!a_special && b_special) return false;
-            // const a_index = types.indexOf(a.type)
-            // const b_index = types.indexOf(b.type)
-            // if (a_index < b_index) return true
-            // else if (a_index > b_index) return false
         }
 
         // Has a target -> higher priority
@@ -123,11 +121,6 @@ export function sortPriority(bot: Character, types?: MonsterName[]): (a: Entity,
 
 export function sortTypeThenClosest(to: Character, types: MonsterName[]) {
     return (a: IPosition & { type: MonsterName }, b: IPosition & { type: MonsterName }) => {
-        // const a_index = types.indexOf(a.type);
-        // const b_index = types.indexOf(b.type);
-        // if (a_index < b_index) return -1;
-        // else if (a_index > b_index) return 1;
-
         const a_special: boolean = SPECIAL_MONSTERS.has((a.type as SpecialName));
         const b_special: boolean = SPECIAL_MONSTERS.has((b.type as SpecialName));
         if (a_special && !b_special) return -1;
@@ -146,4 +139,55 @@ export async function sleep(ms: number): Promise<void> {
 
 export function ignoreExceptions(): void {
     return;
+}
+
+export async function startCharacter(partyController: PartyController, name: string, ctype: CharacterType, serverName: ServerRegion, serverId: ServerIdentifier): Promise<CharacterRunner<PingCompensatedCharacter>> {
+    let baseStrategy: BaseStrategy<PingCompensatedCharacter> = new BaseStrategy(partyController, { hpPotType: "hpot0", mpPotType: "mpot0", useHpAt: 0.8, useMpAt: 0.5, keepPotions: { max: 5000, min: 3000 }});
+
+    try {
+        let runner: CharacterRunner<PingCompensatedCharacter>;
+        switch (ctype) {
+            case "warrior": {
+                let character: Warrior = await Game.startWarrior(name, serverName, serverId);
+                runner = new CharacterRunner(character, baseStrategy);
+                break;
+            }
+            case "mage": {
+                let character: Mage = await Game.startMage(name, serverName, serverId);
+                runner = new CharacterRunner(character, baseStrategy);
+                break;
+            }
+            case "priest": {
+                let character: Priest = await Game.startPriest(name, serverName, serverId);
+                runner = new CharacterRunner(character, baseStrategy);
+                break;
+            }
+            case "merchant": {
+                let character: Merchant = await Game.startMerchant(name, serverName, serverId);
+                runner = new CharacterRunner(character, baseStrategy);
+                break;
+            }
+            case "ranger": {
+                let character: Ranger = await Game.startRanger(name, serverName, serverId);
+                runner = new CharacterRunner(character, baseStrategy);
+                break;
+            }
+            case "paladin": {
+                let character: Paladin = await Game.startPaladin(name, serverName, serverId);
+                runner = new CharacterRunner(character, baseStrategy);
+                break;
+            }
+            case "rogue": {
+                let character: Rogue = await Game.startRogue(name, serverName, serverId);
+                runner = new CharacterRunner(character, baseStrategy);
+                break;
+            }
+            default:
+                console.warn(`No handler for character ${name} of ctype ${ctype} found`);
+        }
+
+        return runner;
+    } catch (ex) {
+        console.error(ex);
+    }
 }

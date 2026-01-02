@@ -1,10 +1,11 @@
-import { CharacterType, Mage, Merchant, PingCompensatedCharacter, Priest, Warrior } from "alclient";
-import { Strategy, CharacterRunner } from "../strategies/character_runner";
-import { WarriorAttackStrategy } from "../strategies/warrior/warrior_attack_strategy";
-import { BaseMoveStrategy } from "../strategies/move_strategy";
-import { MAGE_AOE, MAGE_DPS, MAGE_FAST, PRIEST_GF, PRIEST_MF, PRIEST_TANKY, WARRIOR_AOE, WARRIOR_DPS } from "./equipment_setups";
+import { CharacterType, PingCompensatedCharacter } from "alclient";
+import { PartyController } from "../controller/party_controller";
+import { Strategy } from "../strategies/character_runner";
 import { MageAttackStrategy } from "../strategies/mage/mage_attack_strategy";
+import { BaseMoveStrategy } from "../strategies/move_strategy";
 import { PriestAttackStrategy } from "../strategies/priest/priest_attack_strategy";
+import { WarriorAttackStrategy } from "../strategies/warrior/warrior_attack_strategy";
+import { MAGE_AOE, MAGE_DPS, MAGE_FAST, PRIEST_GF, PRIEST_MF, PRIEST_TANKY, WARRIOR_AOE, WARRIOR_DPS } from "./equipment_setups";
 
 
 export type EventName = "goobrawl" | "dragold" | "icegolem" | "valentines" | "snowman";
@@ -23,7 +24,7 @@ export type EventConfig = {
 }
 
 
-export function getEventConfig(eventName: SpecialName | EventName, executors: CharacterRunner<PingCompensatedCharacter>[]): EventConfig {
+export function getEventConfig(eventName: SpecialName | EventName, partyController: PartyController): EventConfig {
     let defaultEnergize = {
         onMpRatio: 0.8,
         when: { 
@@ -39,37 +40,37 @@ export function getEventConfig(eventName: SpecialName | EventName, executors: Ch
                 summon: false,
                 configs: {
                     warrior: {
-                        attack: new WarriorAttackStrategy(executors, {
+                        attack: new WarriorAttackStrategy(partyController, {
                             typeList: ["pinkgoo", "bgoo", "rgoo"],
                             disableIdleAttack: true,
                             enableGreedyAggro: true,
                             maximumTargets: 5,
-                            ensureEquipped: WARRIOR_AOE,
+                            equipmentSet: WARRIOR_AOE,
                             disableStomp: true,
                             enableEquipForCleave: true
                         }),
                         move: new BaseMoveStrategy(["pinkgoo", "bgoo", "rgoo"])
                     },
                     mage: {
-                        attack: new MageAttackStrategy(executors, {
+                        attack: new MageAttackStrategy(partyController, {
                             typeList: ["pinkgoo", "bgoo", "rgoo"],
                             disableIdleAttack: true,
                             enableGreedyAggro: true,
                             maximumTargets: 5,
-                            ensureEquipped: MAGE_AOE,
+                            equipmentSet: MAGE_AOE,
                             disableScare: true,
                             energize: defaultEnergize
                         }),
                         move: new BaseMoveStrategy(["pinkgoo", "bgoo", "rgoo"])
                     },
                     priest: {
-                        attack: new PriestAttackStrategy(executors, {
+                        attack: new PriestAttackStrategy(partyController, {
                             typeList: ["pinkgoo", "bgoo", "rgoo"],
                             disableIdleAttack: true,
                             enableGreedyAggro: true,
                             maximumTargets: 15,
                             enableAbsorbToTank: true,
-                            ensureEquipped: PRIEST_GF,
+                            equipmentSet: PRIEST_GF,
                             startHealingAtRatio: 0.8
                         }),
                         move: new BaseMoveStrategy(["pinkgoo", "bgoo", "rgoo"])
@@ -82,10 +83,10 @@ export function getEventConfig(eventName: SpecialName | EventName, executors: Ch
                 summon: true,
                 configs: {
                     warrior: {
-                        attack: new WarriorAttackStrategy(executors, {
+                        attack: new WarriorAttackStrategy(partyController, {
                             type: "dragold",
                             disableIdleAttack: true,
-                            ensureEquipped: WARRIOR_DPS,
+                            equipmentSet: WARRIOR_DPS,
                             disableAgitate: true,
                             disableCleave: true,
                             disableStomp: true
@@ -93,22 +94,22 @@ export function getEventConfig(eventName: SpecialName | EventName, executors: Ch
                         move: new BaseMoveStrategy(["dragold"])
                     },
                     mage: {
-                        attack: new MageAttackStrategy(executors, {
+                        attack: new MageAttackStrategy(partyController, {
                             type: "dragold",
                             disableIdleAttack: true,
-                            ensureEquipped: MAGE_DPS,
+                            equipmentSet: MAGE_DPS,
                             disableCburst: true,
                             energize: defaultEnergize
                         }),
                         move: new BaseMoveStrategy(["dragold"])
                     },
                     priest: {
-                        attack: new PriestAttackStrategy(executors, {
+                        attack: new PriestAttackStrategy(partyController, {
                             type: "dragold",
                             disableIdleAttack: true,
                             enableAbsorbToTank: true,
                             maximumTargets: 3,
-                            ensureEquipped: PRIEST_TANKY,
+                            equipmentSet: PRIEST_TANKY,
                             enableHealStrangers: true,
                             startHealingAtRatio: 0.8
                         }),
@@ -122,10 +123,10 @@ export function getEventConfig(eventName: SpecialName | EventName, executors: Ch
                 summon: false,
                 configs: {
                     warrior: {
-                        attack: new WarriorAttackStrategy(executors, {
+                        attack: new WarriorAttackStrategy(partyController, {
                             type: "icegolem",
                             disableIdleAttack: true,
-                            ensureEquipped: WARRIOR_DPS,
+                            equipmentSet: WARRIOR_DPS,
                             disableAgitate: true,
                             disableCleave: true,
                             disableStomp: true
@@ -133,10 +134,10 @@ export function getEventConfig(eventName: SpecialName | EventName, executors: Ch
                         move: new BaseMoveStrategy(["icegolem"])
                     },
                     mage: {
-                        attack: new MageAttackStrategy(executors, {
+                        attack: new MageAttackStrategy(partyController, {
                             type: "icegolem",
                             disableIdleAttack: true,
-                            ensureEquipped: MAGE_DPS,
+                            equipmentSet: MAGE_DPS,
                             disableKillSteal: true,
                             disableCburst: true,
                             energize: defaultEnergize
@@ -144,12 +145,12 @@ export function getEventConfig(eventName: SpecialName | EventName, executors: Ch
                         move: new BaseMoveStrategy(["icegolem"])
                     },
                     priest: {
-                        attack: new PriestAttackStrategy(executors, {
+                        attack: new PriestAttackStrategy(partyController, {
                             type: "icegolem",
                             disableIdleAttack: true,
                             enableAbsorbToTank: true,
                             maximumTargets: 3,
-                            ensureEquipped: PRIEST_TANKY,
+                            equipmentSet: PRIEST_TANKY,
                             enableHealStrangers: true,
                             startHealingAtRatio: 0.8
                         }),
@@ -163,10 +164,10 @@ export function getEventConfig(eventName: SpecialName | EventName, executors: Ch
                 summon: true,
                 configs: {
                     warrior: {
-                        attack: new WarriorAttackStrategy(executors, {
+                        attack: new WarriorAttackStrategy(partyController, {
                             type: "pinkgoo",
                             disableIdleAttack: true,
-                            ensureEquipped: WARRIOR_DPS,
+                            equipmentSet: WARRIOR_DPS,
                             disableAgitate: true,
                             disableCleave: true,
                             disableStomp: true
@@ -174,10 +175,10 @@ export function getEventConfig(eventName: SpecialName | EventName, executors: Ch
                         move: new BaseMoveStrategy(["pinkgoo"])
                     },
                     mage: {
-                        attack: new MageAttackStrategy(executors, {
+                        attack: new MageAttackStrategy(partyController, {
                             type: "pinkgoo",
                             disableIdleAttack: true,
-                            ensureEquipped: MAGE_FAST,
+                            equipmentSet: MAGE_FAST,
                             disableKillSteal: true,
                             disableCburst: true,
                             energize: defaultEnergize
@@ -185,10 +186,10 @@ export function getEventConfig(eventName: SpecialName | EventName, executors: Ch
                         move: new BaseMoveStrategy(["pinkgoo"])
                     },
                     priest: {
-                        attack: new PriestAttackStrategy(executors, {
+                        attack: new PriestAttackStrategy(partyController, {
                             type: "pinkgoo",
                             disableIdleAttack: true,
-                            ensureEquipped: PRIEST_MF,
+                            equipmentSet: PRIEST_MF,
                             startHealingAtRatio: 0.8
                         }),
                         move: new BaseMoveStrategy(["pinkgoo"])
@@ -201,9 +202,9 @@ export function getEventConfig(eventName: SpecialName | EventName, executors: Ch
                 summon: true,
                 configs: {
                     warrior: {
-                        attack: new WarriorAttackStrategy(executors, {
+                        attack: new WarriorAttackStrategy(partyController, {
                             type: "snowman",
-                            ensureEquipped: WARRIOR_DPS,
+                            equipmentSet: WARRIOR_DPS,
                             disableAgitate: true,
                             disableCleave: true,
                             disableStomp: true
@@ -211,9 +212,9 @@ export function getEventConfig(eventName: SpecialName | EventName, executors: Ch
                         move: new BaseMoveStrategy(["snowman"])
                     },
                     mage: {
-                        attack: new MageAttackStrategy(executors, {
+                        attack: new MageAttackStrategy(partyController, {
                             type: "snowman",
-                            ensureEquipped: MAGE_FAST,
+                            equipmentSet: MAGE_FAST,
                             disableKillSteal: true,
                             disableCburst: true,
                             energize: defaultEnergize
@@ -221,9 +222,9 @@ export function getEventConfig(eventName: SpecialName | EventName, executors: Ch
                         move: new BaseMoveStrategy(["snowman"])
                     },
                     priest: {
-                        attack: new PriestAttackStrategy(executors, {
+                        attack: new PriestAttackStrategy(partyController, {
                             type: "snowman",
-                            ensureEquipped: PRIEST_MF,
+                            equipmentSet: PRIEST_MF,
                             startHealingAtRatio: 0.8
                         }),
                         move: new BaseMoveStrategy(["snowman"])
@@ -238,9 +239,9 @@ export function getEventConfig(eventName: SpecialName | EventName, executors: Ch
                 summon: true,
                 configs: {
                     warrior: {
-                        attack: new WarriorAttackStrategy(executors, {
+                        attack: new WarriorAttackStrategy(partyController, {
                             type: "phoenix",
-                            ensureEquipped: WARRIOR_DPS,
+                            equipmentSet: WARRIOR_DPS,
                             disableAgitate: true,
                             disableCleave: true,
                             enableEquipForStomp: true
@@ -248,17 +249,17 @@ export function getEventConfig(eventName: SpecialName | EventName, executors: Ch
                         move: new BaseMoveStrategy(["phoenix"])
                     },
                     mage: {
-                        attack: new MageAttackStrategy(executors, {
+                        attack: new MageAttackStrategy(partyController, {
                             type: "phoenix",
-                            ensureEquipped: MAGE_DPS,
+                            equipmentSet: MAGE_DPS,
                             energize: defaultEnergize
                         }),
                         move: new BaseMoveStrategy(["phoenix"])
                     },
                     priest: {
-                        attack: new PriestAttackStrategy(executors, {
+                        attack: new PriestAttackStrategy(partyController, {
                             type: "phoenix",
-                            ensureEquipped: PRIEST_MF,
+                            equipmentSet: PRIEST_MF,
                             startHealingAtRatio: 0.8
                         }),
                         move: new BaseMoveStrategy(["phoenix"])
@@ -271,9 +272,9 @@ export function getEventConfig(eventName: SpecialName | EventName, executors: Ch
                 summon: false,
                 configs: {
                     mage: {
-                        attack: new MageAttackStrategy(executors, {
+                        attack: new MageAttackStrategy(partyController, {
                             type: "frog",
-                            ensureEquipped: MAGE_DPS,
+                            equipmentSet: MAGE_DPS,
                             energize: defaultEnergize
                         }),
                         move: new BaseMoveStrategy(["frog"])
@@ -286,9 +287,9 @@ export function getEventConfig(eventName: SpecialName | EventName, executors: Ch
                 summon: true,
                 configs: {
                     warrior: {
-                        attack: new WarriorAttackStrategy(executors, {
+                        attack: new WarriorAttackStrategy(partyController, {
                             type: "fvampire",
-                            ensureEquipped: WARRIOR_DPS,
+                            equipmentSet: WARRIOR_DPS,
                             disableAgitate: true,
                             disableCleave: true,
                             enableEquipForStomp: true
@@ -296,18 +297,18 @@ export function getEventConfig(eventName: SpecialName | EventName, executors: Ch
                         move: new BaseMoveStrategy(["fvampire"])
                     },
                     mage: {
-                        attack: new MageAttackStrategy(executors, {
+                        attack: new MageAttackStrategy(partyController, {
                             type: "fvampire",
-                            ensureEquipped: MAGE_DPS,
+                            equipmentSet: MAGE_DPS,
                             energize: defaultEnergize
                         }),
                         move: new BaseMoveStrategy(["fvampire"])
                     },
                     priest: {
-                        attack: new PriestAttackStrategy(executors, {
+                        attack: new PriestAttackStrategy(partyController, {
                             type: "fvampire",
                             enableAbsorbToTank: true,
-                            ensureEquipped: PRIEST_MF,
+                            equipmentSet: PRIEST_MF,
                             startHealingAtRatio: 0.8
                         }),
                         move: new BaseMoveStrategy(["fvampire"])
@@ -320,9 +321,9 @@ export function getEventConfig(eventName: SpecialName | EventName, executors: Ch
                 summon: true,
                 configs: {
                     warrior: {
-                        attack: new WarriorAttackStrategy(executors, {
+                        attack: new WarriorAttackStrategy(partyController, {
                             type: "mvampire",
-                            ensureEquipped: WARRIOR_DPS,
+                            equipmentSet: WARRIOR_DPS,
                             disableAgitate: true,
                             disableCleave: true,
                             enableEquipForStomp: true
@@ -330,18 +331,18 @@ export function getEventConfig(eventName: SpecialName | EventName, executors: Ch
                         move: new BaseMoveStrategy(["mvampire"])
                     },
                     mage: {
-                        attack: new MageAttackStrategy(executors, {
+                        attack: new MageAttackStrategy(partyController, {
                             type: "mvampire",
-                            ensureEquipped: MAGE_DPS,
+                            equipmentSet: MAGE_DPS,
                             energize: defaultEnergize
                         }),
                         move: new BaseMoveStrategy(["mvampire"])
                     },
                     priest: {
-                        attack: new PriestAttackStrategy(executors, {
+                        attack: new PriestAttackStrategy(partyController, {
                             type: "mvampire",
                             enableAbsorbToTank: true,
-                            ensureEquipped: PRIEST_MF,
+                            equipmentSet: PRIEST_MF,
                             startHealingAtRatio: 0.8
                         }),
                         move: new BaseMoveStrategy(["mvampire"])
@@ -354,9 +355,9 @@ export function getEventConfig(eventName: SpecialName | EventName, executors: Ch
                 summon: false,
                 configs: {
                     mage: {
-                        attack: new MageAttackStrategy(executors, {
+                        attack: new MageAttackStrategy(partyController, {
                             type: "jr",
-                            ensureEquipped: MAGE_DPS,
+                            equipmentSet: MAGE_DPS,
                             energize: defaultEnergize
                         }),
                         move: new BaseMoveStrategy(["jr"])
@@ -369,9 +370,9 @@ export function getEventConfig(eventName: SpecialName | EventName, executors: Ch
                 summon: false,
                 configs: {
                     mage: {
-                        attack: new MageAttackStrategy(executors, {
+                        attack: new MageAttackStrategy(partyController, {
                             type: "greenjr",
-                            ensureEquipped: MAGE_DPS,
+                            equipmentSet: MAGE_DPS,
                             energize: defaultEnergize
                         }),
                         move: new BaseMoveStrategy(["greenjr"])
@@ -384,9 +385,9 @@ export function getEventConfig(eventName: SpecialName | EventName, executors: Ch
                 summon: true,
                 configs: {
                     warrior: {
-                        attack: new WarriorAttackStrategy(executors, {
+                        attack: new WarriorAttackStrategy(partyController, {
                             type: "skeletor",
-                            ensureEquipped: WARRIOR_DPS,
+                            equipmentSet: WARRIOR_DPS,
                             disableAgitate: true,
                             disableCleave: true,
                             disableStomp: true
@@ -394,18 +395,18 @@ export function getEventConfig(eventName: SpecialName | EventName, executors: Ch
                         move: new BaseMoveStrategy(["skeletor"])
                     },
                     mage: {
-                        attack: new MageAttackStrategy(executors, {
+                        attack: new MageAttackStrategy(partyController, {
                             type: "skeletor",
-                            ensureEquipped: MAGE_DPS,
+                            equipmentSet: MAGE_DPS,
                             energize: defaultEnergize
                         }),
                         move: new BaseMoveStrategy(["skeletor"])
                     },
                     priest: {
-                        attack: new PriestAttackStrategy(executors, {
+                        attack: new PriestAttackStrategy(partyController, {
                             type: "skeletor",
                             enableAbsorbToTank: true,
-                            ensureEquipped: PRIEST_TANKY,
+                            equipmentSet: PRIEST_TANKY,
                             startHealingAtRatio: 0.8
                         }),
                         move: new BaseMoveStrategy(["skeletor"])

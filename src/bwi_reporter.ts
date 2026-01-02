@@ -1,7 +1,7 @@
-import { Entity, PingCompensatedCharacter } from "alclient";
-import { CharacterRunner } from "./strategies/character_runner";
+import { PingCompensatedCharacter } from "alclient";
 import BotWebInterface from "bot-web-interface";
 import prettyMilliseconds from "pretty-ms";
+import { PartyController } from "./controller/party_controller";
 
 
 type BWIMetricSchema = {
@@ -38,13 +38,13 @@ export class BWIReporter {
     private statBeatIntrval: number;
     private bwiInstance: BotWebInterface;
     private statisticsInterval: NodeJS.Timeout;
-    private executors: CharacterRunner<PingCompensatedCharacter>[];
+    private controller: PartyController;
 
     private botDataSources = new Map<string, BWIDataSource>();
 
-    public constructor(executors: CharacterRunner<PingCompensatedCharacter>[], port: number = 924, statBeatInterval: number = 500) {
+    public constructor(controller: PartyController, port: number = 924, statBeatInterval: number = 500) {
         this.statBeatIntrval = statBeatInterval;
-        this.executors = executors;
+        this.controller = controller;
 
         this.bwiInstance = new BotWebInterface({
             port: port,
@@ -52,7 +52,7 @@ export class BWIReporter {
             updateRate: statBeatInterval
         });
 
-        for (let executor of executors) {
+        for (let executor of controller.getRunners()) {
             let bot: PingCompensatedCharacter = executor.bot;
 
             let dataSourceObj: BWIDataSource = {
@@ -86,7 +86,7 @@ export class BWIReporter {
     }
 
     private updateStatistics(): void {
-        for (let executor of this.executors) {
+        for (let executor of this.controller.getRunners()) {
             let bot: PingCompensatedCharacter = executor.bot;
             let dataSource: BWIDataSource = this.botDataSources.get(bot.id);
 

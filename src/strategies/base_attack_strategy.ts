@@ -1,8 +1,9 @@
-import { ActionData, Constants, EntitiesData, Entity, Game, GetEntityFilters, ItemName, LocateItemFilters, Mage, MonsterName, PingCompensatedCharacter, Player, SkillName, SlotType, Tools, Warrior, WeaponType } from "alclient"
-import { Loop, LoopName, Loops, Strategy, CharacterRunner, StrategyName } from "./character_runner"
-import { sortPriority, sleep, filterExecutors, ignoreExceptions } from "../base/functions"
+import { ActionData, Constants, EntitiesData, Entity, Game, GetEntityFilters, ItemName, LocateItemFilters, MonsterName, PingCompensatedCharacter, Player, SkillName, SlotType, Tools, WeaponType } from "alclient"
 import FastPriorityQueue from "fastpriorityqueue"
+import { filterRunners, ignoreExceptions, sleep, sortPriority } from "../base/functions"
 import { generateEquipmentSetup } from "../configs/equipment_setups"
+import { PartyController } from "../controller/party_controller"
+import { Loop, LoopName, Loops, Strategy, StrategyName } from "./character_runner"
 
 
 export type EquipInSlot = {
@@ -11,19 +12,20 @@ export type EquipInSlot = {
     unequip?: boolean
 }
 
-export type EnsureEquipped = {
+export type EquipmentSet = {
     [T in SlotType]?: EquipInSlot
 }
 
 export type BaseAttackConfig = GetEntityFilters & {
-    assistPlayer?: string
     disableBasicAttack?: boolean
     disableIdleAttack?: boolean
+    disableDefensiveAttack?: boolean
+    disableZapperAttack?: boolean
     disableScare?: boolean
     disableZapper?: boolean
     disableKillSteal?: boolean
     enableGreedyAggro?: boolean | MonsterName[]
-    ensureEquipped?: EnsureEquipped
+    equipmentSet?: EquipmentSet
     maximumTargets?: number
 }
 
@@ -33,11 +35,11 @@ export const IDLE_ATTACK_MONSTERS: MonsterName[] = ["cutebee", "goldenbat", "fro
 export class BaseAttackStrategy<T extends PingCompensatedCharacter> implements Strategy<T> {
     public loops: Loops<T> = new Map<LoopName, Loop<T>>;
 
-    protected runners: CharacterRunner<PingCompensatedCharacter>[];
+    protected partyController: PartyController;
     protected config: BaseAttackConfig;
     protected botSort: (a: Entity, b: Entity) => boolean;
 
-    protected ensureEquipped = new Map<string, EnsureEquipped>();
+    protected ensureEquipped = new Map<string, EquipmentSet>();
     protected interval: SkillName[] = ["attack"];
 
     protected greedyOnEntities: (data: EntitiesData) => Promise<unknown>;
@@ -45,8 +47,8 @@ export class BaseAttackStrategy<T extends PingCompensatedCharacter> implements S
 
     private _name: StrategyName = "attack";
 
-    public constructor(runners: CharacterRunner<PingCompensatedCharacter>[], config: BaseAttackConfig) {
-        this.runners = runners;
+    public constructor(partyController: PartyController, config: BaseAttackConfig) {
+        this.partyController = partyController;
         this.config = config;
 
         if (this.config.willDieToProjectiles === undefined)
@@ -70,8 +72,8 @@ export class BaseAttackStrategy<T extends PingCompensatedCharacter> implements S
     }
 
     public onApply(bot: T): void {
-        if (this.config.ensureEquipped) {
-            let currentSetup: EnsureEquipped = generateEquipmentSetup(bot, this.config.ensureEquipped);
+        if (this.config.equipmentSet) {
+            let currentSetup: EquipmentSet = generateEquipmentSetup(bot, this.config.equipmentSet);
             this.ensureEquipped.set(bot.id, currentSetup);
         }
 
@@ -140,12 +142,12 @@ export class BaseAttackStrategy<T extends PingCompensatedCharacter> implements S
         if (this.greedyOnEntities) bot.socket.off("entities", this.greedyOnEntities);
     }
 
-    public get name() {
+    public get name(): StrategyName {
         return this._name;
     }
 
     protected async attack(bot: T): Promise<void> {
-        if (!this.shouldAttack(bot)) {
+        if (!this.config.disableDefensiveAttack && !this.shouldAttack(bot)) {
             this.defensiveAttack(bot).catch(ignoreExceptions);
             return;
         }
@@ -153,6 +155,7 @@ export class BaseAttackStrategy<T extends PingCompensatedCharacter> implements S
         await this.equipItems(bot);
 
         if (!this.config.disableBasicAttack) await this.basicAttack(bot, this.botSort).catch(ignoreExceptions);
+        if (!this.config.disableZapperAttack) await this.zapperAttack(bot, this.botSort).catch(ignoreExceptions);
         if (!this.config.disableIdleAttack) await this.idleAttack(bot, this.botSort).catch(ignoreExceptions);
 
         await this.equipItems(bot);
@@ -282,6 +285,80 @@ export class BaseAttackStrategy<T extends PingCompensatedCharacter> implements S
         return bot.basicAttack(entity.id);
     }
 
+    protected async zapperAttack(bot: T, priority: (a: Entity, b: Entity) => boolean): Promise<unknown> {
+        if (this.config.disableZapper) return;
+        if (!bot.canUse("zapperzap")) return;
+
+        if (this.config.enableGreedyAggro) {
+            let entities: Entity[] = bot.getEntities({
+                canDamage: "zapperzap",
+                hasTarget: false,
+                typeList: Array.isArray(this.config.enableGreedyAggro)
+                    ? this.config.enableGreedyAggro
+                    : this.config.typeList,
+                withinRange: "zapperzap"
+            });
+
+            if (entities.length && !(this.config.maximumTargets !== undefined && bot.targets >= this.config.maximumTargets)) {
+                let targets: FastPriorityQueue<Entity> = new FastPriorityQueue<Entity>(priority);
+                for (let entity of entities) {
+                    targets.add(entity);
+                }
+
+                return bot.zapperZap(targets.peek().id);
+            }
+        }
+
+        let entities: Entity[] = bot.getEntities({
+            ...this.config,
+            canDamage: "zapperzap",
+            withinRange: "zapperzap"
+        });
+        if (entities.length == 0) return;
+
+        if (bot.mp < bot.max_mp - 500) {
+            for (let i = 0; i < entities.length; i++) {
+                let entity: Entity = entities[i];
+                if (!bot.canKillInOneShot(entity, "zapperzap")) {
+                    entities.splice(i, 1);
+                    i--;
+                    continue;
+                }
+            }
+        }
+        if (entities.length == 0) return;
+
+        let targets: FastPriorityQueue<Entity> = new FastPriorityQueue<Entity>(priority);
+        for (let entity of entities) {
+            targets.add(entity);
+        }
+
+        let targetingMe = bot.calculateTargets();
+        while (targets.size) {
+            let target: Entity = targets.poll();
+
+            if (!target.target) {
+                if (this.config.maximumTargets !== undefined && bot.targets >= this.config.maximumTargets) continue;
+                switch (target.damage_type) {
+                    case "magical":
+                        if (bot.mcourage <= targetingMe.magical) continue;
+                        break;
+                    case "physical":
+                        if (bot.pcourage <= targetingMe.physical) continue;
+                        break;
+                    case "pure":
+                        if (bot.courage <= targetingMe.pure) continue;
+                        break;
+                }
+            }
+
+            let canKill: boolean = bot.canKillInOneShot(target);
+            if (canKill) this.preventOverkill(bot, target);
+
+            return bot.zapperZap(target.id);
+        }
+    }
+
     protected shouldAttack(bot: T): boolean {
         if (bot.c.town) return false;
         if (bot.c.fishing || bot.c.mining) return false;
@@ -327,7 +404,7 @@ export class BaseAttackStrategy<T extends PingCompensatedCharacter> implements S
     }
 
     protected async equipItems(bot: T): Promise<unknown> {
-        const equipSetup: EnsureEquipped = this.ensureEquipped.get(bot.id);
+        const equipSetup: EquipmentSet = this.ensureEquipped.get(bot.id);
         if (!equipSetup) return;
 
         let equipBatch: { num: number, slot: SlotType }[] = [];
@@ -376,9 +453,9 @@ export class BaseAttackStrategy<T extends PingCompensatedCharacter> implements S
     }
 
     protected preventOverkill(bot: PingCompensatedCharacter, target: Entity): void {
-        let executors = filterExecutors(this.runners, { serverData: bot.serverData });
-        for (let myBotExecutor of executors) {
-            let myBot: PingCompensatedCharacter = myBotExecutor.bot;
+        let runners = filterRunners(this.partyController.getRunners(), { serverData: bot.serverData });
+        for (let runner of runners) {
+            let myBot: PingCompensatedCharacter = runner.bot;
             if (bot == myBot) continue;
             if (Constants.SPECIAL_MONSTERS.includes(target.type)) continue;
 

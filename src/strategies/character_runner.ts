@@ -8,7 +8,7 @@ export type Loop<T> = {
 export type Loops<T> = Map<LoopName, Loop<T>>;
 
 export type StrategyName = "base" | "attack" | "move" | "party" | "party_heal" | "magiport" | "upgrade" | "utility";
-export type LoopName = "attack" | "move" | "use_pots" | "buy_pots" | "loot" | "respawn" | "party" | "party_heal" | "magiport" | "mluck" | "upgrade" | "ponty" | "inventory" | "resuppply";
+export type LoopName = "attack" | "move" | "avoidance" | "use_pots" | "buy_pots" | "loot" | "respawn" | "party" | "party_heal" | "magiport" | "mluck" | "upgrade" | "ponty" | "inventory" | "resuppply";
 
 export interface Strategy<T> {
     name: StrategyName
@@ -232,6 +232,7 @@ export class CharacterRunner<T extends PingCompensatedCharacter> {
             }
 
             console.error(`Couldn't reconnect ${this.bot.name}\nCause:`, ex);
+            console.error(`Retry is: ${retry}`);
             if (retry) {
                 let wait = /wait_(\d+)_second/.exec(ex);
                 if (wait && wait[1]) {

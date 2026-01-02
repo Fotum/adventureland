@@ -1,8 +1,8 @@
-import { EntitiesData, Entity, Game, ItemData, PingCompensatedCharacter, Player, SlotType, Tools, Warrior } from "alclient";
-import { BaseAttackConfig, BaseAttackStrategy, IDLE_ATTACK_MONSTERS } from "../base_attack_strategy";
+import { EntitiesData, Entity, Game, ItemData, Player, SlotType, Tools, Warrior } from "alclient";
 import { ignoreExceptions, sleep } from "../../base/functions";
 import { FILTER_HIGHEST } from "../../configs/equipment_setups";
-import { CharacterRunner } from "../character_runner";
+import { PartyController } from "../../controller/party_controller";
+import { BaseAttackConfig, BaseAttackStrategy, IDLE_ATTACK_MONSTERS } from "../base_attack_strategy";
 
 
 export type WarriorAttackConfig = BaseAttackConfig & {
@@ -18,8 +18,8 @@ export type WarriorAttackConfig = BaseAttackConfig & {
 export class WarriorAttackStrategy extends BaseAttackStrategy<Warrior> {
     protected config: WarriorAttackConfig;
 
-    public constructor(executors: CharacterRunner<PingCompensatedCharacter>[], options?: WarriorAttackConfig) {
-        super(executors, options);
+    public constructor(partyController: PartyController, options?: WarriorAttackConfig) {
+        super(partyController, options);
 
         if (!options.disableCleave) this.interval.push("cleave");
         if (!options.disableWarCry) this.interval.push("warcry");
@@ -260,11 +260,11 @@ export class WarriorAttackStrategy extends BaseAttackStrategy<Warrior> {
         if (this.config.enableEquipForCleave) {
             let equipBatch: { num: number; slot: SlotType }[] = [];
 
-            if (this.config.ensureEquipped.mainhand && !this.config.ensureEquipped.mainhand.unequip) {
+            if (this.config.equipmentSet.mainhand && !this.config.equipmentSet.mainhand.unequip) {
                 let num: number = bot.locateItem(
-                    this.config.ensureEquipped.mainhand.name,
+                    this.config.equipmentSet.mainhand.name,
                     bot.items,
-                    this.config.ensureEquipped.mainhand.filters
+                    this.config.equipmentSet.mainhand.filters
                 );
                 if (num !== undefined) equipBatch.push({ num, slot: "mainhand" });
             } else if (mainhand) {
@@ -278,11 +278,11 @@ export class WarriorAttackStrategy extends BaseAttackStrategy<Warrior> {
                 await bot.unequip("mainhand");
             }
 
-            if (this.config.ensureEquipped.offhand && !this.config.ensureEquipped.offhand.unequip) {
+            if (this.config.equipmentSet.offhand && !this.config.equipmentSet.offhand.unequip) {
                 let num: number = bot.locateItem(
-                    this.config.ensureEquipped.offhand.name,
+                    this.config.equipmentSet.offhand.name,
                     bot.items,
-                    this.config.ensureEquipped.offhand.filters
+                    this.config.equipmentSet.offhand.filters
                 );
                 if (num !== undefined) equipBatch.push({ num, slot: "offhand" });
             } else if (offhand) {
@@ -339,11 +339,11 @@ export class WarriorAttackStrategy extends BaseAttackStrategy<Warrior> {
             // Re-equip items
             let equipBatch: { num: number; slot: SlotType }[] = [];
 
-            if (this.config.ensureEquipped.mainhand && !this.config.ensureEquipped.mainhand.unequip) {
+            if (this.config.equipmentSet.mainhand && !this.config.equipmentSet.mainhand.unequip) {
                 let num: number = bot.locateItem(
-                    this.config.ensureEquipped.mainhand.name,
+                    this.config.equipmentSet.mainhand.name,
                     bot.items,
-                    this.config.ensureEquipped.mainhand.filters,
+                    this.config.equipmentSet.mainhand.filters,
                 );
                 if (num !== undefined) equipBatch.push({ num, slot: "mainhand" });
             } else if (mainhand) {
@@ -357,11 +357,11 @@ export class WarriorAttackStrategy extends BaseAttackStrategy<Warrior> {
                 await bot.unequip("mainhand");
             }
 
-            if (this.config.ensureEquipped.offhand && !this.config.ensureEquipped.offhand.unequip) {
+            if (this.config.equipmentSet.offhand && !this.config.equipmentSet.offhand.unequip) {
                 let num: number = bot.locateItem(
-                    this.config.ensureEquipped.offhand.name,
+                    this.config.equipmentSet.offhand.name,
                     bot.items,
-                    this.config.ensureEquipped.offhand.filters,
+                    this.config.equipmentSet.offhand.filters,
                 );
                 if (num !== undefined) equipBatch.push({ num, slot: "offhand" });
             } else if (offhand) {

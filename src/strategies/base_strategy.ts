@@ -1,8 +1,9 @@
 import { Attribute, Character, ChestData, ChestOpenedData, Constants, GItem, Game, IPosition, ItemName, PingCompensatedCharacter, Tools } from "alclient";
-import { Loop, LoopName, Loops, Strategy, CharacterRunner, StrategyName } from "./character_runner";
 import { LRUCache } from "lru-cache";
-import { ignoreExceptions } from "../base/functions";
 import { KEEP_GOLD, KEEP_ITEMS, PotionName, SELL_ITMES, SEND_GOLD_AT, SEND_TO_NAME } from "../base/constants";
+import { ignoreExceptions } from "../base/functions";
+import { PartyController } from "../controller/party_controller";
+import { Loop, LoopName, Loops, Strategy, StrategyName } from "./character_runner";
 
 
 export type RestorationConfig = {
@@ -22,14 +23,14 @@ export class BaseStrategy<T extends PingCompensatedCharacter> implements Strateg
     protected static recentlyLooted = new LRUCache<string, boolean>({ max: 10 });
 
     private _name: StrategyName = "base";
-    private runners: CharacterRunner<T>[];
+    private partyController: PartyController;
     private config: RestorationConfig;
     private chestCache = new Map<string, Map<string, Map<string, ChestData>>>();
 
     private lootOnDrop: (data: ChestData) => void;
 
-    public constructor(runners: CharacterRunner<T>[], config: RestorationConfig) {
-        this.runners = runners;
+    public constructor(partyController: PartyController, config: RestorationConfig) {
+        this.partyController = partyController;
         this.config = config;
 
         this.loops.set("respawn", {
@@ -188,7 +189,7 @@ export class BaseStrategy<T extends PingCompensatedCharacter> implements Strateg
 
         let mf: number = 0;
         let mfer: Character;
-        for (const myBot of this.runners) {
+        for (const myBot of this.partyController.getRunners()) {
             const friend = myBot.bot;
             if (friend.serverData.region !== bot.serverData.region || friend.serverData.name !== bot.serverData.name) continue;
             if (!friend.chests.has(chest.id)) continue; // Friend dont have this chest
@@ -231,7 +232,7 @@ export class BaseStrategy<T extends PingCompensatedCharacter> implements Strateg
     }
 
     private async handleInventory(bot: T): Promise<void> {
-        const sendToBot: PingCompensatedCharacter | undefined = this.runners.find((runner) => runner.bot.name == SEND_TO_NAME)?.bot;
+        const sendToBot: PingCompensatedCharacter | undefined = this.partyController.getRunners().find((runner) => runner.bot.name == SEND_TO_NAME)?.bot;
         const hasDistance: boolean = sendToBot && Tools.squaredDistance(bot, sendToBot) < Constants.NPC_INTERACTION_DISTANCE_SQUARED;
         
 
