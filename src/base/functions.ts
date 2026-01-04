@@ -1,9 +1,9 @@
 import { Character, CharacterType, Entity, Game, IPosition, Mage, Merchant, MonsterName, Paladin, PingCompensatedCharacter, Priest, Ranger, Rogue, ServerData, ServerIdentifier, ServerRegion, Tools, Warrior } from "alclient"
 import { SpecialName } from "../configs/boss_configs"
 import { PartyController } from "../controller/party_controller"
+import { BaseStrategy } from "../strategies/base_strategy"
 import { CharacterRunner } from "../strategies/character_runner"
 import { SPECIAL_MONSTERS } from "./constants"
-import { BaseStrategy } from "../strategies/base_strategy"
 
 
 export type FilterBotsOptions = {
@@ -131,6 +131,14 @@ export function sortTypeThenClosest(to: Character, types: MonsterName[]) {
 
         return d_a - d_b;
     }
+}
+
+export function sortClosestDistance(to: Character) {
+    return (a: IPosition, b: IPosition) => {
+        let d_a = Tools.squaredDistance(to, a);
+        let d_b = Tools.squaredDistance(to, b);
+        return d_a - d_b;
+    };
 }
 
 export async function sleep(ms: number): Promise<void> {

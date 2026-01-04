@@ -2,7 +2,7 @@ import { CharacterType, IPosition, PingCompensatedCharacter } from "alclient";
 import { PartyController } from "../controller/party_controller";
 import { Strategy } from "../strategies/character_runner";
 import { MageAttackStrategy } from "../strategies/mage/mage_attack_strategy";
-import { BaseMoveStrategy, FarmingMoveStrategy, HoldPositionStrategy, MoveAroundStrategy } from "../strategies/move_strategy";
+import { BaseMoveStrategy, HoldPositionStrategy, KiteInCircleStrategy, KiteMonsterStrategy, MoveInCircleStrategy } from "../strategies/move_strategy";
 import { PriestAttackStrategy } from "../strategies/priest/priest_attack_strategy";
 import { WarriorAttackStrategy } from "../strategies/warrior/warrior_attack_strategy";
 import { MAGE_AOE, PRIEST_MF, PRIEST_TANKY, WARRIOR_AOE } from "./equipment_setups";
@@ -44,14 +44,14 @@ export function getSpotConfig(spotName: SpotName, partyController: PartyControll
                     warrior: {
                         attack: new WarriorAttackStrategy(partyController, {
                             typeList: ["bat", "goldenbat", "phoenix", "mvampire"],
-                            enableGreedyAggro: false,
                             maximumTargets: 15,
                             equipmentSet: WARRIOR_AOE,
-                            disableStomp: false,
-                            enableEquipForCleave: true,
-                            enableEquipForStomp: false
+                            enableEquipForCleave: true
                         }),
-                        move: new BaseMoveStrategy(["bat", "goldenbat", "phoenix", "mvampire"])
+                        move: new KiteMonsterStrategy({
+                            partyController: partyController,
+                            typeList: ["bat", "goldenbat", "phoenix", "mvampire"]
+                        })
                     },
                     mage: {
                         attack: new MageAttackStrategy(partyController, {
@@ -62,7 +62,10 @@ export function getSpotConfig(spotName: SpotName, partyController: PartyControll
                             disableCburst: false,
                             energize: defaultEnergize
                         }),
-                        move: new BaseMoveStrategy(["bat", "goldenbat", "phoenix", "mvampire"])
+                        move: new KiteMonsterStrategy({
+                            partyController: partyController,
+                            typeList: ["bat", "goldenbat", "phoenix", "mvampire"]
+                        })
                     },
                     priest: {
                         attack: new PriestAttackStrategy(partyController, {
@@ -74,7 +77,12 @@ export function getSpotConfig(spotName: SpotName, partyController: PartyControll
                             enableAbsorbToTank: true,
                             startHealingAtRatio: 0.8
                         }),
-                        move: new BaseMoveStrategy(["bat", "goldenbat", "phoenix", "mvampire"])
+                        move: new KiteInCircleStrategy({
+                            centre: { map: "cave", x: -200, y: -478 },
+                            radius: 130,
+                            typeList: ["bat", "mvampire", "phoenix"],
+                            sensitivity: 20
+                        })
                     },
                     merchant: {
                         move: new HoldPositionStrategy({ x: 331, y: -831, map: "cave" })
@@ -630,7 +638,10 @@ export function getSpotConfig(spotName: SpotName, partyController: PartyControll
                             enableEquipForCleave: true,
                             enableEquipForStomp: true
                         }),
-                        move: new BaseMoveStrategy(["goo"])
+                        move: new KiteMonsterStrategy({
+                            partyController: partyController,
+                            typeList: ["goo"]
+                        })
                     },
                     mage: {
                         attack: new MageAttackStrategy(partyController, {
@@ -638,7 +649,10 @@ export function getSpotConfig(spotName: SpotName, partyController: PartyControll
                             equipmentSet: MAGE_AOE,
                             energize: defaultEnergize
                         }),
-                        move: new BaseMoveStrategy(["goo"])
+                        move: new KiteMonsterStrategy({
+                            partyController: partyController,
+                            typeList: ["goo"]
+                        })
                     },
                     priest: {
                         attack: new PriestAttackStrategy(partyController, {
@@ -649,7 +663,10 @@ export function getSpotConfig(spotName: SpotName, partyController: PartyControll
                             enableAbsorbToTank: true,
                             startHealingAtRatio: 0.8
                         }),
-                        move: new BaseMoveStrategy(["goo"])
+                        move: new KiteMonsterStrategy({
+                            partyController: partyController,
+                            typeList: ["goo"]
+                        })
                     },
                     merchant: {
                         move: new HoldPositionStrategy({ x: -1, y: 648, map: "main" })
@@ -929,7 +946,7 @@ export function getSpotConfig(spotName: SpotName, partyController: PartyControll
                             enableEquipForCleave: true,
                             enableEquipForStomp: true
                         }),
-                        move: new FarmingMoveStrategy(["phoenix", "scorpion"], { x: 1309, y: -215, map: "main" })
+                        move: new BaseMoveStrategy(["phoenix", "scorpion"])
                     },
                     mage: {
                         attack: new MageAttackStrategy(partyController, {
@@ -939,7 +956,7 @@ export function getSpotConfig(spotName: SpotName, partyController: PartyControll
                             disableCburst: true,
                             energize: defaultEnergize
                         }),
-                        move: new FarmingMoveStrategy(["phoenix", "scorpion"], { x: 1309, y: -215, map: "main" })
+                        move: new BaseMoveStrategy(["phoenix", "scorpion"])
                     },
                     priest: {
                         attack: new PriestAttackStrategy(partyController, {
@@ -949,9 +966,11 @@ export function getSpotConfig(spotName: SpotName, partyController: PartyControll
                             disableScare: true,
                             startHealingAtRatio: 0.8
                         }),
-                        move: new MoveAroundStrategy(["phoenix", "scorpion"], {
-                            position: { x: 1309, y: -215, map: "main" },
-                            kitingOpts: { radius: 30, minDistToMove: 10 }
+                        move: new KiteInCircleStrategy({
+                            centre: { map: "main", x: 1309, y: -215 },
+                            radius: 30,
+                            typeList: ["scorpion", "phoenix"],
+                            sensitivity: 10
                         })
                     },
                     merchant: {
@@ -974,7 +993,7 @@ export function getSpotConfig(spotName: SpotName, partyController: PartyControll
                             enableEquipForCleave: true,
                             enableEquipForStomp: true
                         }),
-                        move: new FarmingMoveStrategy(["phoenix", "spider"], { x: 1309, y: -215, map: "main" })
+                        move: new BaseMoveStrategy(["phoenix", "spider"])
                     },
                     mage: {
                         attack: new MageAttackStrategy(partyController, {
@@ -984,7 +1003,7 @@ export function getSpotConfig(spotName: SpotName, partyController: PartyControll
                             disableCburst: true,
                             energize: defaultEnergize
                         }),
-                        move: new FarmingMoveStrategy(["phoenix", "spider"], { x: 1309, y: -215, map: "main" })
+                        move: new BaseMoveStrategy(["phoenix", "spider"])
                     },
                     priest: {
                         attack: new PriestAttackStrategy(partyController, {
@@ -994,9 +1013,11 @@ export function getSpotConfig(spotName: SpotName, partyController: PartyControll
                             disableScare: true,
                             startHealingAtRatio: 0.8
                         }),
-                        move: new MoveAroundStrategy(["phoenix", "spider"], {
-                            position: { x: 1309, y: -215, map: "main" },
-                            kitingOpts: { radius: 30, minDistToMove: 10 }
+                        move: new KiteInCircleStrategy({
+                            centre: { map: "main", x: 1309, y: -215 },
+                            radius: 30,
+                            typeList: ["spider", "phoenix"],
+                            sensitivity: 10
                         })
                     },
                     merchant: {

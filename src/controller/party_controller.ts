@@ -13,8 +13,7 @@ export class PartyController {
     private partyAllow: string[];
 
     private activeRunners: Map<string, CharacterRunner<PingCompensatedCharacter>>;
-
-    private pTarget: string = undefined;
+    private botTargets: Map<string, string>;
 
     constructor(homeServerName: ServerRegion, homeServerId: ServerIdentifier, defaultSpot: SpotName, partyLeader: string, partyAllow: string[]) {
         this.homeServerName = homeServerName;
@@ -26,6 +25,7 @@ export class PartyController {
         this.partyAllow = partyAllow;
 
         this.activeRunners = new Map<string, CharacterRunner<PingCompensatedCharacter>>();
+        this.botTargets = new Map<string, string>();
     }
 
     public getRunners(): CharacterRunner<PingCompensatedCharacter>[] {
@@ -49,12 +49,16 @@ export class PartyController {
         this.activeRunners.delete(botId);
     }
 
-    public get target(): string {
-        return this.pTarget;
+    public getBotTarget(botId: string): string {
+        return this.botTargets.get(botId);
     }
 
-    public set target(newTarget: string) {
-        this.pTarget = newTarget;
+    public setBotTarget(botId: string, target: string | null): void {
+        this.botTargets.set(botId, target);
+    }
+
+    public getPartyTarget(): string {
+        return this.botTargets.get(this.partyLeader);
     }
 }
 

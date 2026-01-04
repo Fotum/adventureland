@@ -1,8 +1,8 @@
-import { Entity, IPosition, MonsterName, Pathfinder, PingCompensatedCharacter, Player, Tools } from "alclient";
-import { Loop, LoopName, Strategy, CharacterRunner, StrategyName } from "./character_runner";
-import { ignoreExceptions, sortTypeThenClosest } from "../base/functions";
-import { getEntityAvoidanceVector, getRandomAngle, getVector } from "../geometry/functions";
-import { Vector } from "../geometry/vector";
+import { Entity, GData, GMap, GMonster, Game, IPosition, MapName, MonsterName, Pathfinder, PingCompensatedCharacter, Player, ServerInfoDataLive, SmartMoveOptions, Tools } from "alclient";
+import { PLAYER_MIN_DISTANCE } from "../base/constants";
+import { filterRunners, ignoreExceptions, sortClosestDistance } from "../base/functions";
+import { PartyController } from "../controller/party_controller";
+import { CharacterRunner, Loop, LoopName, Strategy, StrategyName } from "./character_runner";
 
 
 export class BaseMoveStrategy<T extends PingCompensatedCharacter> implements Strategy<T> {
@@ -17,17 +17,30 @@ export class BaseMoveStrategy<T extends PingCompensatedCharacter> implements Str
 
         this.loops.set("move", {
             fn: async (bot: T) => {
-                await this.move(bot);
+                if (bot.rip) return;
+                await this.move(bot).catch(ignoreExceptions);
             },
             interval: 200
         });
     }
 
-    public get name() {
+    public get name(): StrategyName {
         return this._name;
     }
 
-    private async move(bot: T) {
+    private async move(bot: T): Promise<unknown> {
+        if (bot.ctype == "priest") {
+            let lowHpFriend: Player = bot.getPlayer({ isDead: false, isPartyMember: true, returnLowestHP: true });
+            if (lowHpFriend && lowHpFriend.hp < (lowHpFriend.max_hp * 0.5) && Tools.distance(bot, lowHpFriend) > bot.range) {
+                return bot.smartMove(lowHpFriend, { getWithin: bot.range * 0.8 }).catch(ignoreExceptions);
+            }
+        } else if (bot.hp < (bot.max_hp * 0.5)) {
+            let priest: Player = bot.getPlayer({ isDead: false, isPartyMember: true, ctype: "priest", returnNearest: true });
+            if (priest && Tools.distance(bot, priest) > priest.range) {
+                return bot.smartMove(priest, { getWithin: priest.range * 0.8 }).catch(ignoreExceptions);
+            }
+        }
+
         let nearest: Entity = bot.getEntity({
             returnNearest: true,
             typeList: this.types,
@@ -36,28 +49,77 @@ export class BaseMoveStrategy<T extends PingCompensatedCharacter> implements Str
         });
 
         if (!nearest) {
-            if (!bot.smartMoving) bot.smartMove(this.types[0]).catch(ignoreExceptions);
+            if (!bot.smartMoving) return bot.smartMove(this.types[0]);
         } else if (Tools.distance(bot, nearest) > bot.range) {
-            bot.smartMove(nearest, {
+            return bot.smartMove(nearest, {
                 getWithin: Math.max(0, bot.range - nearest.speed),
                 resolveOnFinalMoveStart: true
-            }).catch(ignoreExceptions);
+            });
         }
     }
 }
 
-export class FollowMoveStrategy implements Strategy<PingCompensatedCharacter> {
-    public loops = new Map<LoopName, Loop<PingCompensatedCharacter>>;
+export class FollowMoveStrategy<T extends PingCompensatedCharacter> implements Strategy<T> {
+    public loops: Map<LoopName, Loop<T>> = new Map<LoopName, Loop<T>>;
 
     private _name: StrategyName = "move";
-    private friendToFollow: CharacterRunner<PingCompensatedCharacter>;
+    private friendToFollow: CharacterRunner<PingCompensatedCharacter> | string;
 
-    public constructor(friendToFollow: CharacterRunner<PingCompensatedCharacter>) {
-        if (!friendToFollow) throw new Error("No follow target specified");
+    public constructor(friendToFollow: CharacterRunner<PingCompensatedCharacter> | string) {
         this.friendToFollow = friendToFollow;
-
         this.loops.set("move", {
             fn: async (bot: PingCompensatedCharacter) => {
+                if (bot.rip) return;
+                await this.move(bot).catch(ignoreExceptions);
+            },
+            interval: 1000
+        });
+    }
+
+    protected async move(bot: PingCompensatedCharacter): Promise<unknown> {
+        let toFollow: IPosition & { ready?: boolean } = undefined;
+        if (this.friendToFollow instanceof CharacterRunner<PingCompensatedCharacter>) {
+            toFollow = this.friendToFollow.bot;
+        } else {
+            toFollow = bot.getPlayers().find((player) => player.id == this.friendToFollow);
+            if (toFollow) toFollow.ready = true;
+        }
+
+        if (!toFollow || !toFollow.ready) return;
+        return bot.smartMove(toFollow, { getWithin: PLAYER_MIN_DISTANCE + 5 }).catch(ignoreExceptions);
+    }
+
+    public get name(): StrategyName {
+        return this._name;
+    }
+}
+
+export type HoldPositionStrategyConfig = {
+    offset?: {
+        x?: number
+        y?: number
+        d?: number
+    }
+}
+export class HoldPositionStrategy<T extends PingCompensatedCharacter> implements Strategy<T> {
+    public loops = new Map<LoopName, Loop<T>>;
+
+    private _name: StrategyName = "move";
+    private location: IPosition;
+    private delta: number = 0;
+
+    public constructor(location: IPosition, config?: HoldPositionStrategyConfig) {
+        this.location = { ...location };
+
+        if (config?.offset) {
+            if (config.offset.x) this.location.x += config.offset.x;
+            if (config.offset.y) this.location.y += config.offset.y;
+            if (config.offset.d) this.delta = config.offset.d;
+        }
+
+        this.loops.set("move", {
+            fn: async (bot: T) => {
+                if (bot.rip) return;
                 await this.move(bot).catch(ignoreExceptions);
             },
             interval: 1000
@@ -68,300 +130,449 @@ export class FollowMoveStrategy implements Strategy<PingCompensatedCharacter> {
         return this._name;
     }
 
-    private async move(bot: PingCompensatedCharacter): Promise<IPosition> {
-        let friend: PingCompensatedCharacter = this.friendToFollow.bot;
-        if (!friend || !friend.ready) return;
-
-        return bot.smartMove(friend, { getWithin: 10 });
+    private async move(bot: T): Promise<unknown> {
+        if (this.location.map != bot.map || (this.delta > 0 && Tools.distance(bot, this.location) > this.delta)) {
+            return bot.smartMove(this.location, { useBlink: true }).catch(ignoreExceptions);
+        }
     }
 }
 
-export class HoldPositionStrategy implements Strategy<PingCompensatedCharacter> {
-    public loops = new Map<LoopName, Loop<PingCompensatedCharacter>>;
-
-    private _name: StrategyName = "move";
-    private location: IPosition;
-
-    public constructor(location: IPosition) {
-        this.location = location;
-
-        this.loops.set("move", {
-            fn: async (bot: PingCompensatedCharacter) => {
-                await this.move(bot);
-            },
-            interval: 1000
-        });
-    }
-
-    public get name() {
-        return this._name;
-    }
-
-    private async move(bot: PingCompensatedCharacter): Promise<void> {
-        await bot.smartMove(this.location, { useBlink: true }).catch(ignoreExceptions);
-    }
+export type KiteInCircleConfig = {
+    centre: IPosition
+    radius: number
+    typeList: MonsterName[]
+    sensitivity: number
 }
+export class KiteInCircleStrategy<T extends PingCompensatedCharacter> implements Strategy<T> {
+    public loops: Map<LoopName, Loop<T>> = new Map<LoopName, Loop<T>>;
 
-export class FarmingMoveStrategy implements Strategy<PingCompensatedCharacter> {
-    public loops = new Map<LoopName, Loop<PingCompensatedCharacter>>;
-
-    protected types: MonsterName[];
-    protected position: IPosition;
-    protected botSort: (a: Entity, b: Entity) => number;
+    protected config: KiteInCircleConfig;
 
     private _name: StrategyName = "move";
 
-    public constructor(type: MonsterName | MonsterName[], position: IPosition) {
-        if (Array.isArray(type)) this.types = type;
-        else this.types = [type];
+    public constructor(config: KiteInCircleConfig) {
+        this.config = config;
 
-        this.position = position;
         this.loops.set("move", {
-            fn: async (bot: PingCompensatedCharacter) => {
+            fn: async (bot: T) => {
                 if (bot.rip) return;
-                if (!Pathfinder.canStand(bot) && bot.moving) return;
-
-                let targets: Entity[] = bot.getEntities({
-                    canDamage: true,
-                    couldGiveCredit: true,
-                    typeList: this.types,
-                    willBurnToDeath: false,
-                    willDieToProjectiles: false
-                });
-                targets.sort(this.botSort);
-                let target: IPosition = targets.length > 0 ? targets[1] : undefined;
-
-                await this.move(bot, target, bot.range - 5);
+                await this.move(bot).catch(ignoreExceptions);
             },
             interval: 250
         });
     }
 
-    public onApply(bot: PingCompensatedCharacter): void {
-        this.botSort = sortTypeThenClosest(bot, this.types);
-    }
-
-    public get name() {
+    public get name(): StrategyName {
         return this._name;
     }
 
-    protected async move(bot: PingCompensatedCharacter, newPosition?: IPosition, withinRange?: number): Promise<void> {
-        if (bot.ctype == "priest") {
-            let lowHpFriend: Player = bot.getPlayer({ isDead: false, isPartyMember: true, returnLowestHP: true });
-            if (lowHpFriend && lowHpFriend.hp < (lowHpFriend.max_hp * 0.5) && Tools.distance(bot, lowHpFriend) > bot.range) {
-                bot.smartMove(lowHpFriend, { getWithin: bot.range - 25 }).catch(ignoreExceptions);
-                return;
+    private async move(bot: T): Promise<unknown> {
+        const { centre, radius, typeList: typeList, sensitivity } = this.config;
+
+        if (Tools.distance(bot, centre) > radius * sensitivity) {
+            await bot.smartMove(centre, { getWithin: radius })
+        }
+
+        let monster: Entity = bot.getEntity({ typeList: typeList, returnNearest: true });
+        if (!monster) return;
+
+        let angleFromCentreToBot: number = Math.atan2(bot.y - centre.y, bot.x - centre.x);
+
+        let cw: number = angleFromCentreToBot + Math.PI / 6;
+        let ccw: number = angleFromCentreToBot - Math.PI / 6;
+
+        let cwPoint: IPosition = {
+            x: centre.x + radius * Math.cos(cw),
+            y: centre.y + radius * Math.sin(cw)
+        };
+        let ccwPoint: IPosition = {
+            x: centre.x + radius * Math.cos(ccw),
+            y: centre.y + radius * Math.sin(ccw)
+        };
+
+        let distanceFromCwToMonster:  number = Tools.distance({ x: monster.x, y: monster.y }, cwPoint);
+        let distanceFromCcwToMonster: number = Tools.distance({ x: monster.x, y: monster.y }, ccwPoint);
+
+        let moveToPoint: IPosition = undefined;
+        if (distanceFromCwToMonster > bot.range && distanceFromCcwToMonster > bot.range) {
+            if (distanceFromCwToMonster > distanceFromCcwToMonster) {
+                moveToPoint = ccwPoint;
+            } else {
+                moveToPoint = cwPoint;
             }
-        } else if (bot.hp < (bot.max_hp * 0.5)) {
-            let priest: Player = bot.getPlayer({ isDead: false, isPartyMember: true, ctype: "priest", returnNearest: true });
-            if (priest && Tools.distance(bot, priest) > priest.range) {
-                bot.smartMove(priest, { getWithin: priest.range - 25 }).catch(ignoreExceptions);
-                return;
+        } else {
+            if (distanceFromCwToMonster <= distanceFromCcwToMonster) {
+                moveToPoint = ccwPoint;
+            } else {
+                moveToPoint = cwPoint;
             }
         }
 
-        // We can see target nearby, check if we need to move or just keep staying
-        if (newPosition) {
-            let d: number = Tools.distance(bot, newPosition);
-            if (!withinRange) withinRange = bot.range - 5;
-            if (d > withinRange) {
-                let targetVector: Vector = getVector(bot, newPosition, withinRange);
-                let moveTo: Vector = new Vector(bot.x, bot.y).add(targetVector);
-
-                // No need to move
-                if (targetVector.length() == 0) return;
-
-                let moveToPos: IPosition = { x: moveTo.x, y: moveTo.y, map: newPosition.map };
-                if (Pathfinder.canWalkPath(bot, moveToPos)) {
-                    bot.move(moveToPos.x, moveToPos.y, { disableSafetyCheck: true, resolveOnStart: true }).catch(ignoreExceptions);
-                } else {
-                    bot.smartMove(moveToPos, {
-                        getWithin: withinRange,
-                        resolveOnFinalMoveStart: true
-                    }).catch(ignoreExceptions);
-                }
-            }
-
-            return;
-        }
-
-        // If we are on a wrong map or somewhere far away and cant see any targets
-        if (bot.map !== this.position.map) {
-            await bot.smartMove(this.position, {
-                avoidTownWarps: bot.targets > 0,
-                resolveOnFinalMoveStart: true,
-                useBlink: true,
-                stopIfTrue: async () => {
-                    if (bot.map !== this.position.map) return false;
-                    let entities = bot.getEntities({
-                        canDamage: true,
-                        couldGiveCredit: true,
-                        typeList: this.types,
-                        willBurnToDeath: false,
-                        willDieToProjectiles: false,
-                        withinRange: "attack"
-                    });
-                    return entities.length > 0;
-                }
-            }).catch(ignoreExceptions);
-        } else if (!bot.smartMoving) {
-            bot.smartMove(this.position, {
-                resolveOnFinalMoveStart: true,
-                useBlink: true,
-                stopIfTrue: async () => {
-                    if (bot.map !== this.position.map) return false;
-                    let entities = bot.getEntities({
-                        canDamage: true,
-                        couldGiveCredit: true,
-                        typeList: this.types,
-                        willBurnToDeath: false,
-                        willDieToProjectiles: false,
-                        withinRange: "attack"
-                    });
-                    return entities.length > 0;
-                }
-            }).catch(ignoreExceptions);
-        }
+        return bot.smartMove(moveToPoint, { resolveOnFinalMoveStart: true }).catch(ignoreExceptions);
     }
 }
 
-export type KitingMoveConfig = {
-    position: IPosition
-    kitingOpts: {
-        numAngles: number
-        lookupDist: number
-        ignoreMonsters?: MonsterName[]
-    }
+export type MoveInCircleStrategyConfig = {
+    centre: IPosition
+    radius: number
+    sides?: number
+    ccw?: boolean
+    rnd?: boolean
 }
+export class MoveInCircleStrategy<T extends PingCompensatedCharacter> implements Strategy<T> {
+    public loops: Map<LoopName, Loop<T>> = new Map<LoopName, Loop<T>>;
 
-export class KitingMoveStrategy extends FarmingMoveStrategy {
-    private options: { numAngles: number, lookupDist: number, ignoreMonsters?: MonsterName[] };
+    protected config: MoveInCircleStrategyConfig;
 
-    public constructor(type: MonsterName | MonsterName[], options: KitingMoveConfig) {
-        super(type, options.position);
-        this.options = options.kitingOpts;
+    private _name: StrategyName = "move";
+
+    public constructor(config: MoveInCircleStrategyConfig) {
+        if (config.sides === undefined) {
+            config.sides = 3;
+        } else if (config.sides !== undefined && config.sides < 3) {
+            config.sides = 3;
+        }
+
+        this.config = config;
 
         this.loops.set("move", {
-            fn: async (bot: PingCompensatedCharacter) => {
+            fn: async (bot: T) => {
                 if (bot.rip) return;
-                if (!Pathfinder.canStand(bot) && bot.moving) return;
-
-                let targets: Entity[] = bot.getEntities({
-                    canDamage: true,
-                    couldGiveCredit: true,
-                    typeList: this.types,
-                    willBurnToDeath: false,
-                    willDieToProjectiles: false
-                });
-                targets.sort(this.botSort);
-                let target: IPosition = targets.length > 0 ? targets[1] : undefined;
-
-                await this.move(bot, target);
+                await this.move(bot).catch(ignoreExceptions);
             },
-            interval: 250
+            interval: 250,
         });
     }
 
-    protected async move(bot: PingCompensatedCharacter, target?: IPosition): Promise<void> {
-        if (!target) return super.move(bot, target);
-
-        this.kite(bot, target);
+    public get name(): StrategyName {
+        return this._name;
     }
 
-    protected async kite(bot: PingCompensatedCharacter, target: IPosition): Promise<void> {
-        let botPosVector: Vector = new Vector(bot.x, bot.y);
-        let avoidanceVector: Vector = getEntityAvoidanceVector(bot, {
-            affectArea: bot.range,
-            magLimit: bot.range - 5,
-            ignoreMonsters: this.options.ignoreMonsters ? this.options.ignoreMonsters : undefined
+    private async move(bot: T): Promise<unknown> {
+        const angle: number = (2 * Math.PI) / this.config.sides;
+        const centre = this.config.centre;
+        const radius = this.config.radius;
+
+        let direction: number = 1;
+        if (this.config.rnd && !this.config.ccw) direction = Math.random() < 0.5 ? 1 : -1;
+        if (this.config.ccw && !this.config.rnd) direction = -1;
+
+        if (Pathfinder.canWalkPath(bot, centre)) {
+            let angleFromCentreToCurrent: number = Math.atan2(bot.y - centre.y, bot.x - centre.x);
+            let endPositionAngle: number = angleFromCentreToCurrent + (angle * direction);
+            let endPosition: IPosition = {
+                x: centre.x + radius * Math.cos(endPositionAngle),
+                y: centre.y + radius * Math.sin(endPositionAngle)
+            };
+
+            return bot.move(endPosition.x, endPosition.y).catch(ignoreExceptions);
+        } else {
+            return bot.smartMove(centre, { getWithin: radius, useBlink: true }).catch(ignoreExceptions);
+        }
+    }
+}
+
+export type SpecialMonsterKiteStrategyConfig = {
+    partyController: PartyController
+    ignoreMaps?: MapName[]
+    typeList: MonsterName[]
+}
+type CheckedBossData = undefined | {
+    map: MapName
+    x: number
+    y: number
+}
+export class SpecialMonsterKiteStrategy<T extends PingCompensatedCharacter> implements Strategy<T> {
+    public loops: Map<LoopName, Loop<T>> = new Map<LoopName, Loop<T>>;
+
+    protected config: SpecialMonsterKiteStrategyConfig;
+    protected spawns: IPosition[];
+
+    private _name: StrategyName = "move";
+    private avoidDoorsCosts = { blink: 999_999_999, enter: 999_999_999, town: 999_999_999, transport: 999_999_999 };
+
+    public constructor(config: SpecialMonsterKiteStrategyConfig) {
+        this.config = config;
+        if (!this.config.ignoreMaps) this.config.ignoreMaps = ["test"];
+
+        this.spawns = Pathfinder.locateMonster(this.config.typeList);
+        if (this.config.ignoreMaps.length) {
+            this.spawns = this.spawns.filter((spawn) => !this.config.ignoreMaps.includes(spawn.map));
+        }
+
+        this.loops.set("move", {
+            fn: async (bot: T) => {
+                if (bot.rip) return;
+                await this.move(bot).catch(ignoreExceptions);
+                await this.kiteToNpc(bot).catch(ignoreExceptions);
+            },
+            interval: 250,
         });
-        let targetVector: Vector = getVector(bot, target, bot.range - 5, bot.range - 5);
+    }
 
-        let botMoveVector: Vector = botPosVector.clone().add(avoidanceVector).add(targetVector);
-        if (botMoveVector.length() <= 10) return;
+    public get name(): StrategyName {
+        return this._name;
+    }
 
-        for (let i = 1; i < this.options.numAngles; i++) {
-            let lookupVec: Vector = botMoveVector.clone().multiply(this.options.lookupDist);
-            let botMovePos: IPosition = { x: botMoveVector.x, y: botMoveVector.y, map: target.map };
-            let lookupPos: IPosition = { x: lookupVec.x, y: lookupVec.y, map: target.map };
-            if (!(Pathfinder.canStand(botMovePos) && Pathfinder.canStand(lookupPos))) {
-                let angle = (i % 2 ? 1 : -1) * (Math.PI * ((i - (i % 2)) / this.options.numAngles));
-                botMoveVector.rotate(angle);
+    protected async move(bot: T): Promise<IPosition | void> {
+        const smartMoveOptions: SmartMoveOptions = {
+            getWithin: bot.range - 10,
+            stopIfTrue: async (): Promise<boolean> => {
+                let target: CheckedBossData = this.checkGoodData(bot);
+                if (!target || target === bot) return false;
+                return Tools.distance(target, bot.smartMoving) > bot.range;
+            },
+            useBlink: true,
+            avoidTownWarps: bot.targets > 0
+        };
+
+        let target: CheckedBossData = this.checkGoodData(bot);
+        if (target) {
+            return Tools.distance(bot, target) > bot.range ? bot.smartMove(target, smartMoveOptions).catch(ignoreExceptions) : undefined;
+        }
+
+        spawns: for (let spawn of this.spawns) {
+            if (this.config.ignoreMaps && this.config.ignoreMaps.includes(spawn.map)) continue;
+            if (this.config.partyController?.getRunners()) {
+                for (let runner of this.config.partyController.getRunners()) {
+                    if (runner.bot == bot) continue;
+                    if (Tools.distance(runner.bot, spawn) < 400) continue spawns;
+                    if (!runner.bot.smartMoving) continue;
+                    if (Tools.distance(runner.bot.smartMoving, spawn) < 100) continue spawns;
+                }
+            }
+
+            try {
+                await bot.smartMove(spawn, smartMoveOptions);
+            } catch (ex) {
+                if (ex.message.includes("new smartMove started")) return;
+                else console.error(ex);
+            }
+
+            let target: CheckedBossData = this.checkGoodData(bot);
+            if (target) return bot.smartMove(target, smartMoveOptions).catch(ignoreExceptions);
+        }
+
+        let gMap: GMap = bot.G.maps[bot.map as keyof GData["maps"]];
+        let canRoam: boolean = false;
+
+        let spawns: IPosition[] = [];
+        for (let spawn of gMap.monsters) {
+            let gMonster: GMonster = bot.G.monsters[spawn.type];
+            canRoam = spawn.roam ? true : spawn.roam;
+
+            if (gMonster.aggro >= 100 || gMonster.rage >= 100) continue;
+            if (spawn.boundary) {
+                spawns.push({
+                    map: bot.map,
+                    x: (spawn.boundary[0] + spawn.boundary[2]) / 2,
+                    y: (spawn.boundary[1] + spawn.boundary[3]) / 2
+                });
+            } else if (spawn.boundaries) {
+                for (let boundary of spawn.boundaries) {
+                    if (this.config.ignoreMaps && this.config.ignoreMaps.includes(boundary[0])) continue;
+                    spawns.push({
+                        map: boundary[0],
+                        x: (boundary[1] + boundary[3]) / 2,
+                        y: (boundary[2] + boundary[4]) / 2
+                    });
+                }
+            }
+        }
+
+        if (!canRoam) return;
+        for (let spawn of gMap.spawns) {
+            spawns.push({ map: bot.map, x: spawn[0], y: spawn[1] });
+        }
+        spawns.sort((a, b) => a.x - b.x);
+
+        spawns: for (let spawn of spawns) {
+            if (this.config.partyController?.getRunners()) {
+                for (let runner of this.config.partyController.getRunners()) {
+                    if (runner.bot == bot) continue;
+                    if (Tools.distance(runner.bot, spawn) < 400) continue spawns;
+                    if (!runner.bot.smartMoving) continue;
+                    if (Tools.distance(runner.bot.smartMoving, spawn) < 100) continue spawns;
+                }
+            }
+
+            try {
+                await bot.smartMove(spawn, smartMoveOptions).catch(ignoreExceptions);
+            } catch (ex) {
+                if (ex.message.includes("new smartMove started")) return;
+                else console.error(ex);
+            }
+
+            let target: CheckedBossData = this.checkGoodData(bot);
+            if (target) return bot.smartMove(target, smartMoveOptions).catch(ignoreExceptions);
+        }
+    }
+
+    protected async kiteToNpc(bot: T): Promise<unknown> {
+        let target: Entity = bot.getEntity({ typeList: this.config.typeList });
+        if (!target) return;
+
+        let targets: IPosition[] = [];
+        if (bot.map == "main") {
+            let kane: Player = bot.players.get("$Kane");
+            if (!kane && this.config?.partyController.getRunners()) {
+                for (let runner of this.config.partyController.getRunners()) {
+                    if (!runner.isReady()) continue;
+                    if (runner.bot == bot) continue;
+
+                    kane = runner.bot.players.get("$Kane");
+                    if (kane) break;
+                }
+            }
+            if (kane) targets.push(kane);
+
+            let angel: Player = bot.players.get("$Angel");
+            if (!angel && this.config?.partyController.getRunners()) {
+                for (let runner of this.config.partyController.getRunners()) {
+                    if (!runner.isReady()) continue;
+                    if (runner.bot == bot) continue;
+
+                    angel = runner.bot.players.get("$Angel");
+                    if (angel) break;
+                }
+            }
+            if (angel) targets.push(angel);
+        }
+
+        if (targets.length == 1) return;
+        targets.sort(sortClosestDistance(bot));
+
+        let lastD: number = 0;
+        for (let target of targets) {
+            if (!target) return;
+
+            let d: number = Tools.distance({ x: bot.x, y: bot.y }, { x: target.x, y: target.y });
+            if (d < bot.range) {
+                lastD = d;
                 continue;
             }
 
-            if (Pathfinder.canWalkPath(bot, botMovePos)) {
+            if (lastD) {
+                return bot.smartMove(target, {
+                    costs: this.avoidDoorsCosts,
+                    getWithin: d - (bot.range - lastD),
+                    resolveOnFinalMoveStart: true
+                }).catch(ignoreExceptions);
+            } else {
+                return bot.smartMove(target, {
+                    costs: this.avoidDoorsCosts,
+                    resolveOnFinalMoveStart: true
+                }).catch(ignoreExceptions);
+            }
+        }
+
+        if (lastD) {
+            return bot.smartMove(targets[1], {
+                costs: this.avoidDoorsCosts,
+                getWithin: Tools.distance({ x: bot.x, y: bot.y }, { x: targets[1].x, y: targets[1].y }) - (bot.range = lastD),
+                resolveOnFinalMoveStart: true
+            }).catch(ignoreExceptions);
+        }
+    }
+
+    protected returnUndefinedIfMapIgnored(position: { map: MapName, x: number, y: number }): CheckedBossData {
+        if (!this.config.ignoreMaps) return position;
+        if (this.config.ignoreMaps.includes(position.map)) return undefined;
+
+        return position;
+    }
+
+    protected checkGoodData(bot: T): CheckedBossData {
+        let target: Entity = bot.getEntity({ returnNearest: true, typeList: this.config.typeList });
+        if (target) return this.returnUndefinedIfMapIgnored(target);
+
+        if (this.config.partyController?.getRunners()) {
+            for (let runner of filterRunners(this.config.partyController.getRunners(), { serverData: bot.serverData })) {
+                if (bot == runner.bot) continue;
+                let target: Entity = runner.bot.getEntity({ returnNearest: true, typeList: this.config.typeList });
+                if (target) return this.returnUndefinedIfMapIgnored(target);
+            }
+        }
+
+        for (let type of this.config.typeList) {
+            let sInfo: ServerInfoDataLive = bot.S?.[type] as ServerInfoDataLive;
+            if (sInfo?.live && sInfo.map && sInfo.x !== undefined && sInfo.y !== undefined) {
+                return this.returnUndefinedIfMapIgnored(sInfo as { map: MapName, x: number, y: number });
+            }
+
+            if (sInfo?.live && sInfo.map && bot.map != sInfo.map) {
+                let gInfo: GMap = Game.G.maps[sInfo.map as keyof GData["maps"]];
+                return { map: sInfo.map, x: gInfo.spawns[0][0], y: gInfo.spawns[0][1] };
+            }
+        }
+
+        let maps: Set<MapName> = new Set<MapName>(this.spawns.map((spawn) => spawn.map));
+        if (maps.size > 0 && !maps.has(bot.map)) {
+            let gInfo: GMap = Game.G.maps[this.spawns[0].map as keyof GData["maps"]];
+            return { map: this.spawns[0].map, x: gInfo.spawns[0][0], y: gInfo.spawns[0][1] };
+        }
+
+        return undefined;
+    }
+}
+
+export class KiteMonsterStrategy<T extends PingCompensatedCharacter> extends SpecialMonsterKiteStrategy<T> {
+    public constructor(config: SpecialMonsterKiteStrategyConfig) {
+        super(config);
+
+        this.loops.set("move", {
+            fn: async (bot: T) => {
+                if (bot.rip) return;
+                await this.move(bot).catch(ignoreExceptions);
+            },
+            interval: 250,
+        });
+    }
+
+    protected async move(bot: T): Promise<IPosition | void> {
+        let entity = bot.getEntity({ ...this.config, returnNearest: true });
+        if (!entity) return super.move(bot).catch(ignoreExceptions);
+
+        return this.kite(bot, entity).catch(ignoreExceptions);
+    }
+
+    protected async kite(bot: T, entity: Entity): Promise<IPosition | void> {
+        if ((bot.map != entity.map || bot.in != entity.in) && !bot.smartMoving) {
+            return bot.smartMove(entity, { getWithin: bot.range, useBlink: true }).catch(ignoreExceptions);
+        }
+
+        let angleFromEntityToBot: number = Math.atan2(bot.y - entity.y, bot.x - entity.x);
+        let kiteDistance: number = Math.min(bot.range, (entity.charge ?? entity.speed ?? 0) + entity.range + 50);
+        let lookDistance: number = kiteDistance * 1.25;
+        let numAngles: number = 40;
+
+        for (let i = 1; i < numAngles; i++) {
+            let angle: number = angleFromEntityToBot + (i % 2 ? 1: -1) * (Math.PI * ((i - (i % 2)) / numAngles));
+            let angleCos: number = Math.cos(angle);
+            let angleSin: number = Math.sin(angle);
+            let kitePosition: IPosition = {
+                map: bot.map,
+                x: entity.x + kiteDistance * angleCos,
+                y: entity.y + kiteDistance * angleSin
+            };
+            let lookPosition: IPosition = {
+                map: bot.map,
+                x: entity.x + lookDistance * angleCos,
+                y: entity.y + lookDistance * angleSin
+            };
+
+            if (!(Pathfinder.canStand(lookPosition) && Pathfinder.canStand(kitePosition))) continue;
+            if (Pathfinder.canWalkPath(bot, kitePosition)) {
                 if (bot.smartMoving) bot.stopSmartMove().catch(ignoreExceptions);
-                bot.move(botMovePos.x, botMovePos.y, { disableSafetyCheck: true, resolveOnStart: true }).catch(ignoreExceptions);
+                return bot.move(kitePosition.x, kitePosition.y, { resolveOnStart: true }).catch(ignoreExceptions);
             } else if (!bot.smartMoving) {
-                bot.smartMove(botMovePos, {
+                return bot.smartMove(kitePosition, {
                     avoidTownWarps: true,
                     costs: { enter: 9999, transport: 9999 },
                     resolveOnFinalMoveStart: true
                 }).catch(ignoreExceptions);
             }
-
-            return;
+            break;
         }
-    }
-}
-
-export type MoveAroundConfig = {
-    position: IPosition
-    kitingOpts: {
-        radius: number
-        minDistToMove: number
-    }
-}
-
-export class MoveAroundStrategy extends FarmingMoveStrategy {
-    private options: { radius: number, minDistToMove: number };
-
-    public constructor(type: MonsterName | MonsterName[], options: MoveAroundConfig) {
-        super(type, options.position);
-
-        this.options = options.kitingOpts;
-
-        this.loops.set("move", {
-            fn: async (bot: PingCompensatedCharacter) => {
-                if (bot.rip) return;
-                if (!Pathfinder.canStand(bot) && bot.moving) return;
-
-                let targets: Entity[] = bot.getEntities({
-                    canDamage: true,
-                    couldGiveCredit: true,
-                    typeList: this.types,
-                    willBurnToDeath: false,
-                    willDieToProjectiles: false
-                });
-                targets.sort(this.botSort);
-                let target: IPosition = targets.length > 0 ? targets[1] : undefined;
-
-                await this.move(bot, target, this.options.radius);
-            },
-            interval: 250
-        });
-    }
-
-    protected async move(bot: PingCompensatedCharacter, target?: IPosition, withinRange?: number): Promise<void> {
-        if (!target) return super.move(bot, target, withinRange);
-
-        this.moveAround(bot, target);
-    }
-
-    protected async moveAround(bot: PingCompensatedCharacter, centre: IPosition): Promise<void> {
-        let angle: number = getRandomAngle();
-
-        let moveVector: Vector = new Vector(bot.x - centre.x, bot.y - centre.y);
-        moveVector = moveVector.rotate(angle).limit(this.options.radius);
-
-        let newPosition: Vector = new Vector(centre.x, centre.y).add(moveVector);
-        while (!Pathfinder.canWalkPath(bot, { x: newPosition.x, y: newPosition.y, map: centre.map })) {
-            angle = getRandomAngle();
-            newPosition = newPosition.rotate(angle);
-        }
-
-        if (Tools.distance(bot, newPosition) > this.options.minDistToMove)
-            await bot.move(newPosition.x, newPosition.y, { disableSafetyCheck: true }).catch(ignoreExceptions);
     }
 }

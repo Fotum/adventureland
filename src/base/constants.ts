@@ -7,6 +7,8 @@ export type PotionName = "hpot0" | "hpot1" | "hpotx" | "mpot0" | "mpot1" | "mpot
 export const INFINITE_PAST: Date = new Date("1900-01-01Z00:00:00:000");
 export const INFINITE_FUTURE: Date = new Date("2100-01-01Z00:00:00:000");
 
+export const PLAYER_MIN_DISTANCE: number = 15;
+
 // export const MY_CHARACTERS: Map<string, CharacterType> = new Map<string, CharacterType>([
 //     ["Shalfey", "warrior"],
 //     ["Flamme", "priest"],
