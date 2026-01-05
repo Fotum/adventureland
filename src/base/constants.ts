@@ -8,6 +8,7 @@ export const INFINITE_PAST: Date = new Date("1900-01-01Z00:00:00:000");
 export const INFINITE_FUTURE: Date = new Date("2100-01-01Z00:00:00:000");
 
 export const PLAYER_MIN_DISTANCE: number = 15;
+export const HEAL_RETREAT_RATIO: number = 0.5;
 
 // export const MY_CHARACTERS: Map<string, CharacterType> = new Map<string, CharacterType>([
 //     ["Shalfey", "warrior"],
@@ -19,14 +20,13 @@ export const MY_CHARACTERS: Map<string, CharacterType> = new Map<string, Charact
     ["Ardy", "warrior"],
     ["NIami", "priest"],
     ["Memph1s", "mage"],
-    // ["Fotum", "merchant"]
+    ["Fotum", "merchant"]
 ]);
 export const FRIENDLY_CHARACTERS: string[] = [];
 
 export const SPECIAL_MONSTERS: Set<SpecialName> = new Set(["phoenix", "frog", "fvampire", "mvampire", "jr", "greenjr", "skeletor"]);
 export const EVENTS: Set<EventName> = new Set(["goobrawl", "dragold", "icegolem", "valentines", "snowman"]);
 
-export const SEND_TO_NAME: string = "Momental";
 export const KEEP_GOLD: number = 1_000_000;
 export const SEND_GOLD_AT: number = 1.5;
 export const KEEP_ITEMS: Set<ItemName> = new Set<ItemName>([
@@ -40,11 +40,6 @@ export const EXCHANGE_ITMES: Set<ItemName> = new Set<ItemName>([
 ]);
 export const BUY_FROM_PONTY: Map<ItemName, number> = new Map<ItemName, number>([
     ["5bucks", 100_000_000],
-
-    // Heavy set
-    ["hhelmet", 20_000_000],
-    ["harmor", 23_000_000],
-    ["hpants", 18_000_000],
 
     // Darkforge set
     ["xhelmet", 23_500_000],
@@ -66,13 +61,10 @@ export const BUY_FROM_PONTY: Map<ItemName, number> = new Map<ItemName, number>([
     ["cearring", 10_500_000],
 
     // Rare items
-    ["firestaff", 14_000_000],
-    ["fireblade", 10_000_000],
     ["ololipop", 4_000_000],
     ["glolipop", 4_000_000],
     ["oozingterror", 10_000_000],
     ["mittens", 8_000_000],
-    ["lmace", 80_000_000],
     ["frankypants", 30_000_000],
 
     // Super rare items
@@ -82,6 +74,7 @@ export const BUY_FROM_PONTY: Map<ItemName, number> = new Map<ItemName, number>([
     ["zapper", 60_000_000],
 
     // Event items
+    ["lmace", 80_000_000],
     ["mistletoe", 48_000],
     ["candycane", 57_600],
     ["ornament", 7_200],
@@ -91,12 +84,16 @@ export const DISMANTLE_ITEMS: Set<ItemName> = new Set<ItemName>([
     "firebow"
 ]);
 export const SELL_ITMES: Set<ItemName> = new Set<ItemName>([
-    "xmassweater", "rednose", "warmscarf", "dexamulet", "dexring", "vitring", "vitearring", "dexearring", "snowball", "coat", "pants",
-    "snowflakes", "hpbelt", "hpamulet", "cclaw", "iceskates", "hbow", "santasbelt", "candycanesword", "xmaspants", "xmashat", "xmasshoes",
-    "stinger", "quiver", "sstinger", "merry", "ringsj", "t2bow", "firecrackers", "throwingstars", "sword", "rapier", "dagger", "xmace",
-    "pstem", "spear", "cupid", "swifty", "dexbelt", "shield", "whiteegg", "carrotsword", "spores", "smoke", "gslime", "crossbow", "mushroomstaff",
-    "smush", "wbook0", "hgloves", "hboots", "basher", "pmaceofthedead", "daggerofthedead", "bowofthedead", "swordofthedead", "staffofthedead",
-    "maceofthedead", "wcap", "wgloves", "wattire", "wshoes", "helmet1", "coat1", "pants1", "gloves1", "shoes1", "helmet", "shoes", "gloves"
+    "basher", "bowofthedead", "candycanesword", "carrotsword", "cclaw", "coat", "coat1", "crossbow", "cupid", "dagger", "daggerofthedead", "dexamulet", "dexbelt", "dexearring", "dexring", "firecrackers",
+    "glolipop", "gloves", "gloves1", "gphelmet", "gslime", "hboots", "hbow", "hdagger", "helmet", "helmet1", "hgloves", "hhelmet", "hpamulet", "hpants", "hpbelt", "iceskates", "maceofthedead", "merry",
+    "mushroomstaff", "pants", "pants1", "phelmet", "pmace", "pmaceofthedead", "pstem", "quiver", "rapier", "rednose", "ringsj", "santasbelt", "shield", "shoes", "shoes1", "skullamulet", "smoke", "smush",
+    "snowball", "snowflakes", "spear", "spores", "sstinger", "staffofthedead", "stinger", "swifty", "sword", "swordofthedead", "t2bow", "throwingstars", "vitearring", "vitring", "vitscroll", "warmscarf",
+    "wattire", "wbook0", "wcap", "wgloves", "whiteegg", "wshoes", "xmace", "xmashat", "xmaspants", "xmasshoes", "xmassweater"
+]);
+export const REPLENISH_RATIO: number = 0.3;
+export const REPLENISHABLES: Map<ItemName, number> = new Map<ItemName, number>([
+    ["elixirluck", 20],
+    ["xptome", 1]
 ]);
 
 export const MERCHANT_KEEP_ITEMS: Set<ItemName> = new Set<ItemName>([
@@ -200,27 +197,3 @@ export const MERCHANT_UPGRADE: Map<ItemName, UpgradeConfig> = new Map<ItemName, 
     ["orbg", { level: 3 }],
     ["jacko", { level: 3 }]
 ]);
-
-export const WARRIOR_KEEP_ITEMS: ItemData[] = [
-    {name: "bataxe", level: 8},
-    {name: "fireblade", level: 9},
-    {name: "ololipop", level: 9},
-    {name: "molesteeth", level: 2},
-    {name: "strearring", level: 4},
-    {name: "basher", level: 8}
-];
-export const MAGE_KEEP_ITEMS: ItemData[] = [
-    {name: "firestaff", level: 9},
-	{name: "gstaff", level: 6},
-	{name: "exoarm", level: 1},
-	{name: "orbg", level: 2},
-	{name: "jacko", level: 2},
-	{name: "pinkie", level: 8}
-];
-export const PRIEST_KEEP_ITEMS: ItemData[] = [
-	{name: "wbookhs", level: 2},
-	{name: "exoarm", level: 0},
-	{name: "mshield", level: 8},
-	{name: "handofmidas", level: 7},
-	{name: "wgloves", level: 9}
-];

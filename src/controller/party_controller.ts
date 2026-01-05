@@ -1,31 +1,42 @@
 import { PingCompensatedCharacter, ServerIdentifier, ServerRegion } from "alclient";
 import { SpotName } from "../configs/spot_configs";
 import { CharacterRunner } from "../strategies/character_runner";
+import { EventName, SpecialName } from "../configs/boss_configs";
 
 
+type RunnerState = "afk" | "return" | "farming" | "quest" | EventName | SpecialName;
+
+export type PartyControllerConfig = {
+    homeServerName: ServerRegion
+    homeServerId: ServerIdentifier
+    defaultSpot: SpotName
+    partyLeader: string
+    partyAllow: string[]
+    mainTank?: string
+    sendToName?: string
+
+    // #TODO: Party setup for bosses and quests will be in quest/boss event
+    doQuests?: boolean
+    doBosses?: boolean
+}
 export class PartyController {
-    private homeServerName: ServerRegion;
-    private homeServerId: ServerIdentifier;
-
-    private defaultSpot: SpotName;
-
-    private partyLeader: string;
-    private partyAllow: string[];
+    public config: PartyControllerConfig;
 
     private activeRunners: Map<string, CharacterRunner<PingCompensatedCharacter>>;
-    private botTargets: Map<string, string>;
+    private runnerStates: Map<string, RunnerState>;
 
-    constructor(homeServerName: ServerRegion, homeServerId: ServerIdentifier, defaultSpot: SpotName, partyLeader: string, partyAllow: string[]) {
-        this.homeServerName = homeServerName;
-        this.homeServerId = homeServerId;
-
-        this.defaultSpot = defaultSpot;
-
-        this.partyLeader = partyLeader;
-        this.partyAllow = partyAllow;
+    constructor(config: PartyControllerConfig) {
+        this.config = config;
 
         this.activeRunners = new Map<string, CharacterRunner<PingCompensatedCharacter>>();
-        this.botTargets = new Map<string, string>();
+        this.runnerStates = new Map<string, RunnerState>();
+
+        process.on("SIGINT", this.saveAndExit);
+        process.on("SIGTERM", this.saveAndExit);
+    }
+
+    public async startControler(): Promise<void> {
+        // TODO: Controller logic goes here (events etc)
     }
 
     public getRunners(): CharacterRunner<PingCompensatedCharacter>[] {
@@ -49,16 +60,8 @@ export class PartyController {
         this.activeRunners.delete(botId);
     }
 
-    public getBotTarget(botId: string): string {
-        return this.botTargets.get(botId);
-    }
-
-    public setBotTarget(botId: string, target: string | null): void {
-        this.botTargets.set(botId, target);
-    }
-
-    public getPartyTarget(): string {
-        return this.botTargets.get(this.partyLeader);
+    public saveAndExit(): void {
+        process.exit(0);
     }
 }
 

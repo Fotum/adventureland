@@ -7,8 +7,8 @@ export type Loop<T> = {
 }
 export type Loops<T> = Map<LoopName, Loop<T>>;
 
-export type StrategyName = "base" | "attack" | "targeting" | "move" | "party" | "party_heal" | "magiport" | "upgrade" | "utility";
-export type LoopName = "attack" | "targeting" | "move" | "avoidance" | "use_pots" | "buy_pots" | "loot" | "respawn" | "party" | "party_heal" | "magiport" | "mluck" | "upgrade" | "ponty" | "inventory" | "resuppply";
+export type StrategyName = "admin" | "base" | "attack" | "move" | "party" | "party_heal" | "magiport" | "upgrade" | "inventory" | "utility";
+export type LoopName = "attack" | "move" | "avoidance" | "use_pots" | "buy_pots" | "loot" | "respawn" | "party" | "party_heal" | "magiport" | "mluck" | "upgrade" | "ponty" | "inventory" | "resuppply";
 
 export interface Strategy<T> {
     name: StrategyName
@@ -64,11 +64,10 @@ export class CharacterRunner<T extends PingCompensatedCharacter> {
                 });
             } else {
                 // Start loop
-                let now: Date = new Date();
                 this.loops.set(name, {
                     fn: loop.fn,
                     interval: loop.interval,
-                    started: now
+                    started: new Date()
                 });
 
                 const newLoop = async () => {

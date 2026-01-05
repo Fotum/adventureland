@@ -1,17 +1,26 @@
 import { Character, CharacterType, Entity, Game, IPosition, Mage, Merchant, MonsterName, Paladin, PingCompensatedCharacter, Priest, Ranger, Rogue, ServerData, ServerIdentifier, ServerRegion, Tools, Warrior } from "alclient"
 import { SpecialName } from "../configs/boss_configs"
 import { PartyController } from "../controller/party_controller"
+import { RunnerException } from "../exceptions/exceptions"
+import { AdminCommandStrategy } from "../strategies/admin_command_strategy"
+import { NoAttackScareStrategy } from "../strategies/base_attack_strategy"
+import { BaseInventoryStrategy } from "../strategies/base_inventory_strategy"
 import { BaseStrategy } from "../strategies/base_strategy"
 import { CharacterRunner } from "../strategies/character_runner"
-import { SPECIAL_MONSTERS } from "./constants"
+import { MagiportSmartMovingStrategy } from "../strategies/mage/magiport_strategy"
+import { MerchantStrategy } from "../strategies/merchant/merchant_strategy"
+import { MerchantUpgradeStrategy } from "../strategies/merchant/merchant_upgrade_strategy"
+import { AcceptPartyRequest, RequestParty } from "../strategies/party_strategy"
+import { PartyHealStrategy } from "../strategies/priest/party_heal_strategy"
+import { UnstackStrategy } from "../strategies/unstack_strategy"
+import { MY_CHARACTERS, SPECIAL_MONSTERS } from "./constants"
 
 
-export type FilterBotsOptions = {
+export type FilterRunnersOptions = {
     owner?: string
     serverData?: ServerData
 }
-
-export function filterRunners(executors: CharacterRunner<PingCompensatedCharacter>[], filters: FilterBotsOptions = {}): CharacterRunner<PingCompensatedCharacter>[] {
+export function filterRunners(executors: CharacterRunner<PingCompensatedCharacter>[], filters: FilterRunnersOptions = {}): CharacterRunner<PingCompensatedCharacter>[] {
     let filteredExecutors: CharacterRunner<PingCompensatedCharacter>[] = [];
     for (let executor of executors) {
         if (!executor.isReady()) continue;
@@ -119,7 +128,7 @@ export function sortPriority(bot: Character, types?: MonsterName[]): (a: Entity,
     }
 }
 
-export function sortTypeThenClosest(to: Character, types: MonsterName[]) {
+export function sortTypeThenClosest(to: Character, types: MonsterName[]): (a: IPosition & { type: MonsterName }, b: IPosition & { type: MonsterName }) => number {
     return (a: IPosition & { type: MonsterName }, b: IPosition & { type: MonsterName }) => {
         const a_special: boolean = SPECIAL_MONSTERS.has((a.type as SpecialName));
         const b_special: boolean = SPECIAL_MONSTERS.has((b.type as SpecialName));
@@ -133,7 +142,7 @@ export function sortTypeThenClosest(to: Character, types: MonsterName[]) {
     }
 }
 
-export function sortClosestDistance(to: Character) {
+export function sortClosestDistance(to: Character): (a: IPosition, b: IPosition) => number {
     return (a: IPosition, b: IPosition) => {
         let d_a = Tools.squaredDistance(to, a);
         let d_b = Tools.squaredDistance(to, b);
@@ -149,53 +158,107 @@ export function ignoreExceptions(): void {
     return;
 }
 
-export async function startCharacter(partyController: PartyController, name: string, ctype: CharacterType, serverName: ServerRegion, serverId: ServerIdentifier): Promise<CharacterRunner<PingCompensatedCharacter>> {
-    let baseStrategy: BaseStrategy<PingCompensatedCharacter> = new BaseStrategy(partyController, { hpPotType: "hpot0", mpPotType: "mpot0", useHpAt: 0.8, useMpAt: 0.5, keepPotions: { max: 5000, min: 3000 }});
-
+export async function startCharacter(partyController: PartyController, name: string, ctype?: CharacterType, serverName?: ServerRegion, serverId?: ServerIdentifier): Promise<CharacterRunner<PingCompensatedCharacter> | undefined> {
     try {
-        let runner: CharacterRunner<PingCompensatedCharacter>;
+        if (!serverName) serverName = partyController.config.homeServerName;
+        if (!serverId) serverId = partyController.config.homeServerId;
+
+        if (!ctype) {
+            if (!MY_CHARACTERS.has(name)) {
+                throw new RunnerException("InitializationException", `Could not find character with name ${name} in list of MY_CHARACTERS`);
+            }
+
+            ctype = MY_CHARACTERS.get(name);
+        }
+
+        let baseStrategy: BaseStrategy<PingCompensatedCharacter> = new BaseStrategy(partyController, { hpPotType: "hpot0", mpPotType: "mpot0", useHpAt: 0.8, useMpAt: 0.5, keepPotions: { max: 5000, min: 3000 }});
+        let runner: CharacterRunner<PingCompensatedCharacter> = undefined;
+
         switch (ctype) {
             case "warrior": {
                 let character: Warrior = await Game.startWarrior(name, serverName, serverId);
                 runner = new CharacterRunner(character, baseStrategy);
+                checkRunner(runner, name, ctype);
+
                 break;
             }
             case "mage": {
                 let character: Mage = await Game.startMage(name, serverName, serverId);
                 runner = new CharacterRunner(character, baseStrategy);
+                checkRunner(runner, name, ctype);
+
+                runner.applyStrategy(new MagiportSmartMovingStrategy(partyController));
                 break;
             }
             case "priest": {
                 let character: Priest = await Game.startPriest(name, serverName, serverId);
                 runner = new CharacterRunner(character, baseStrategy);
+                checkRunner(runner, name, ctype);
+
+                runner.applyStrategy(new PartyHealStrategy(partyController));
                 break;
             }
             case "merchant": {
                 let character: Merchant = await Game.startMerchant(name, serverName, serverId);
                 runner = new CharacterRunner(character, baseStrategy);
+                checkRunner(runner, name, ctype);
+
+                runner.applyStrategy(new NoAttackScareStrategy());
+                runner.applyStrategy(new MerchantStrategy(partyController));
+                runner.applyStrategy(new MerchantUpgradeStrategy());
                 break;
             }
             case "ranger": {
                 let character: Ranger = await Game.startRanger(name, serverName, serverId);
                 runner = new CharacterRunner(character, baseStrategy);
+                checkRunner(runner, name, ctype);
+
                 break;
             }
             case "paladin": {
                 let character: Paladin = await Game.startPaladin(name, serverName, serverId);
                 runner = new CharacterRunner(character, baseStrategy);
+                checkRunner(runner, name, ctype);
+
                 break;
             }
             case "rogue": {
                 let character: Rogue = await Game.startRogue(name, serverName, serverId);
                 runner = new CharacterRunner(character, baseStrategy);
+                checkRunner(runner, name, ctype);
+
                 break;
             }
-            default:
+            default: {
                 console.warn(`No handler for character ${name} of ctype ${ctype} found`);
+                return undefined;
+            }
         }
+
+        if (runner.bot.id == partyController.config.partyLeader) {
+            runner.applyStrategy(new AcceptPartyRequest({ accept: partyController.config.partyAllow }));
+        } else {
+            runner.applyStrategy(new RequestParty(partyController.config.partyLeader));
+        }
+
+        if (runner.bot.ctype != "merchant") {
+            runner.applyStrategy(new BaseInventoryStrategy(partyController));
+        }
+
+        runner.applyStrategy(new UnstackStrategy());
+        runner.applyStrategy(new AdminCommandStrategy(partyController));
 
         return runner;
     } catch (ex) {
         console.error(ex);
+
+        if (!(ex instanceof RunnerException)) {
+            // Reconnect again
+            setTimeout(async () => { startCharacter(partyController, name, ctype, serverName, serverId); }, 5000);
+        }
     }
+}
+
+function checkRunner(runner: CharacterRunner<PingCompensatedCharacter>, name: string, ctype: CharacterType): void {
+    if (!runner) throw new RunnerException("InitializationException", `Failed to initialize runner for character ${name} of ctype ${ctype}`);
 }

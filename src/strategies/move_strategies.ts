@@ -1,5 +1,5 @@
-import { Entity, GData, GMap, GMonster, Game, IPosition, MapName, MonsterName, Pathfinder, PingCompensatedCharacter, Player, ServerInfoDataLive, SmartMoveOptions, Tools } from "alclient";
-import { PLAYER_MIN_DISTANCE } from "../base/constants";
+import { Constants, Entity, GData, GMap, GMonster, Game, IPosition, MapName, MonsterName, Pathfinder, PingCompensatedCharacter, Player, ServerInfoDataLive, SmartMoveOptions, Tools } from "alclient";
+import { HEAL_RETREAT_RATIO, PLAYER_MIN_DISTANCE } from "../base/constants";
 import { filterRunners, ignoreExceptions, sortClosestDistance } from "../base/functions";
 import { PartyController } from "../controller/party_controller";
 import { CharacterRunner, Loop, LoopName, Strategy, StrategyName } from "./character_runner";
@@ -31,10 +31,10 @@ export class BaseMoveStrategy<T extends PingCompensatedCharacter> implements Str
     private async move(bot: T): Promise<unknown> {
         if (bot.ctype == "priest") {
             let lowHpFriend: Player = bot.getPlayer({ isDead: false, isPartyMember: true, returnLowestHP: true });
-            if (lowHpFriend && lowHpFriend.hp < (lowHpFriend.max_hp * 0.5) && Tools.distance(bot, lowHpFriend) > bot.range) {
+            if (lowHpFriend && lowHpFriend.hp < (lowHpFriend.max_hp * HEAL_RETREAT_RATIO) && Tools.distance(bot, lowHpFriend) > bot.range) {
                 return bot.smartMove(lowHpFriend, { getWithin: bot.range * 0.8 }).catch(ignoreExceptions);
             }
-        } else if (bot.hp < (bot.max_hp * 0.5)) {
+        } else if (bot.hp < (bot.max_hp * HEAL_RETREAT_RATIO)) {
             let priest: Player = bot.getPlayer({ isDead: false, isPartyMember: true, ctype: "priest", returnNearest: true });
             if (priest && Tools.distance(bot, priest) > priest.range) {
                 return bot.smartMove(priest, { getWithin: priest.range * 0.8 }).catch(ignoreExceptions);
@@ -170,7 +170,20 @@ export class KiteInCircleStrategy<T extends PingCompensatedCharacter> implements
         const { centre, radius, typeList: typeList, sensitivity } = this.config;
 
         if (Tools.distance(bot, centre) > radius * sensitivity) {
-            await bot.smartMove(centre, { getWithin: radius })
+            await bot.smartMove(centre, { getWithin: radius }).catch(ignoreExceptions);
+        }
+
+        // #TODO: Rewrite using vectors and multiple entities insted of one closest
+        if (bot.ctype == "priest") {
+            let lowHpFriend: Player = bot.getPlayer({ isDead: false, isPartyMember: true, returnLowestHP: true });
+            if (lowHpFriend && lowHpFriend.hp < (lowHpFriend.max_hp * HEAL_RETREAT_RATIO) && Tools.distance(bot, lowHpFriend) > bot.range) {
+                return bot.smartMove(lowHpFriend, { getWithin: bot.range * 0.8 }).catch(ignoreExceptions);
+            }
+        } else if (bot.hp < (bot.max_hp * HEAL_RETREAT_RATIO)) {
+            let priest: Player = bot.getPlayer({ isDead: false, isPartyMember: true, ctype: "priest", returnNearest: true });
+            if (priest && Tools.distance(bot, priest) > priest.range) {
+                return bot.smartMove(priest, { getWithin: priest.range * 0.8 }).catch(ignoreExceptions);
+            }
         }
 
         let monster: Entity = bot.getEntity({ typeList: typeList, returnNearest: true });
@@ -541,6 +554,19 @@ export class KiteMonsterStrategy<T extends PingCompensatedCharacter> extends Spe
             return bot.smartMove(entity, { getWithin: bot.range, useBlink: true }).catch(ignoreExceptions);
         }
 
+        // #TODO: Rewrite using vectors and multiple entities insted of one closest
+        if (bot.ctype == "priest") {
+            let lowHpFriend: Player = bot.getPlayer({ isDead: false, isPartyMember: true, returnLowestHP: true });
+            if (lowHpFriend && lowHpFriend.hp < (lowHpFriend.max_hp * HEAL_RETREAT_RATIO) && Tools.distance(bot, lowHpFriend) > bot.range) {
+                return bot.smartMove(lowHpFriend, { getWithin: bot.range * 0.8 }).catch(ignoreExceptions);
+            }
+        } else if (bot.hp < (bot.max_hp * HEAL_RETREAT_RATIO)) {
+            let priest: Player = bot.getPlayer({ isDead: false, isPartyMember: true, ctype: "priest", returnNearest: true });
+            if (priest && Tools.distance(bot, priest) > priest.range) {
+                return bot.smartMove(priest, { getWithin: priest.range * 0.8 }).catch(ignoreExceptions);
+            }
+        }
+
         let angleFromEntityToBot: number = Math.atan2(bot.y - entity.y, bot.x - entity.x);
         let kiteDistance: number = Math.min(bot.range, (entity.charge ?? entity.speed ?? 0) + entity.range + 50);
         let lookDistance: number = kiteDistance * 1.25;
@@ -574,5 +600,36 @@ export class KiteMonsterStrategy<T extends PingCompensatedCharacter> extends Spe
             }
             break;
         }
+    }
+}
+
+export class GetHolidaySpiritStrategy<T extends PingCompensatedCharacter> implements Strategy<T> {
+    public loops: Map<LoopName, Loop<T>> = new Map<LoopName, Loop<T>>;
+
+    private _name: StrategyName = "move";
+
+    public constructor() {
+        this.loops.set("move", {
+            fn: async (bot: T) => {
+                if (bot.rip) return;
+                await this.getHolidaySpirit(bot);
+            },
+            interval: 250
+        });
+    }
+
+    public get name(): StrategyName {
+        return this._name;
+    }
+
+    private async getHolidaySpirit(bot: T): Promise<void> {
+        if (!bot.S.holidayseason) return;
+        if (bot.s.holidayspirit) return;
+
+        await bot.smartMove("newyear_tree", {
+            getWithin: Constants.NPC_INTERACTION_DISTANCE / 2,
+            avoidTownWarps: true
+        }).catch(ignoreExceptions);
+        await bot.getHolidaySpirit();
     }
 }

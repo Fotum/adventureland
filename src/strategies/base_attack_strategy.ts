@@ -1,7 +1,7 @@
-import { ActionData, Constants, EntitiesData, Entity, Game, GetEntityFilters, ItemName, LocateItemFilters, MonsterName, PingCompensatedCharacter, Player, SkillName, SlotType, Tools, WeaponType } from "alclient"
+import { ActionData, Constants, EntitiesData, Entity, Game, GetEntityFilters, HitData, ItemData, ItemName, LocateItemFilters, MonsterName, PingCompensatedCharacter, Player, SkillName, SlotType, Tools, WeaponType } from "alclient"
 import FastPriorityQueue from "fastpriorityqueue"
 import { filterRunners, ignoreExceptions, sleep, sortPriority } from "../base/functions"
-import { generateEquipmentSetup } from "../configs/equipment_setups"
+import { generateEquipmentSet } from "../configs/equipment_setups"
 import { PartyController } from "../controller/party_controller"
 import { Loop, LoopName, Loops, Strategy, StrategyName } from "./character_runner"
 
@@ -39,7 +39,7 @@ export class BaseAttackStrategy<T extends PingCompensatedCharacter> implements S
     protected config: BaseAttackConfig;
     protected botSort: (a: Entity, b: Entity) => boolean;
 
-    protected ensureEquipped = new Map<string, EquipmentSet>();
+    protected equipmentSet = new Map<string, EquipmentSet>();
     protected interval: SkillName[] = ["attack"];
 
     protected greedyOnEntities: (data: EntitiesData) => Promise<unknown>;
@@ -64,6 +64,8 @@ export class BaseAttackStrategy<T extends PingCompensatedCharacter> implements S
 
         this.loops.set("attack", {
             fn: async (bot: T) => {
+                if (bot.rip) return;
+
                 if (this.shouldScare(bot)) await this.scare(bot);
                 await this.attack(bot).catch(ignoreExceptions)
             },
@@ -73,8 +75,8 @@ export class BaseAttackStrategy<T extends PingCompensatedCharacter> implements S
 
     public onApply(bot: T): void {
         if (this.config.equipmentSet) {
-            let currentSetup: EquipmentSet = generateEquipmentSetup(bot, this.config.equipmentSet);
-            this.ensureEquipped.set(bot.id, currentSetup);
+            let currentSetup: EquipmentSet = generateEquipmentSet(bot, this.config.equipmentSet);
+            this.equipmentSet.set(bot.id, currentSetup);
         }
 
         this.botSort = sortPriority(bot, this.config.typeList);
@@ -367,7 +369,7 @@ export class BaseAttackStrategy<T extends PingCompensatedCharacter> implements S
         return true;
     }
 
-    protected async scare(bot: T): Promise<string[]> {
+    protected async scare(bot: T): Promise<unknown> {
         if (this.config.disableScare) return;
         if (!(bot.hasItem("jacko") || bot.isEquipped("jacko"))) return;
         if (!bot.isEquipped("jacko") && bot.canUse("scare", { ignoreEquipped: true })) {
@@ -376,14 +378,14 @@ export class BaseAttackStrategy<T extends PingCompensatedCharacter> implements S
         }
 
         if (!bot.canUse("scare")) return;
-        return bot.scare();
+        return bot.scare().catch(ignoreExceptions);
     }
 
     protected shouldScare(bot: T): boolean {
         if (bot.targets == 0 || this.config.disableScare) return false;
 
         if (this.config.typeList) {
-            let targetingMe = bot.getEntities({
+            let targetingMe: Entity[] = bot.getEntities({
                 notTypeList: [
                     ...this.config.typeList,
                     ...(this.config.disableIdleAttack ? [] : IDLE_ATTACK_MONSTERS)
@@ -404,7 +406,7 @@ export class BaseAttackStrategy<T extends PingCompensatedCharacter> implements S
     }
 
     protected async equipItems(bot: T): Promise<unknown> {
-        const equipSetup: EquipmentSet = this.ensureEquipped.get(bot.id);
+        const equipSetup: EquipmentSet = this.equipmentSet.get(bot.id);
         if (!equipSetup) return;
 
         let equipBatch: { num: number, slot: SlotType }[] = [];
@@ -460,6 +462,66 @@ export class BaseAttackStrategy<T extends PingCompensatedCharacter> implements S
             if (Constants.SPECIAL_MONSTERS.includes(target.type)) continue;
 
             myBot.deleteEntity(target.id);
+        }
+    }
+}
+
+export class NoAttackScareStrategy<T extends PingCompensatedCharacter> implements Strategy<T> {
+    public loops: Loops<T> = new Map<LoopName, Loop<T>>;
+
+    private _name: StrategyName = "attack";
+
+    public constructor() {
+        this.loops.set("attack", {
+            fn: async (bot: T) => {
+                if (bot.rip) return;
+
+                if (this.shouldScare(bot)) {
+                    this.scare(bot).catch(ignoreExceptions);
+                }
+            },
+            interval: 250
+        });
+    }
+
+    public get name(): StrategyName {
+        return this._name;
+    }
+
+    protected shouldScare(bot: T): boolean {
+        if (bot.targets == 0) return false;
+        if (bot.hp > bot.max_hp * 0.5) return false;
+
+        let targetingMe: Entity[] = bot.getEntities({ targetingMe: true });
+        if (targetingMe.length > 0) return true;
+
+        return bot.isScared();
+    }
+
+    protected async scare(bot: T): Promise<void> {
+        if (!(bot.hasItem("jacko") || bot.isEquipped("jacko"))) return;
+
+        let currentOrb: ItemData = undefined;
+        if (!bot.isEquipped("jacko") && bot.canUse("scare", { ignoreEquipped: true })) {
+            if (bot.slots.orb) {
+                currentOrb = { ...bot.slots.orb };
+            }
+
+            await bot.equip(bot.locateItem("jacko"), "orb");
+            if (bot.s.penalty_cd) await sleep(bot.s.penalty_cd.ms);
+        }
+
+        if (bot.canUse("scare")) bot.scare().catch(ignoreExceptions);
+
+        if (currentOrb) {
+            let orbIx: number = bot.locateItem(currentOrb.name, bot.items, {
+                level: currentOrb.level,
+                special: currentOrb.p
+            });
+            if (orbIx !== undefined) {
+                await bot.equip(orbIx).catch(ignoreExceptions);
+                if (bot.s.penalty_cd) await sleep(bot.s.penalty_cd.ms);
+            }
         }
     }
 }

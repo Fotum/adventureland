@@ -2,13 +2,13 @@ import { CharacterType, PingCompensatedCharacter } from "alclient";
 import { PartyController } from "../controller/party_controller";
 import { Strategy } from "../strategies/character_runner";
 import { MageAttackStrategy } from "../strategies/mage/mage_attack_strategy";
-import { BaseMoveStrategy } from "../strategies/move_strategy";
+import { BaseMoveStrategy } from "../strategies/move_strategies";
 import { PriestAttackStrategy } from "../strategies/priest/priest_attack_strategy";
 import { WarriorAttackStrategy } from "../strategies/warrior/warrior_attack_strategy";
 import { MAGE_AOE, MAGE_DPS, MAGE_FAST, PRIEST_GF, PRIEST_MF, PRIEST_TANKY, WARRIOR_AOE, WARRIOR_DPS } from "./equipment_setups";
 
 
-export type EventName = "goobrawl" | "dragold" | "icegolem" | "valentines" | "snowman";
+export type EventName = "goobrawl" | "dragold" | "icegolem" | "valentines" | "snowman" | "mrpumpkin" | "mrgreen";
 export type SpecialName = "phoenix" | "frog" | "fvampire" | "mvampire" | "jr" | "greenjr" | "skeletor";
 
 export type EventConfig = {

@@ -1,6 +1,6 @@
 import { GItem, Game, Item, ItemName, Merchant } from "alclient";
-import { Loop, LoopName, Strategy, StrategyName } from "../character_runner";
 import { MERCHANT_UPGRADE, UpgradeConfig } from "../../base/constants";
+import { Loop, LoopName, Strategy, StrategyName } from "../character_runner";
 
 
 export class MerchantUpgradeStrategy implements Strategy<Merchant> {
@@ -11,10 +11,10 @@ export class MerchantUpgradeStrategy implements Strategy<Merchant> {
     public constructor() {
         this.loops.set("upgrade", {
             fn: async (bot: Merchant) => {
-                let upgradePromise = this.upgradeItems(bot);
-                let compoundPromise = this.compoundItems(bot);
+                if (bot.rip) return;
 
-                await Promise.race([upgradePromise, compoundPromise]);
+                this.upgradeItems(bot).catch(console.error);
+                this.compoundItems(bot).catch(console.error);
             },
             interval: 500
         });
@@ -25,15 +25,15 @@ export class MerchantUpgradeStrategy implements Strategy<Merchant> {
     }
 
     protected async upgradeItems(bot: Merchant): Promise<boolean> {
-        if (bot.isUpgrading() || bot.map.startsWith("bank") || bot.rip) return;
+        if (bot.isUpgrading() || bot.map.startsWith("bank")) return;
         
         let itemsToUpgrade: [number, Item][] = [];
         for (let [slot, item] of bot.getItems()) {
-            if (!item.upgrade || item.l || !item.e || !MERCHANT_UPGRADE.has(item.name)) continue;
+            if (!item.upgrade || item.l || !MERCHANT_UPGRADE.has(item.name)) continue;
             itemsToUpgrade.push([slot, item]);
         }
 
-        if (!itemsToUpgrade.length) return;
+        if (itemsToUpgrade.length == 0) return;
         itemsToUpgrade.sort((a, b) => a[1].level - b[1].level);
 
         for (let [slot, item] of itemsToUpgrade) {
@@ -60,7 +60,7 @@ export class MerchantUpgradeStrategy implements Strategy<Merchant> {
     }
 
     protected async compoundItems(bot: Merchant): Promise<boolean> {
-        if (bot.isCompounding() || bot.map.startsWith("bank") || bot.rip) return;
+        if (bot.isCompounding() || bot.map.startsWith("bank")) return;
 
         for (let [, item] of bot.getItems()) {
             let gItem: GItem = Game.G.items[item.name];

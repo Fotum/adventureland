@@ -45,8 +45,8 @@ export class MagiportSmartMovingStrategy implements Strategy<Mage> {
         if (bot.smartMoving) return;
         if (bot.getEntity({ type: "fieldgen0", withinRange: 400 })) return;
 
-        for (let context of filterRunners(this.partyController.getRunners(), { serverData: bot.serverData })) {
-            let friend = context.bot;
+        for (let runner of filterRunners(this.partyController.getRunners(), { serverData: bot.serverData })) {
+            let friend = runner.bot;
             if (friend.id == bot.id) continue;
             if (!friend.smartMoving) continue;
             if (friend.map.startsWith("bank")) continue;
@@ -75,7 +75,6 @@ export class MagiportSmartMovingStrategy implements Strategy<Mage> {
 export type MagiportServiceConfig = {
     allowList?: string[]
 }
-
 export class MagiportServiceStrategy implements Strategy<Mage> {
     public loops = new Map<LoopName, Loop<PingCompensatedCharacter>>();
 

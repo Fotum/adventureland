@@ -64,7 +64,7 @@ export const PRIEST_GF: EquipmentSet = {
     elixir: { name: "elixirluck", filters: { returnLowestQuantity: true }}
 };
 
-export function generateEquipmentSetup(bot: PingCompensatedCharacter, override?: EquipmentSet): EquipmentSet {
+export function generateEquipmentSet(bot: PingCompensatedCharacter, override?: EquipmentSet): EquipmentSet {
     let currentSet: EquipmentSet = {};
 
     for (let currSlot in bot.slots) {

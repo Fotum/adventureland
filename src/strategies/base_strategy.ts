@@ -1,6 +1,6 @@
 import { Attribute, Character, ChestData, ChestOpenedData, Constants, GItem, Game, IPosition, ItemName, PingCompensatedCharacter, Tools } from "alclient";
 import { LRUCache } from "lru-cache";
-import { KEEP_GOLD, KEEP_ITEMS, PotionName, SELL_ITMES, SEND_GOLD_AT, SEND_TO_NAME } from "../base/constants";
+import { PotionName } from "../base/constants";
 import { ignoreExceptions } from "../base/functions";
 import { PartyController } from "../controller/party_controller";
 import { Loop, LoopName, Loops, Strategy, StrategyName } from "./character_runner";
@@ -58,12 +58,6 @@ export class BaseStrategy<T extends PingCompensatedCharacter> implements Strateg
                 await this.restockPotions(bot).catch(console.error);
             },
             interval: 60_000
-        });
-        this.loops.set("inventory", {
-            fn: async (bot: T) => {
-                await this.handleInventory(bot).catch(ignoreExceptions);
-            },
-            interval: 1000
         });
     }
 
@@ -209,14 +203,15 @@ export class BaseStrategy<T extends PingCompensatedCharacter> implements Strateg
 
     private async restockPotions(bot: T): Promise<void> {
         if (bot.rip) return;
+        if (bot.map.startsWith("bank")) return;
 
         let currHpPots: number = bot.countItem(this.config.hpPotType);
         if (currHpPots <= this.config.keepPotions.min) {
             let toBuy: number = this.config.keepPotions.max - currHpPots;
             if (bot.canBuy(this.config.hpPotType, { quantity: toBuy })) {
-                await bot.buy(this.config.hpPotType, toBuy);
+                await bot.buy(this.config.hpPotType, toBuy).catch(console.error);
             } else {
-                console.warn("Cannot buy HP potions");
+                console.warn(`[${bot.ctype}]: Cannot buy HP potions`);
             }
         }
 
@@ -224,37 +219,9 @@ export class BaseStrategy<T extends PingCompensatedCharacter> implements Strateg
         if (currMpPots <= this.config.keepPotions.min) {
             let toBuy: number = this.config.keepPotions.max - currMpPots;
             if (bot.canBuy(this.config.mpPotType, { quantity: toBuy })) {
-                await bot.buy(this.config.mpPotType, toBuy);
+                await bot.buy(this.config.mpPotType, toBuy).catch(console.error);
             } else {
-                console.warn("Cannot buy MP potions");
-            }
-        }
-    }
-
-    private async handleInventory(bot: T): Promise<void> {
-        const sendToBot: PingCompensatedCharacter | undefined = this.partyController.getRunners().find((runner) => runner.bot.name == SEND_TO_NAME)?.bot;
-        const hasDistance: boolean = sendToBot && Tools.squaredDistance(bot, sendToBot) < Constants.NPC_INTERACTION_DISTANCE_SQUARED;
-        
-
-        if (hasDistance && bot.gold >= (KEEP_GOLD * SEND_GOLD_AT)) bot.sendGold(SEND_TO_NAME, bot.gold - KEEP_GOLD).catch(console.error);
-
-        for (const [ix, item] of bot.getItems()) {
-            if (item.l) continue;
-            if (KEEP_ITEMS.has(item.name)) continue;
-
-            if ((!item.level || item.level == 0) && SELL_ITMES.has(item.name) && bot.canSell()) {
-                bot.sell(ix, item.q ?? 1).catch(console.error);
-            } else if (hasDistance) {
-                let canSend: boolean = hasDistance;
-                let isPvpMarked: boolean = item.v !== undefined;
-
-                if (sendToBot.esize == 0 && item.q) {
-                    let maxStack: number = Game.G.items[item.name].s ?? 1;
-                    let targetHas: number = sendToBot.countItem(item.name, sendToBot.items, { pvpMarked: isPvpMarked });
-                    canSend = targetHas > 0 && (targetHas + item.q) <= maxStack;
-                }
-
-                if (canSend) bot.sendItem(SEND_TO_NAME, ix, item.q ?? 1).catch(console.error);
+                console.warn(`[${bot.ctype}]: Cannot buy MP potions`);
             }
         }
     }
