@@ -17,7 +17,6 @@ export type MerchantConfig = {
         travel?: boolean
         when?: number
     }
-    goldToHold: number
 }
 
 export const DEFAULT_MERCHANT_CONFIG: MerchantConfig = {
@@ -28,8 +27,7 @@ export const DEFAULT_MERCHANT_CONFIG: MerchantConfig = {
         runners: true,
         others: true,
         when: 0.75
-    },
-    goldToHold: 500_000_000
+    }
 };
 
 export class MerchantStrategy implements Strategy<Merchant> {

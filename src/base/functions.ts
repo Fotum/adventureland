@@ -158,6 +158,24 @@ export function ignoreExceptions(): void {
     return;
 }
 
+export function generateRandomNumber(precision?: number): number {
+    if (!precision) { precision = 0xffff; }
+    return Date.now() & precision;
+}
+
+export function mssince(tsFrom: number, tsTo?: number): number {
+    if (!tsTo) { tsTo = Date.now(); }
+    return tsTo - tsFrom;
+}
+
+export function ssince(tsFrom: number, tsTo?: number): number {
+    return Math.round(mssince(tsFrom, tsTo) / 1000);
+}
+
+export function msince(tsFrom: number, tsTo?: number): number {
+    return Math.round(mssince(tsFrom, tsTo) / 60000);
+}
+
 export async function startCharacter(partyController: PartyController, name: string, ctype?: CharacterType, serverName?: ServerRegion, serverId?: ServerIdentifier): Promise<CharacterRunner<PingCompensatedCharacter> | undefined> {
     try {
         if (!serverName) serverName = partyController.config.homeServerName;

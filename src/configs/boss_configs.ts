@@ -9,11 +9,11 @@ import { MAGE_AOE, MAGE_DPS, MAGE_FAST, PRIEST_GF, PRIEST_MF, PRIEST_TANKY, WARR
 
 
 export type EventName = "goobrawl" | "dragold" | "icegolem" | "valentines" | "snowman" | "mrpumpkin" | "mrgreen";
-export type SpecialName = "phoenix" | "frog" | "fvampire" | "mvampire" | "jr" | "greenjr" | "skeletor";
+export type SpecialName = "phoenix" | "frog" | "fvampire" | "mvampire" | "jr" | "greenjr" | "skeletor" | "stompy";
 
 export type EventConfig = {
-    waitResp?: boolean
-    summon: boolean
+    waitRespMs?: number
+    doSummon: boolean
     configs: {
         [T in CharacterType]?: {
             attack?: Strategy<PingCompensatedCharacter>,
@@ -22,8 +22,6 @@ export type EventConfig = {
     }
     isActive: boolean
 }
-
-
 export function getEventConfig(eventName: SpecialName | EventName, partyController: PartyController): EventConfig {
     let defaultEnergize = {
         onMpRatio: 0.8,
@@ -36,8 +34,8 @@ export function getEventConfig(eventName: SpecialName | EventName, partyControll
         // Events
         case "goobrawl":
             return {
-                waitResp: true,
-                summon: false,
+                waitRespMs: 10_000,
+                doSummon: false,
                 configs: {
                     warrior: {
                         attack: new WarriorAttackStrategy(partyController, {
@@ -80,7 +78,7 @@ export function getEventConfig(eventName: SpecialName | EventName, partyControll
             };
         case "dragold":
             return {
-                summon: true,
+                doSummon: true,
                 configs: {
                     warrior: {
                         attack: new WarriorAttackStrategy(partyController, {
@@ -120,7 +118,7 @@ export function getEventConfig(eventName: SpecialName | EventName, partyControll
             };
         case "icegolem":
             return {
-                summon: false,
+                doSummon: false,
                 configs: {
                     warrior: {
                         attack: new WarriorAttackStrategy(partyController, {
@@ -161,7 +159,7 @@ export function getEventConfig(eventName: SpecialName | EventName, partyControll
             };
         case "valentines":
             return {
-                summon: true,
+                doSummon: true,
                 configs: {
                     warrior: {
                         attack: new WarriorAttackStrategy(partyController, {
@@ -199,7 +197,7 @@ export function getEventConfig(eventName: SpecialName | EventName, partyControll
             };
         case "snowman":
             return {
-                summon: true,
+                doSummon: true,
                 configs: {
                     warrior: {
                         attack: new WarriorAttackStrategy(partyController, {
@@ -236,7 +234,7 @@ export function getEventConfig(eventName: SpecialName | EventName, partyControll
         // Special monsters
         case "phoenix":
             return {
-                summon: true,
+                doSummon: true,
                 configs: {
                     warrior: {
                         attack: new WarriorAttackStrategy(partyController, {
@@ -269,7 +267,7 @@ export function getEventConfig(eventName: SpecialName | EventName, partyControll
             };
         case "frog":
             return {
-                summon: false,
+                doSummon: false,
                 configs: {
                     mage: {
                         attack: new MageAttackStrategy(partyController, {
@@ -284,7 +282,7 @@ export function getEventConfig(eventName: SpecialName | EventName, partyControll
             };
         case "fvampire":
             return {
-                summon: true,
+                doSummon: true,
                 configs: {
                     warrior: {
                         attack: new WarriorAttackStrategy(partyController, {
@@ -318,7 +316,7 @@ export function getEventConfig(eventName: SpecialName | EventName, partyControll
             };
         case "mvampire":
             return {
-                summon: true,
+                doSummon: true,
                 configs: {
                     warrior: {
                         attack: new WarriorAttackStrategy(partyController, {
@@ -352,7 +350,7 @@ export function getEventConfig(eventName: SpecialName | EventName, partyControll
             };
         case "jr":
             return {
-                summon: false,
+                doSummon: false,
                 configs: {
                     mage: {
                         attack: new MageAttackStrategy(partyController, {
@@ -367,7 +365,7 @@ export function getEventConfig(eventName: SpecialName | EventName, partyControll
             };
         case "greenjr":
             return {
-                summon: false,
+                doSummon: false,
                 configs: {
                     mage: {
                         attack: new MageAttackStrategy(partyController, {
@@ -382,7 +380,7 @@ export function getEventConfig(eventName: SpecialName | EventName, partyControll
             };
         case "skeletor":
             return {
-                summon: true,
+                doSummon: true,
                 configs: {
                     warrior: {
                         attack: new WarriorAttackStrategy(partyController, {

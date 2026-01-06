@@ -121,6 +121,10 @@ export class CharacterRunner<T extends PingCompensatedCharacter> {
             this.applyStrategy(strategy);
     }
 
+    public getStrategy(name: StrategyName): Strategy<T> {
+        return this.strategies.get(name);
+    }
+
     public removeStrategy(stratName: StrategyName): void {
         let strategy = this.strategies.get(stratName);
         if (!strategy)
@@ -238,7 +242,7 @@ export class CharacterRunner<T extends PingCompensatedCharacter> {
                     this.timeouts.set(
                         "connect",
                         setTimeout(() => this.reconnect(), 2000 + Number.parseInt(wait[1])  * 1000)
-                        );
+                    );
                 } else if (/limits/.test(ex)) {
                     this.timeouts.set(
                         "connect",

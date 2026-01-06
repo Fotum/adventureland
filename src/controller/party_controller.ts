@@ -1,10 +1,8 @@
 import { PingCompensatedCharacter, ServerIdentifier, ServerRegion } from "alclient";
 import { SpotName } from "../configs/spot_configs";
 import { CharacterRunner } from "../strategies/character_runner";
-import { EventName, SpecialName } from "../configs/boss_configs";
+import { RunnerTask } from "./runner_task";
 
-
-type RunnerState = "afk" | "return" | "farming" | "quest" | EventName | SpecialName;
 
 export type PartyControllerConfig = {
     homeServerName: ServerRegion
@@ -19,8 +17,14 @@ export type PartyControllerConfig = {
     doQuests?: boolean
     doBosses?: boolean
 }
+type RunnerState = {
+    currentTask: RunnerTask
+    taskQueue: RunnerTask[]
+}
 export class PartyController {
     public config: PartyControllerConfig;
+
+    private isRunning: boolean = false;
 
     private activeRunners: Map<string, CharacterRunner<PingCompensatedCharacter>>;
     private runnerStates: Map<string, RunnerState>;
@@ -35,8 +39,28 @@ export class PartyController {
         process.on("SIGTERM", this.saveAndExit);
     }
 
-    public async startControler(): Promise<void> {
-        // TODO: Controller logic goes here (events etc)
+    private async taskCheckerLoop(): Promise<void> {
+        try {
+            if (!this.isRunning) return;
+
+
+        } catch (ex) {
+
+        } finally {
+            setTimeout(() => { this.taskCheckerLoop() }, 1000);
+        }
+    }
+
+    public startControler(): void {
+        if (!this.isRunning) {
+            this.isRunning = true;
+        }
+    }
+
+    public stopController(): void {
+        if (this.isRunning) {
+            this.isRunning = false;
+        }
     }
 
     public getRunners(): CharacterRunner<PingCompensatedCharacter>[] {
