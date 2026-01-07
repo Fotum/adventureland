@@ -1,4 +1,5 @@
 import { CharacterType, PingCompensatedCharacter } from "alclient";
+import { SpotName } from "../base/constants";
 import { PartyController } from "../controller/party_controller";
 import { Strategy } from "../strategies/character_runner";
 import { MageAttackStrategy } from "../strategies/mage/mage_attack_strategy";
@@ -8,19 +9,13 @@ import { WarriorAttackStrategy } from "../strategies/warrior/warrior_attack_stra
 import { MAGE_AOE, PRIEST_MF, PRIEST_TANKY, WARRIOR_AOE, WARRIOR_DPS } from "./equipment_setups";
 
 
-export type SpotName = "cave_first" | "cave_second" | "stoneworm" | "booboo" | "bees" | "crabs" | "crabxs" | 
-                        "squigs" | "tortoise" | "croc" | "armadillo" | "rats" | "moles" | "porcupine" | "goos" | 
-                        "snakes" | "cgoo" | "iceroamer" | "osnake" | "minimush" | "bigbird" | "scorpion" | "spider";
-
 export type SpotConfig = {
     [T in CharacterType]?: {
         attack?: Strategy<PingCompensatedCharacter>,
         move?: Strategy<PingCompensatedCharacter>
     }
 }
-
-
-export function getSpotConfig(partyController: PartyController): SpotConfig {
+export function getSpotConfig(partyController: PartyController, spotName?: SpotName): SpotConfig | undefined {
     let defaultEnergize = {
         onMpRatio: 0.8,
         when: { 
@@ -28,7 +23,9 @@ export function getSpotConfig(partyController: PartyController): SpotConfig {
         }
     };
 
-    switch (partyController.config.defaultSpot) {
+    if (!spotName) { spotName = partyController.config.defaultSpot; }
+
+    switch (spotName) {
         case "cave_first":
             return {
                 warrior: {
@@ -881,5 +878,7 @@ export function getSpotConfig(partyController: PartyController): SpotConfig {
                     move: new HoldPositionStrategy({x: 1308, y: -331, map: "main"})
                 }
             };
+        default:
+            return undefined;
     }
 }

@@ -1,6 +1,6 @@
 import { GItem, Game, Item, ItemName, Merchant } from "alclient";
-import { MERCHANT_UPGRADE, UpgradeConfig } from "../../base/constants";
 import { Loop, LoopName, Strategy, StrategyName } from "../character_runner";
+import { MERCHANT_UPGRADE, UpgradeConfig } from "../../base/settings";
 
 
 export class MerchantUpgradeStrategy implements Strategy<Merchant> {

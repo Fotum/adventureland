@@ -1,8 +1,9 @@
 import { CharacterType, Game, Pathfinder, PingCompensatedCharacter, ServerIdentifier, ServerRegion } from "alclient";
-import { FRIENDLY_CHARACTERS, MY_CHARACTERS } from "./base/constants";
+import { MY_CHARACTERS, SpotName } from "./base/constants";
 import { startCharacter } from "./base/functions";
+import { FRIENDLY_CHARACTERS } from "./base/settings";
 import { BWIReporter } from "./bwi_reporter";
-import { SpotConfig, SpotName, getSpotConfig } from "./configs/spot_configs";
+import { SpotConfig, getSpotConfig } from "./configs/spot_configs";
 import { PartyController } from "./controller/party_controller";
 import { CharacterRunner } from "./strategies/character_runner";
 
@@ -27,7 +28,8 @@ const PARTY_CONTROLLER: PartyController = new PartyController({
     partyLeader: PARTY_LEADER,
     partyAllow: PARTY_ALLOW,
     mainTank: MAIN_TANK,
-    sendToName: SEND_TO_NAME
+    sendToName: SEND_TO_NAME,
+    doQuests: new Set<CharacterType>()
 });
 async function run(): Promise<void> {
     // Start characters
@@ -42,6 +44,8 @@ async function run(): Promise<void> {
         if (config.attack) runner.applyStrategy(config.attack);
         if (config.move) runner.applyStrategy(config.move);
     }
+
+    PARTY_CONTROLLER.startControler();
 
     // Initialize and start bwi
     new BWIReporter(PARTY_CONTROLLER);

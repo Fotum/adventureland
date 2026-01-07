@@ -1,37 +1,37 @@
-import { PingCompensatedCharacter } from "alclient";
-import { EventName, SpecialName } from "../configs/boss_configs";
+import { Game, IPosition, PingCompensatedCharacter } from "alclient";
 import { CharacterRunner } from "../strategies/character_runner";
 import { sleep } from "../base/functions";
+import { EventName, SpecialName } from "../base/constants";
 
 
-export type RunnerTaskName = "afk" | "return" | "farming" | "quest" | "holiday" | "bcheck" | "cyberland" | "bank" | EventName | SpecialName;
-export type RunnerTaskStep = {
+export type RunnerTaskName = "unknown" | "afk" | "return" | "farming" | "quest" | "quest_npc" | "holiday" | "bcheck" | "cyberland" | "bank" | EventName | SpecialName;
+type RunnerTaskStep = {
     name: string
     fn: (runner: CharacterRunner<PingCompensatedCharacter>, signal: AbortSignal) => Promise<unknown>
 }
 
-type ExecutableRunnerTaskStep = {
-    name: string
-    isComplete: boolean
-    fn: (runner: CharacterRunner<PingCompensatedCharacter>, signal: AbortSignal) => Promise<unknown>
-}
+type ExecutableRunnerTaskStep = RunnerTaskStep & { isComplete: boolean }
 type RunnerTaskStatus = "CREATED" | "RUNNING" | "COMPLETE" | "ABORTED" | "ERROR";
 export class RunnerTask {
-    private _id: number;
+    private _id: string;
     private _name: RunnerTaskName;
-    private runner: CharacterRunner<PingCompensatedCharacter>;
+    private _targetPosition: IPosition | keyof typeof Game.G.events;
+    private _runner: CharacterRunner<PingCompensatedCharacter>;
 
     private _step: number = 0;
     private _length: number = 0;
     private _status: RunnerTaskStatus = "CREATED";
+    private _isComplete: boolean = false;
 
     private taskSteps: ExecutableRunnerTaskStep[] = [];
     private abortController: AbortController = new AbortController();
 
-    constructor(id: number, name: RunnerTaskName, runner: CharacterRunner<PingCompensatedCharacter>) {
+    constructor(id: string, name: RunnerTaskName, runner: CharacterRunner<PingCompensatedCharacter>, targetPosition?: IPosition | keyof typeof Game.G.events) {
         this._id = id;
         this._name = name;
-        this.runner = runner;
+        this._runner = runner;
+
+        this._targetPosition = targetPosition;
     }
 
     public async execute(): Promise<void> {
@@ -40,7 +40,7 @@ export class RunnerTask {
 
         while (this._status == "RUNNING" && this._step != this._length) {
             try {
-                while (!this.runner.isReady()) {
+                while (!this._runner.isReady() || this._runner.bot.rip) {
                     // Wait for bot to reconnect
                     await sleep(1000);
                     this.abortController.signal.throwIfAborted();
@@ -50,7 +50,7 @@ export class RunnerTask {
                 if (step.isComplete) continue;
     
                 console.log(`Executing step ${step.name}(${this._step})`);
-                await step.fn(this.runner, this.abortController.signal);
+                await step.fn(this._runner, this.abortController.signal);
                 console.log(`Step execution finished ${step.name}(${this._step})`);
 
                 step.isComplete = true;
@@ -63,17 +63,22 @@ export class RunnerTask {
                     console.warn(ex);
                     this.setComplete("ABORTED");
                     // #TODO: Properly rethrow error
-                    return;
+                } else if (ex.startsWith("Smart move error:")) {
+                    // Just redo step, do nothing
+                    console.warn(ex);
                 } else {
                     console.error(ex);
                     this.setComplete("ERROR");
                     // #TODO: Properly rethrow error
-                    return;
                 }
             }
         }
 
-        this._status = "COMPLETE";
+        // #TODO: Temporary workaround, there should be external try catch
+        if (this._status == "RUNNING") {
+            this._status = "COMPLETE";
+            this._isComplete = true;
+        }
     }
 
     public abortTask(reason?: string): void {
@@ -100,6 +105,7 @@ export class RunnerTask {
             this.taskSteps[stepNum].isComplete = true;
             if (this.taskSteps.every((step) => step.isComplete)) {
                 this._status = "COMPLETE";
+                this._isComplete = true;
             }
         }
     }
@@ -115,9 +121,10 @@ export class RunnerTask {
 
         this.abortController = new AbortController();
         this.taskSteps.forEach((step) => step.isComplete = false);
+        this._isComplete = false;
     }
 
-    public get id(): number {
+    public get id(): string {
         return this._id;
     }
 
@@ -133,13 +140,24 @@ export class RunnerTask {
         return this._length;
     }
 
-    public setComplete(status: RunnerTaskStatus): void {
+    public setComplete(status: RunnerTaskStatus): RunnerTask {
         this._status = status;
         this._step = this.taskSteps.length - 1;
         this.taskSteps.forEach((step) => step.isComplete = true);
+        this._isComplete = true;
+
+        return this;
     }
 
     public get status(): RunnerTaskStatus {
         return this._status;
+    }
+
+    public get isComplete(): boolean {
+        return this._isComplete;
+    }
+
+    public get targetPosition(): IPosition | keyof typeof Game.G.events {
+        return this._targetPosition;
     }
 }

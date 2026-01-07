@@ -1,4 +1,5 @@
 import { CharacterType, PingCompensatedCharacter } from "alclient";
+import { EventName, SpecialName } from "../base/constants";
 import { PartyController } from "../controller/party_controller";
 import { Strategy } from "../strategies/character_runner";
 import { MageAttackStrategy } from "../strategies/mage/mage_attack_strategy";
@@ -7,9 +8,6 @@ import { PriestAttackStrategy } from "../strategies/priest/priest_attack_strateg
 import { WarriorAttackStrategy } from "../strategies/warrior/warrior_attack_strategy";
 import { MAGE_AOE, MAGE_DPS, MAGE_FAST, PRIEST_GF, PRIEST_MF, PRIEST_TANKY, WARRIOR_AOE, WARRIOR_DPS } from "./equipment_setups";
 
-
-export type EventName = "goobrawl" | "dragold" | "icegolem" | "valentines" | "snowman" | "mrpumpkin" | "mrgreen";
-export type SpecialName = "phoenix" | "frog" | "fvampire" | "mvampire" | "jr" | "greenjr" | "skeletor" | "stompy";
 
 export type EventConfig = {
     waitRespMs?: number
@@ -22,7 +20,7 @@ export type EventConfig = {
     }
     isActive: boolean
 }
-export function getEventConfig(eventName: SpecialName | EventName, partyController: PartyController): EventConfig {
+export function getEventConfig(eventName: SpecialName | EventName, partyController: PartyController): EventConfig | undefined {
     let defaultEnergize = {
         onMpRatio: 0.8,
         when: { 
@@ -412,5 +410,7 @@ export function getEventConfig(eventName: SpecialName | EventName, partyControll
                 },
                 isActive: true
             };
+        default:
+            return undefined;
     }
 }

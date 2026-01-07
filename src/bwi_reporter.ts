@@ -26,7 +26,7 @@ type BWIDataSource = {
     esize: number
     gold: number
     party: string
-    // status: string
+    status: string
     target: string
     cc: number
     xpPh: number
@@ -70,7 +70,7 @@ export class BWIReporter {
                 esize: bot.esize,
                 gold: bot.gold,
                 party: bot.party,
-                // status: "Doing something",
+                status: "Doing something",
                 target: "None",
                 cc: bot.cc,
                 xpPh: 0,
@@ -106,6 +106,7 @@ export class BWIReporter {
             dataSource.esize = bot.esize;
             dataSource.gold = bot.gold;
             dataSource.party = bot.party;
+            dataSource.status = this.controller.getRunnerState(bot.id);
             dataSource.target = bot.getTargetEntity()?.name ?? "None";
             dataSource.cc = bot.cc;
 
@@ -130,7 +131,7 @@ export class BWIReporter {
             { name: "inv", type: "labelProgressBar", label: "Inventory", options: { color: "brown" }, getter: () => this.quickBarVal(ds.isize - ds.esize, ds.isize) },
             { name: "gold", type: "text", label: "Gold", getter: () => this.humanizeInt(ds.gold, 1) },
             { name: "party_leader", type: "text", label: "Chief", getter: () => ds.party || "N/A" },
-            // { name: "current_status", type: "text", label: "Status", getter: () => ds.status },
+            { name: "current_status", type: "text", label: "Status", getter: () => ds.status },
             { name: "target", type: "text", label: "Target", getter: () => ds.target || "None" },
             { name: "gph", type: "text", label: "Gold/h", getter: () => this.humanizeInt(this.valPh(ds.goldHisto), 1) },
             { name: "xpph", type: "text", label: "XP/h", getter: () => this.humanizeInt(ds.xpPh, 1) },

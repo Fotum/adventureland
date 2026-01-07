@@ -1,7 +1,12 @@
-import { PingCompensatedCharacter, ServerIdentifier, ServerRegion } from "alclient";
-import { SpotName } from "../configs/spot_configs";
-import { CharacterRunner } from "../strategies/character_runner";
-import { RunnerTask } from "./runner_task";
+import { CharacterType, MonsterName, PingCompensatedCharacter, ServerIdentifier, ServerRegion } from "alclient";
+import { SpotName } from "../base/constants";
+import { generateRandomId, sleep } from "../base/functions";
+import { QUESTS } from "../base/settings";
+import { getQuestConfig } from "../configs/quest_configs";
+import { getSpotConfig } from "../configs/spot_configs";
+import { CharacterRunner, Strategy } from "../strategies/character_runner";
+import { RunnerTask, RunnerTaskName } from "./runner_task";
+import { getChangeSpotTask, getHolidayBuffTask, getInteractWithQuestNpcTask } from "./runner_task_collection";
 
 
 export type PartyControllerConfig = {
@@ -13,12 +18,12 @@ export type PartyControllerConfig = {
     mainTank?: string
     sendToName?: string
 
-    // #TODO: Party setup for bosses and quests will be in quest/boss event
-    doQuests?: boolean
+    doQuests: Set<CharacterType>
     doBosses?: boolean
+    doCyberland?: boolean
 }
 type RunnerState = {
-    currentTask: RunnerTask
+    currTask: RunnerTask
     taskQueue: RunnerTask[]
 }
 export class PartyController {
@@ -35,19 +40,75 @@ export class PartyController {
         this.activeRunners = new Map<string, CharacterRunner<PingCompensatedCharacter>>();
         this.runnerStates = new Map<string, RunnerState>();
 
+        // #TODO: Restore states and populte state map
+        this.taskManagerLoop();
+
         process.on("SIGINT", this.saveAndExit);
         process.on("SIGTERM", this.saveAndExit);
     }
 
-    private async taskCheckerLoop(): Promise<void> {
+    private async taskManagerLoop(): Promise<void> {
         try {
             if (!this.isRunning) return;
 
+            for (const [name, runner] of this.activeRunners) {
+                if (!runner.isReady() || runner.bot.rip) continue;
 
+                let currState: RunnerState = this.runnerStates.get(name);
+
+                // Check if we have something to execute from queue
+                if (currState.currTask.isComplete && currState.taskQueue.length > 0) {
+                    let execTask: RunnerTask = currState.taskQueue.shift();
+                    currState.currTask = execTask;
+                    execTask.execute();
+                }
+
+                // Holiday buff task
+                if (runner.bot.S.holidayseason && !runner.bot.s.holidayspirit && currState.currTask.name != "holiday" && !currState.taskQueue.some((task) => task.name == "holiday")) {
+                    currState.taskQueue.push(getHolidayBuffTask(runner));
+                }
+
+                // Check bosses and push boss task
+
+                // Push get/complete quest task
+                if (this.config.doQuests.has(runner.bot.ctype) && !currState.taskQueue.some((task) => task.name == "quest")) {
+                    if (!runner.bot.s.monsterhunt) {
+                        let questTask: RunnerTask | undefined = getInteractWithQuestNpcTask(runner, "get");
+                        if (questTask) { currState.taskQueue.push(questTask); }
+                    } else if (runner.bot.s.monsterhunt && runner.bot.s.monsterhunt.c == 0) {
+                        let questTask: RunnerTask | undefined = getInteractWithQuestNpcTask(runner, "complete");
+                        if (questTask) { currState.taskQueue.push(questTask); }
+                    }
+                }
+
+                // Merchant tasks
+                if (runner.bot.ctype == "merchant") {
+                    sleep(500);
+                }
+
+                // Return to farm or quest if there is nothing else to do
+                if (currState.currTask.isComplete && currState.taskQueue.length == 0) {
+                    // If we have some active quest -> do it
+                    if (this.config.doQuests.has(runner.bot.ctype) && runner.bot.s.monsterhunt && currState.currTask.name != "quest") {
+                        // Check if we can complete it
+                        let questTarget: MonsterName = runner.bot.s.monsterhunt.id;
+                        if (QUESTS.has(questTarget) && QUESTS.get(questTarget)) {
+                            let strategies: { attack?: Strategy<PingCompensatedCharacter>, move?: Strategy<PingCompensatedCharacter> } = getQuestConfig(this, questTarget)[runner.bot.ctype];
+                            currState.taskQueue.push(getChangeSpotTask("quest", runner, strategies));
+                        }
+                    }
+
+                    if (currState.currTask.name != "farming" && currState.currTask.name != "quest") {
+                        // Go back to farm
+                        let strategies: { attack?: Strategy<PingCompensatedCharacter>, move?: Strategy<PingCompensatedCharacter> } = getSpotConfig(this)[runner.bot.ctype];
+                        currState.taskQueue.push(getChangeSpotTask("farming", runner, strategies));
+                    }
+                }
+            }
         } catch (ex) {
-
+            console.error(ex);
         } finally {
-            setTimeout(() => { this.taskCheckerLoop() }, 1000);
+            setTimeout(() => { this.taskManagerLoop() }, 1000);
         }
     }
 
@@ -69,6 +130,8 @@ export class PartyController {
 
     public addRunner(runner: CharacterRunner<PingCompensatedCharacter>): void {
         this.activeRunners.set(runner.bot.id, runner);
+        // #TODO: Temporary debug
+        this.runnerStates.set(runner.bot.id, { currTask: new RunnerTask(generateRandomId(), "farming", runner).setComplete("COMPLETE"), taskQueue: [] });
     }
 
     public getRunner(botId: string): CharacterRunner<PingCompensatedCharacter> | undefined {
@@ -87,100 +150,10 @@ export class PartyController {
     public saveAndExit(): void {
         process.exit(0);
     }
+
+    public getRunnerState(name: string): RunnerTaskName {
+        return this.runnerStates.has(name)
+            ? this.runnerStates.get(name).currTask.name
+            : "unknown";
+    }
 }
-
-
-// type BossTimer = {
-//     lastCheck: Date
-//     respawn: number
-// }
-
-// export class PartyController {
-//     private defaultSpot: SpotConfig;
-
-//     private executors: CharacterRunner<PingCompensatedCharacter>[];
-//     private bossTimers = new Map<SpecialName, BossTimer>();
-
-//     private states = new Map<string, TaskTarget>();
-//     private actionQueues = new Map<string, Task[]>();
-
-//     public constructor(executors: CharacterRunner<PingCompensatedCharacter>[], defaultSpot: SpotName) {
-//         this.executors = executors;
-//         this.defaultSpot = getSpotConfig(defaultSpot, executors);
-
-//         this.restoreState();
-//     }
-
-//     private async stateControlLoop(): Promise<void> {
-//         for (let executor of this.executors) {
-//             let bot: PingCompensatedCharacter = executor.bot;
-//             if (bot.rip) continue;
-
-//             let currState: TaskTarget = this.states.get(bot.id);
-//             let botTasks: Task[] = this.actionQueues.get(bot.id);
-            
-//         }
-
-//         setTimeout(this.stateControlLoop, 500);
-//     }
-
-//     private async taskExecuteLoop(): Promise<void> {
-
-//     }
-
-//     private restoreState(): void {
-//         let loadedSettings = this.loadStates();
-//         for (let executor of this.executors) {
-//             let botName: string = executor.bot.id;
-//             let state: TaskTarget = loadedSettings.states[botName];
-
-//             if (state) this.states.set(botName, state);
-//             else this.states.set(botName, { name: "afk" });
-//         }
-
-//         // Restore action queue
-
-//         for (let specialNm of SPECIAL_MONSTERS) {
-//             let respawnTime: number = Game.G.monsters[specialNm].respawn;
-//             let savedTimer: Date = loadedSettings.bossTimers[specialNm];
-
-//             if (savedTimer) this.bossTimers.set(specialNm, { lastCheck: savedTimer, respawn: respawnTime });
-//             else this.bossTimers.set(specialNm, { lastCheck: INFINITE_PAST, respawn: respawnTime });
-//         }
-//     }
-
-//     private loadStates(): { states: {}, bossTimers: {} } {
-//         let result = { states: {}, bossTimers: {} };
-//         let loadPath: string = "../../settings/last_state.json";
-//         if (fs.existsSync(loadPath)) {
-//             let root = JSON.parse(fs.readFileSync(loadPath, { encoding: "utf-8" }));
-//             for (let key in root.states) {
-//                 result.states[key] = root.states[key];
-//             }
-
-//             // Restore action queue
-
-//             for (let key in root.bossTimers) {
-//                 result.bossTimers[key] = root.bossTimers[key];
-//             }
-//         }
-
-//         fs.unlinkSync(loadPath);
-//         return result;
-//     }
-
-//     private saveStates(): void {
-//         let root = { states: {}, bossTimers: {} };
-//         for (let [name, state] of this.states) {
-//             root.states[name] = state;
-//         }
-
-//         // Save action queue
-
-//         for (let [name, timer] of this.bossTimers) {
-//             root.bossTimers[name] = timer.lastCheck;
-//         }
-
-//         fs.writeFileSync("../../settings/last_state.json", JSON.stringify(root), { encoding: "utf-8" });
-//     }
-// }

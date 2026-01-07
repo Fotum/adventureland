@@ -1,5 +1,4 @@
 import { Character, CharacterType, Entity, Game, IPosition, Mage, Merchant, MonsterName, Paladin, PingCompensatedCharacter, Priest, Ranger, Rogue, ServerData, ServerIdentifier, ServerRegion, Tools, Warrior } from "alclient"
-import { SpecialName } from "../configs/boss_configs"
 import { PartyController } from "../controller/party_controller"
 import { RunnerException } from "../exceptions/exceptions"
 import { AdminCommandStrategy } from "../strategies/admin_command_strategy"
@@ -13,7 +12,8 @@ import { MerchantUpgradeStrategy } from "../strategies/merchant/merchant_upgrade
 import { AcceptPartyRequest, RequestParty } from "../strategies/party_strategy"
 import { PartyHealStrategy } from "../strategies/priest/party_heal_strategy"
 import { UnstackStrategy } from "../strategies/unstack_strategy"
-import { MY_CHARACTERS, SPECIAL_MONSTERS } from "./constants"
+import { MY_CHARACTERS, SpecialName } from "./constants"
+import { SPECIAL_MONSTERS } from "./settings"
 
 
 export type FilterRunnersOptions = {
@@ -158,9 +158,9 @@ export function ignoreExceptions(): void {
     return;
 }
 
-export function generateRandomNumber(precision?: number): number {
-    if (!precision) { precision = 0xffff; }
-    return Date.now() & precision;
+export function generateRandomId(idLength?: number): string {
+    if (!idLength) { idLength = 0xffff; }
+    return (Date.now() & idLength).toString();
 }
 
 export function mssince(tsFrom: number, tsTo?: number): number {
