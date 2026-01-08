@@ -1,6 +1,6 @@
 import { Character, Constants, GItem, Game, Item, ItemDataTrade, Merchant, Pathfinder, Player, Tools } from "alclient";
 import { MERCHANT_KEEP_ITEMS, MERCHANT_REPLENISHABLES, MERCHANT_REPLENISH_RATIO } from "../../base/constants";
-import { filterRunners, ignoreExceptions } from "../../base/functions";
+import { filterRunners, ignoreExceptions } from "../../base/functions/general";
 import { BUY_FROM_PONTY, DISMANTLE_ITEMS, EXCHANGE_ITMES, SELL_ITMES } from "../../base/settings";
 import { PartyController } from "../../controller/party_controller";
 import { Loop, LoopName, Strategy, StrategyName } from "../character_runner";

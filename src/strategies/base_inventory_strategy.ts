@@ -1,6 +1,6 @@
 import { Constants, Game, PingCompensatedCharacter, Tools } from "alclient";
 import { KEEP_GOLD, KEEP_ITEMS, REPLENISHABLES, REPLENISH_RATIO, SEND_GOLD_AT } from "../base/constants";
-import { ignoreExceptions } from "../base/functions";
+import { ignoreExceptions } from "../base/functions/general";
 import { SELL_ITMES } from "../base/settings";
 import { PartyController } from "../controller/party_controller";
 import { Loop, LoopName, Strategy, StrategyName } from "./character_runner";

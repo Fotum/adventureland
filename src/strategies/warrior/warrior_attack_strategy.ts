@@ -1,5 +1,5 @@
 import { EntitiesData, Entity, Game, ItemData, Player, SlotType, Tools, Warrior } from "alclient";
-import { ignoreExceptions, sleep } from "../../base/functions";
+import { ignoreExceptions, sleep } from "../../base/functions/general";
 import { FILTER_HIGHEST } from "../../configs/equipment_setups";
 import { PartyController } from "../../controller/party_controller";
 import { BaseAttackConfig, BaseAttackStrategy, IDLE_ATTACK_MONSTERS } from "../base_attack_strategy";

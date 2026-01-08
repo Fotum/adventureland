@@ -1,7 +1,7 @@
 import { Attribute, Character, ChestData, ChestOpenedData, Constants, GItem, Game, IPosition, ItemName, PingCompensatedCharacter, Tools } from "alclient";
 import { LRUCache } from "lru-cache";
 import { PotionName } from "../base/constants";
-import { ignoreExceptions } from "../base/functions";
+import { ignoreExceptions } from "../base/functions/general";
 import { PartyController } from "../controller/party_controller";
 import { Loop, LoopName, Loops, Strategy, StrategyName } from "./character_runner";
 
@@ -211,7 +211,7 @@ export class BaseStrategy<T extends PingCompensatedCharacter> implements Strateg
             if (bot.canBuy(this.config.hpPotType, { quantity: toBuy })) {
                 await bot.buy(this.config.hpPotType, toBuy).catch(console.error);
             } else {
-                console.warn(`[${bot.ctype}]: Cannot buy HP potions`);
+                console.warn(`[${bot.id}]: Cannot buy HP potions`);
             }
         }
 
@@ -221,7 +221,7 @@ export class BaseStrategy<T extends PingCompensatedCharacter> implements Strateg
             if (bot.canBuy(this.config.mpPotType, { quantity: toBuy })) {
                 await bot.buy(this.config.mpPotType, toBuy).catch(console.error);
             } else {
-                console.warn(`[${bot.ctype}]: Cannot buy MP potions`);
+                console.warn(`[${bot.id}]: Cannot buy MP potions`);
             }
         }
     }

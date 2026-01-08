@@ -1,6 +1,6 @@
 import { CharacterType, Game, Pathfinder, PingCompensatedCharacter, ServerIdentifier, ServerRegion } from "alclient";
 import { MY_CHARACTERS, SpotName } from "./base/constants";
-import { startCharacter } from "./base/functions";
+import { startCharacter } from "./base/functions/general";
 import { FRIENDLY_CHARACTERS } from "./base/settings";
 import { BWIReporter } from "./bwi_reporter";
 import { SpotConfig, getSpotConfig } from "./configs/spot_configs";
@@ -29,7 +29,11 @@ const PARTY_CONTROLLER: PartyController = new PartyController({
     partyAllow: PARTY_ALLOW,
     mainTank: MAIN_TANK,
     sendToName: SEND_TO_NAME,
-    doQuests: new Set<CharacterType>()
+
+    doQuests: new Set<CharacterType>(),
+    doBosses: true,
+    doCyberland: true,
+    doBanking: true
 });
 async function run(): Promise<void> {
     // Start characters

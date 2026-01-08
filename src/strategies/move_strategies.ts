@@ -1,6 +1,7 @@
 import { Constants, Entity, GData, GMap, GMonster, Game, IPosition, MapName, MonsterName, Pathfinder, PingCompensatedCharacter, Player, ServerInfoDataLive, SmartMoveOptions, Tools } from "alclient";
 import { HEAL_RETREAT_RATIO, PLAYER_MIN_DISTANCE } from "../base/constants";
-import { filterRunners, ignoreExceptions, sortClosestDistance } from "../base/functions";
+import { filterRunners, ignoreExceptions } from "../base/functions/general";
+import { sortClosestDistance } from "../base/functions/sort";
 import { PartyController } from "../controller/party_controller";
 import { CharacterRunner, Loop, LoopName, Strategy, StrategyName } from "./character_runner";
 
@@ -49,7 +50,7 @@ export class BaseMoveStrategy<T extends PingCompensatedCharacter> implements Str
         });
 
         if (!nearest) {
-            if (!bot.smartMoving) return bot.smartMove(this.types[0]);
+            if (!bot.smartMoving) return bot.smartMove(this.types[0], { useBlink: true });
         } else if (Tools.distance(bot, nearest) > bot.range) {
             return bot.smartMove(nearest, {
                 getWithin: Math.max(0, bot.range - nearest.speed),
@@ -95,6 +96,7 @@ export class FollowMoveStrategy<T extends PingCompensatedCharacter> implements S
 }
 
 export type HoldPositionStrategyConfig = {
+    position: IPosition | PingCompensatedCharacter
     offset?: {
         x?: number
         y?: number
@@ -105,17 +107,10 @@ export class HoldPositionStrategy<T extends PingCompensatedCharacter> implements
     public loops = new Map<LoopName, Loop<T>>;
 
     private _name: StrategyName = "move";
-    private location: IPosition;
-    private delta: number = 0;
+    private config: HoldPositionStrategyConfig;
 
-    public constructor(location: IPosition, config?: HoldPositionStrategyConfig) {
-        this.location = { ...location };
-
-        if (config?.offset) {
-            if (config.offset.x) this.location.x += config.offset.x;
-            if (config.offset.y) this.location.y += config.offset.y;
-            if (config.offset.d) this.delta = config.offset.d;
-        }
+    public constructor(config: HoldPositionStrategyConfig) {
+        this.config = config;
 
         this.loops.set("move", {
             fn: async (bot: T) => {
@@ -131,14 +126,23 @@ export class HoldPositionStrategy<T extends PingCompensatedCharacter> implements
     }
 
     private async move(bot: T): Promise<unknown> {
-        if (this.location.map != bot.map || (this.delta > 0 && Tools.distance(bot, this.location) > this.delta)) {
-            return bot.smartMove(this.location, { useBlink: true }).catch(ignoreExceptions);
+        let holdPosition: IPosition = { map: this.config.position.map, x: this.config.position.x, y: this.config.position.y };
+        let delta: number = 0;
+
+        if (this.config?.offset) {
+            if (this.config.offset.x) holdPosition.x += this.config.offset.x;
+            if (this.config.offset.y) holdPosition.y += this.config.offset.y;
+            if (this.config.offset.d) delta = this.config.offset.d;
+        }
+
+        if (holdPosition.map != bot.map || (delta > 0 && Tools.distance(bot, holdPosition) > delta)) {
+            return bot.smartMove(holdPosition, { useBlink: true }).catch(ignoreExceptions);
         }
     }
 }
 
 export type KiteInCircleConfig = {
-    centre: IPosition
+    centre: IPosition | PingCompensatedCharacter
     radius: number
     typeList: MonsterName[]
     sensitivity: number
@@ -170,7 +174,7 @@ export class KiteInCircleStrategy<T extends PingCompensatedCharacter> implements
         const { centre, radius, typeList: typeList, sensitivity } = this.config;
 
         if (Tools.distance(bot, centre) > radius * sensitivity) {
-            await bot.smartMove(centre, { getWithin: radius }).catch(ignoreExceptions);
+            await bot.smartMove(centre, { getWithin: radius, useBlink: true }).catch(ignoreExceptions);
         }
 
         // #TODO: Rewrite using vectors and multiple entities insted of one closest
@@ -226,7 +230,7 @@ export class KiteInCircleStrategy<T extends PingCompensatedCharacter> implements
 }
 
 export type MoveInCircleStrategyConfig = {
-    centre: IPosition
+    centre: IPosition | PingCompensatedCharacter
     radius: number
     sides?: number
     ccw?: boolean

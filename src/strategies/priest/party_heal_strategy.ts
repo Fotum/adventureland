@@ -1,5 +1,5 @@
 import { Priest } from "alclient";
-import { filterRunners, ignoreExceptions } from "../../base/functions";
+import { filterRunners, ignoreExceptions } from "../../base/functions/general";
 import { PartyController } from "../../controller/party_controller";
 import { Loop, LoopName, Loops, Strategy, StrategyName } from "../character_runner";
 

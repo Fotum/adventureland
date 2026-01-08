@@ -1,5 +1,5 @@
 import { PingCompensatedCharacter, Player } from "alclient";
-import { ignoreExceptions } from "../base/functions";
+import { ignoreExceptions } from "../base/functions/general";
 import { Loop, LoopName, Strategy, StrategyName } from "./character_runner";
 import { PLAYER_MIN_DISTANCE } from "../base/constants";
 
@@ -12,6 +12,7 @@ export class UnstackStrategy<T extends PingCompensatedCharacter> implements Stra
     public constructor() {
         this.loops.set("avoidance", {
             fn: async (bot: PingCompensatedCharacter) => {
+                if (bot.rip || bot.smartMoving || bot.moving) return;
                 await this.unstack(bot);
             },
             interval: 1000
@@ -19,11 +20,14 @@ export class UnstackStrategy<T extends PingCompensatedCharacter> implements Stra
     }
 
     private async unstack(bot: PingCompensatedCharacter): Promise<void> {
-        let players: Player[] = bot.getPlayers({ withinRangeOf: bot, withinRange: PLAYER_MIN_DISTANCE });
+        let players: Player[] = bot.getPlayers({ withinRange: PLAYER_MIN_DISTANCE });
         if (players.length == 0) return;
 
-        let x: number = -PLAYER_MIN_DISTANCE + Math.round(PLAYER_MIN_DISTANCE * 2 * Math.random());
-        let y: number = -PLAYER_MIN_DISTANCE + Math.round(PLAYER_MIN_DISTANCE * 2 * Math.random());
+        let player: Player = players[0];
+        let angleFromPlayerToBot: number = Math.atan2(bot.y - player.y, bot.x - player.x);
+
+        let x: number = PLAYER_MIN_DISTANCE * Math.cos(angleFromPlayerToBot);
+        let y: number = PLAYER_MIN_DISTANCE * Math.sin(angleFromPlayerToBot);
 
         await bot.move(bot.x + x, bot.y + y).catch(ignoreExceptions);
     }
@@ -32,31 +36,3 @@ export class UnstackStrategy<T extends PingCompensatedCharacter> implements Stra
         return this._name;
     }
 }
-
-// export class UnstuckStrategy<T extends PingCompensatedCharacter> implements Strategy<T> {
-//     private _name: StrategyName = "utility";
-//     private onHit: (data: HitData) => Promise<void>;
-    
-//     public constructor() {}
-
-//     public onApply(bot: T): void {
-//         this.onHit = async (data: HitData): Promise<void> => {
-//             if (data.id !== bot.id) return;
-//             if (data.stacked && !data.stacked.includes(bot.id)) return;
-            
-//             let x: number = -15 + Math.round(30 * Math.random());
-//             let y: number = -15 + Math.round(30 * Math.random());
-//             await bot.move(bot.x + x, bot.y + y).catch(ignoreExceptions);
-//         }
-
-//         bot.socket.on("hit", this.onHit);
-//     }
-
-//     public onRemove(bot: T): void {
-//         if (this.onHit) bot.socket.off("hit", this.onHit);
-//     }
-
-//     public get name() {
-//         return this._name;
-//     }
-// }

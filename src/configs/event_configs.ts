@@ -1,26 +1,25 @@
-import { CharacterType, PingCompensatedCharacter } from "alclient";
-import { EventName, SpecialName } from "../base/constants";
+import { CharacterType, MonsterName, PingCompensatedCharacter } from "alclient";
 import { PartyController } from "../controller/party_controller";
 import { Strategy } from "../strategies/character_runner";
 import { MageAttackStrategy } from "../strategies/mage/mage_attack_strategy";
-import { BaseMoveStrategy } from "../strategies/move_strategies";
+import { BaseMoveStrategy, FollowMoveStrategy } from "../strategies/move_strategies";
 import { PriestAttackStrategy } from "../strategies/priest/priest_attack_strategy";
 import { WarriorAttackStrategy } from "../strategies/warrior/warrior_attack_strategy";
 import { MAGE_AOE, MAGE_DPS, MAGE_FAST, PRIEST_GF, PRIEST_MF, PRIEST_TANKY, WARRIOR_AOE, WARRIOR_DPS } from "./equipment_setups";
 
 
 export type EventConfig = {
-    waitRespMs?: number
-    doSummon: boolean
+    targets: MonsterName[]
+    waitForRespawnMs?: number
+    override?: boolean
     configs: {
         [T in CharacterType]?: {
             attack?: Strategy<PingCompensatedCharacter>,
             move?: Strategy<PingCompensatedCharacter>
         }
     }
-    isActive: boolean
 }
-export function getEventConfig(eventName: SpecialName | EventName, partyController: PartyController): EventConfig | undefined {
+export function getEventConfig(eventName: string, partyController: PartyController): EventConfig | undefined {
     let defaultEnergize = {
         onMpRatio: 0.8,
         when: { 
@@ -32,8 +31,9 @@ export function getEventConfig(eventName: SpecialName | EventName, partyControll
         // Events
         case "goobrawl":
             return {
-                waitRespMs: 10_000,
-                doSummon: false,
+                targets: ["pinkgoo", "bgoo", "rgoo"],
+                waitForRespawnMs: 10_000,
+                override: true,
                 configs: {
                     warrior: {
                         attack: new WarriorAttackStrategy(partyController, {
@@ -57,7 +57,7 @@ export function getEventConfig(eventName: SpecialName | EventName, partyControll
                             disableScare: true,
                             energize: defaultEnergize
                         }),
-                        move: new BaseMoveStrategy(["pinkgoo", "bgoo", "rgoo"])
+                        move: new FollowMoveStrategy(partyController.config.mainTank)
                     },
                     priest: {
                         attack: new PriestAttackStrategy(partyController, {
@@ -71,12 +71,12 @@ export function getEventConfig(eventName: SpecialName | EventName, partyControll
                         }),
                         move: new BaseMoveStrategy(["pinkgoo", "bgoo", "rgoo"])
                     }
-                },
-                isActive: true
+                }
             };
         case "dragold":
             return {
-                doSummon: true,
+                targets: ["dragold"],
+                override: true,
                 configs: {
                     warrior: {
                         attack: new WarriorAttackStrategy(partyController, {
@@ -111,12 +111,12 @@ export function getEventConfig(eventName: SpecialName | EventName, partyControll
                         }),
                         move: new BaseMoveStrategy(["dragold"])
                     }
-                },
-                isActive: true
+                }
             };
         case "icegolem":
             return {
-                doSummon: false,
+                targets: ["icegolem"],
+                override: true,
                 configs: {
                     warrior: {
                         attack: new WarriorAttackStrategy(partyController, {
@@ -152,12 +152,12 @@ export function getEventConfig(eventName: SpecialName | EventName, partyControll
                         }),
                         move: new BaseMoveStrategy(["icegolem"])
                     }
-                },
-                isActive: true
+                }
             };
         case "valentines":
             return {
-                doSummon: true,
+                targets: ["pinkgoo"],
+                override: false,
                 configs: {
                     warrior: {
                         attack: new WarriorAttackStrategy(partyController, {
@@ -190,12 +190,12 @@ export function getEventConfig(eventName: SpecialName | EventName, partyControll
                         }),
                         move: new BaseMoveStrategy(["pinkgoo"])
                     }
-                },
-                isActive: true
+                }
             };
         case "snowman":
             return {
-                doSummon: true,
+                targets: ["snowman"],
+                override: false,
                 configs: {
                     warrior: {
                         attack: new WarriorAttackStrategy(partyController, {
@@ -225,14 +225,14 @@ export function getEventConfig(eventName: SpecialName | EventName, partyControll
                         }),
                         move: new BaseMoveStrategy(["snowman"])
                     }
-                },
-                isActive: true
+                }
             };
 
         // Special monsters
         case "phoenix":
             return {
-                doSummon: true,
+                targets: ["phoenix", "frog"],
+                override: false,
                 configs: {
                     warrior: {
                         attack: new WarriorAttackStrategy(partyController, {
@@ -242,7 +242,7 @@ export function getEventConfig(eventName: SpecialName | EventName, partyControll
                             disableCleave: true,
                             enableEquipForStomp: true
                         }),
-                        move: new BaseMoveStrategy(["phoenix"])
+                        move: new BaseMoveStrategy(["phoenix", "frog"])
                     },
                     mage: {
                         attack: new MageAttackStrategy(partyController, {
@@ -250,7 +250,7 @@ export function getEventConfig(eventName: SpecialName | EventName, partyControll
                             equipmentSet: MAGE_DPS,
                             energize: defaultEnergize
                         }),
-                        move: new BaseMoveStrategy(["phoenix"])
+                        move: new BaseMoveStrategy(["phoenix", "frog"])
                     },
                     priest: {
                         attack: new PriestAttackStrategy(partyController, {
@@ -258,14 +258,14 @@ export function getEventConfig(eventName: SpecialName | EventName, partyControll
                             equipmentSet: PRIEST_MF,
                             startHealingAtRatio: 0.8
                         }),
-                        move: new BaseMoveStrategy(["phoenix"])
+                        move: new BaseMoveStrategy(["phoenix", "frog"])
                     }
-                },
-                isActive: true
+                }
             };
         case "frog":
             return {
-                doSummon: false,
+                targets: ["frog", "phoenix"],
+                override: false,
                 configs: {
                     mage: {
                         attack: new MageAttackStrategy(partyController, {
@@ -273,14 +273,14 @@ export function getEventConfig(eventName: SpecialName | EventName, partyControll
                             equipmentSet: MAGE_DPS,
                             energize: defaultEnergize
                         }),
-                        move: new BaseMoveStrategy(["frog"])
+                        move: new BaseMoveStrategy(["frog", "phoenix"])
                     }
-                },
-                isActive: true
+                }
             };
         case "fvampire":
             return {
-                doSummon: true,
+                targets: ["fvampire"],
+                override: false,
                 configs: {
                     warrior: {
                         attack: new WarriorAttackStrategy(partyController, {
@@ -309,12 +309,12 @@ export function getEventConfig(eventName: SpecialName | EventName, partyControll
                         }),
                         move: new BaseMoveStrategy(["fvampire"])
                     }
-                },
-                isActive: true
+                }
             };
         case "mvampire":
             return {
-                doSummon: true,
+                targets: ["mvampire"],
+                override: false,
                 configs: {
                     warrior: {
                         attack: new WarriorAttackStrategy(partyController, {
@@ -343,12 +343,12 @@ export function getEventConfig(eventName: SpecialName | EventName, partyControll
                         }),
                         move: new BaseMoveStrategy(["mvampire"])
                     }
-                },
-                isActive: true
+                }
             };
         case "jr":
             return {
-                doSummon: false,
+                targets: ["jr"],
+                override: false,
                 configs: {
                     mage: {
                         attack: new MageAttackStrategy(partyController, {
@@ -358,12 +358,12 @@ export function getEventConfig(eventName: SpecialName | EventName, partyControll
                         }),
                         move: new BaseMoveStrategy(["jr"])
                     }
-                },
-                isActive: true
+                }
             };
         case "greenjr":
             return {
-                doSummon: false,
+                targets: ["greenjr"],
+                override: false,
                 configs: {
                     mage: {
                         attack: new MageAttackStrategy(partyController, {
@@ -373,12 +373,12 @@ export function getEventConfig(eventName: SpecialName | EventName, partyControll
                         }),
                         move: new BaseMoveStrategy(["greenjr"])
                     }
-                },
-                isActive: true
+                }
             };
         case "skeletor":
             return {
-                doSummon: true,
+                targets: ["skeletor"],
+                override: false,
                 configs: {
                     warrior: {
                         attack: new WarriorAttackStrategy(partyController, {
@@ -407,8 +407,7 @@ export function getEventConfig(eventName: SpecialName | EventName, partyControll
                         }),
                         move: new BaseMoveStrategy(["skeletor"])
                     }
-                },
-                isActive: true
+                }
             };
         default:
             return undefined;

@@ -1,6 +1,6 @@
 import { Game, IPosition, PingCompensatedCharacter } from "alclient";
 import { CharacterRunner } from "../strategies/character_runner";
-import { sleep } from "../base/functions";
+import { sleep } from "../base/functions/general";
 import { EventName, SpecialName } from "../base/constants";
 
 
@@ -20,6 +20,8 @@ export class RunnerTask {
 
     private _step: number = 0;
     private _length: number = 0;
+
+    private _canOverride: boolean = true;
     private _status: RunnerTaskStatus = "CREATED";
     private _isComplete: boolean = false;
 
@@ -49,9 +51,9 @@ export class RunnerTask {
                 step = this.taskSteps[this._step];
                 if (step.isComplete) continue;
     
-                console.log(`Executing step ${step.name}(${this._step})`);
+                console.log(`[${this._runner.bot.id}]: Executing step ${step.name}(${this._step})`);
                 await step.fn(this._runner, this.abortController.signal);
-                console.log(`Step execution finished ${step.name}(${this._step})`);
+                console.log(`[${this._runner.bot.id}]: Step execution finished ${step.name}(${this._step})`);
 
                 step.isComplete = true;
                 this._step++;
@@ -63,7 +65,7 @@ export class RunnerTask {
                     console.warn(ex);
                     this.setComplete("ABORTED");
                     // #TODO: Properly rethrow error
-                } else if (ex.startsWith("Smart move error:")) {
+                } else if (ex.message && ex.message.startsWith("Smart move error:")) {
                     // Just redo step, do nothing
                     console.warn(ex);
                 } else {
@@ -159,5 +161,13 @@ export class RunnerTask {
 
     public get targetPosition(): IPosition | keyof typeof Game.G.events {
         return this._targetPosition;
+    }
+
+    public set canOverride(canOverride: boolean) {
+        this._canOverride = canOverride;
+    }
+
+    public get canOverride(): boolean {
+        return this._canOverride;
     }
 }

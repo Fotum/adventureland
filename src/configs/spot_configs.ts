@@ -48,7 +48,7 @@ export function getSpotConfig(partyController: PartyController, spotName?: SpotN
                     }),
                     move: new KiteInCircleStrategy({
                         centre: { map: "cave", x: -200, y: -478 },
-                        radius: 130,
+                        radius: 100,
                         typeList: ["bat", "mvampire", "phoenix"],
                         sensitivity: 20
                     })
@@ -65,13 +65,13 @@ export function getSpotConfig(partyController: PartyController, spotName?: SpotN
                     }),
                     move: new KiteInCircleStrategy({
                         centre: { map: "cave", x: -200, y: -478 },
-                        radius: 130,
+                        radius: 100,
                         typeList: ["bat", "mvampire", "phoenix"],
                         sensitivity: 20
                     })
                 },
                 merchant: {
-                    move: new HoldPositionStrategy({ x: -200, y: -478, map: "cave" })
+                    move: new HoldPositionStrategy({ position: { x: -200, y: -478, map: "cave" } })
                 }
             };
         case "cave_second":
@@ -497,7 +497,7 @@ export function getSpotConfig(partyController: PartyController, spotName?: SpotN
                     move: new BaseMoveStrategy(["mole"])
                 },
                 merchant: {
-                    move: new HoldPositionStrategy({ x: 242, y: -21, map: "tunnel" })
+                    move: new HoldPositionStrategy({ position: { x: 242, y: -21, map: "tunnel" } })
                 }
             };
         case "porcupine":
@@ -526,7 +526,7 @@ export function getSpotConfig(partyController: PartyController, spotName?: SpotN
                     move: new BaseMoveStrategy(["porcupine"])
                 },
                 merchant: {
-                    move: new HoldPositionStrategy({ x: -585, y: 320, map: "desertland" })
+                    move: new HoldPositionStrategy({ position: { x: -585, y: 320, map: "desertland" } })
                 }
             };
         case "goos":
@@ -571,7 +571,7 @@ export function getSpotConfig(partyController: PartyController, spotName?: SpotN
                     })
                 },
                 merchant: {
-                    move: new HoldPositionStrategy({ x: -1, y: 648, map: "main" })
+                    move: new HoldPositionStrategy({ position: { x: -1, y: 648, map: "main" } })
                 }
             };
         case "snakes":
@@ -609,7 +609,7 @@ export function getSpotConfig(partyController: PartyController, spotName?: SpotN
                     move: new BaseMoveStrategy(["snake"])
                 },
                 merchant: {
-                    move: new HoldPositionStrategy({ x: -234, y: 1751, map: "main" })
+                    move: new HoldPositionStrategy({ position: { x: -234, y: 1751, map: "main" } })
                 }
             };
         case "cgoo":
@@ -717,7 +717,7 @@ export function getSpotConfig(partyController: PartyController, spotName?: SpotN
                     move: new BaseMoveStrategy(["osnake"])
                 },
                 merchant: {
-                    move: new HoldPositionStrategy( {x: -519, y: -234, map: "halloween"} )
+                    move: new HoldPositionStrategy({ position: {x: -519, y: -234, map: "halloween"} })
                 }
             };
         case "minimush":
@@ -755,7 +755,7 @@ export function getSpotConfig(partyController: PartyController, spotName?: SpotN
                     move: new BaseMoveStrategy(["minimush", "phoenix"])
                 },
                 merchant: {
-                    move: new HoldPositionStrategy( {x: 14, y: 414, map: "halloween"} )
+                    move: new HoldPositionStrategy({ position: {x: 14, y: 414, map: "halloween"} })
                 }
             };
         case "bigbird":
@@ -793,7 +793,7 @@ export function getSpotConfig(partyController: PartyController, spotName?: SpotN
                     move: new BaseMoveStrategy(["bigbird"])
                 },
                 merchant: {
-                    move: new HoldPositionStrategy( {x: 1378, y: 418, map: "main"} )
+                    move: new HoldPositionStrategy({ position: {x: 1378, y: 418, map: "main"} })
                 }
             };
         case "scorpion":
@@ -834,7 +834,7 @@ export function getSpotConfig(partyController: PartyController, spotName?: SpotN
                     })
                 },
                 merchant: {
-                    move: new HoldPositionStrategy({x: 1308, y: -331, map: "main"})
+                    move: new HoldPositionStrategy({ position: {x: 1308, y: -331, map: "main"} })
                 }
             };
         case "spider":
@@ -875,7 +875,7 @@ export function getSpotConfig(partyController: PartyController, spotName?: SpotN
                     })
                 },
                 merchant: {
-                    move: new HoldPositionStrategy({x: 1308, y: -331, map: "main"})
+                    move: new HoldPositionStrategy({ position: {x: 1308, y: -331, map: "main"} })
                 }
             };
         default:

@@ -1,24 +1,19 @@
 import { BankPackName, ItemName, MonsterName } from "alclient";
-import { SpecialName, EventName } from "./constants";
 
 
 export const FRIENDLY_CHARACTERS: string[] = [];
 
-type BossInfo = {
-    isActive: boolean
-    lastCheck?: number
-}
-export const SPECIAL_MONSTERS: Map<SpecialName, BossInfo> = new Map<SpecialName, BossInfo>([
-    ["phoenix", { isActive: true }],
-    ["frog", { isActive: true }],
-    ["mvampire", { isActive: true }],
-    ["fvampire", { isActive: true }],
-    ["jr", { isActive: true }],
-    ["greenjr", { isActive: true }],
-    ["skeletor", { isActive: true }],
-    ["stompy", { isActive: false }]
+export const SPECIAL_MONSTERS: Map<MonsterName, boolean> = new Map<MonsterName, boolean>([
+    ["phoenix", true],
+    ["frog", false],
+    ["mvampire", true],
+    ["fvampire", true],
+    ["jr", true],
+    ["greenjr", true],
+    ["skeletor", true],
+    ["stompy", false]
 ]);
-export const EVENTS: Map<EventName, boolean> = new Map<EventName, boolean>([
+export const EVENTS: Map<string, boolean> = new Map<string, boolean>([
     ["goobrawl", true],
     ["dragold", true],
     ["icegolem", true],

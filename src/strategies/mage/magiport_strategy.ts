@@ -1,5 +1,5 @@
 import { CMData, Mage, Pathfinder, PingCompensatedCharacter, Tools } from "alclient";
-import { filterRunners } from "../../base/functions";
+import { filterRunners } from "../../base/functions/general";
 import { PartyController } from "../../controller/party_controller";
 import { Loop, LoopName, Strategy, StrategyName } from "../character_runner";
 
@@ -10,8 +10,8 @@ export type MagiportConfig = {
 }
 
 export const DEFAULT_MAGIPORT_CONFIG: MagiportConfig = {
-    delay: 5000,
-    range: 250
+    delay: 1000,
+    range: 500
 };
 
 export class MagiportSmartMovingStrategy implements Strategy<Mage> {
@@ -21,11 +21,11 @@ export class MagiportSmartMovingStrategy implements Strategy<Mage> {
 
     private _name: StrategyName = "magiport";
     private partyController: PartyController;
-    private options: MagiportConfig;
+    private config: MagiportConfig;
 
-    public constructor(partyController: PartyController, options: MagiportConfig = DEFAULT_MAGIPORT_CONFIG) {
+    public constructor(partyController: PartyController, config: MagiportConfig = DEFAULT_MAGIPORT_CONFIG) {
         this.partyController = partyController;
-        this.options = options;
+        this.config = config;
 
         this.loops.set("magiport", {
             fn: async (bot: Mage) => {
@@ -52,11 +52,11 @@ export class MagiportSmartMovingStrategy implements Strategy<Mage> {
             if (friend.map.startsWith("bank")) continue;
             if (Pathfinder.canWalkPath(bot, friend)) continue;
             if (!Pathfinder.canWalkPath(bot, friend.smartMoving)) continue;
-            if (Tools.squaredDistance(friend, friend.smartMoving) < (2 * this.options.range)) continue;
-            if (Tools.squaredDistance(bot, friend.smartMoving) > this.options.range) continue;
+            if (Tools.distance(friend, friend.smartMoving) < (2 * this.config.range)) continue;
+            if (Tools.distance(bot, friend.smartMoving) > this.config.range) continue;
 
             let lastMagiport = MagiportSmartMovingStrategy.recentlyMagiported.get(friend.id);
-            if (lastMagiport && (lastMagiport + this.options.delay) > Date.now()) continue;
+            if (lastMagiport && (lastMagiport + this.config.delay) > Date.now()) continue;
 
             try {
                 await bot.magiport(friend.id);

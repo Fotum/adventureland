@@ -1,6 +1,6 @@
 import { ActionData, ActionDataRay, EntitiesData, Entity, GItem, Game, Mage, MonsterName, PingCompensatedCharacter, Player, SlotType, Tools, TradeItemInfo, TradeSlotType } from "alclient";
 import FastPriorityQueue from "fastpriorityqueue";
-import { filterRunners, ignoreExceptions } from "../../base/functions";
+import { filterRunners, ignoreExceptions } from "../../base/functions/general";
 import { PartyController } from "../../controller/party_controller";
 import { BaseAttackConfig, BaseAttackStrategy } from "../base_attack_strategy";
 

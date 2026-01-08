@@ -1,6 +1,6 @@
 import { Entity, Game, PingCompensatedCharacter, Player, Priest, Tools } from "alclient";
 import FastPriorityQueue from "fastpriorityqueue";
-import { ignoreExceptions } from "../../base/functions";
+import { ignoreExceptions } from "../../base/functions/general";
 import { PartyController } from "../../controller/party_controller";
 import { BaseAttackConfig, BaseAttackStrategy } from "../base_attack_strategy";
 
