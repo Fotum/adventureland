@@ -6,7 +6,7 @@ import { PartyController } from "../controller/party_controller";
 import { Loop, LoopName, Loops, Strategy, StrategyName } from "./character_runner";
 
 
-export type RestorationConfig = {
+export type BaseStrategyConfig = {
     hpPotType: PotionName
     mpPotType: PotionName
     useHpAt: number
@@ -15,6 +15,7 @@ export type RestorationConfig = {
         max: number
         min: number
     }
+    disableLoot?: boolean
 }
 
 export class BaseStrategy<T extends PingCompensatedCharacter> implements Strategy<T> {
@@ -24,12 +25,12 @@ export class BaseStrategy<T extends PingCompensatedCharacter> implements Strateg
 
     private _name: StrategyName = "base";
     private partyController: PartyController;
-    private config: RestorationConfig;
+    private config: BaseStrategyConfig;
     private chestCache = new Map<string, Map<string, Map<string, ChestData>>>();
 
     private lootOnDrop: (data: ChestData) => void;
 
-    public constructor(partyController: PartyController, config: RestorationConfig) {
+    public constructor(partyController: PartyController, config: BaseStrategyConfig) {
         this.partyController = partyController;
         this.config = config;
 
@@ -47,6 +48,7 @@ export class BaseStrategy<T extends PingCompensatedCharacter> implements Strateg
         });
         this.loops.set("loot", {
             fn: async (bot: T) => {
+                if (this.config.disableLoot) { return; }
                 for (let [, chest] of bot.chests) {
                     await this.lootChest(bot, chest).catch(ignoreExceptions);
                 }

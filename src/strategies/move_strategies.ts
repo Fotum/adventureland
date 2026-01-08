@@ -96,7 +96,7 @@ export class FollowMoveStrategy<T extends PingCompensatedCharacter> implements S
 }
 
 export type HoldPositionStrategyConfig = {
-    position: IPosition | PingCompensatedCharacter
+    position: IPosition | CharacterRunner<PingCompensatedCharacter>
     offset?: {
         x?: number
         y?: number
@@ -108,6 +108,7 @@ export class HoldPositionStrategy<T extends PingCompensatedCharacter> implements
 
     private _name: StrategyName = "move";
     private config: HoldPositionStrategyConfig;
+    private lastPosition: IPosition = undefined;
 
     public constructor(config: HoldPositionStrategyConfig) {
         this.config = config;
@@ -126,9 +127,18 @@ export class HoldPositionStrategy<T extends PingCompensatedCharacter> implements
     }
 
     private async move(bot: T): Promise<unknown> {
-        let holdPosition: IPosition = { map: this.config.position.map, x: this.config.position.x, y: this.config.position.y };
-        let delta: number = 0;
+        let configPosition: IPosition | CharacterRunner<PingCompensatedCharacter> = this.config.position;
+        let holdPosition: IPosition = undefined;
+        if (configPosition instanceof CharacterRunner<PingCompensatedCharacter>) {
+            if (configPosition.isReady()) { this.lastPosition = { map: configPosition.bot.map, x: configPosition.bot.x, y: configPosition.bot.y }; }
+            else if (this.lastPosition === undefined) { this.lastPosition = { map: bot.map, x: bot.x, y: bot.y }; }
 
+            holdPosition = this.lastPosition;
+        } else {
+            holdPosition = configPosition;
+        }
+
+        let delta: number = 0;
         if (this.config?.offset) {
             if (this.config.offset.x) holdPosition.x += this.config.offset.x;
             if (this.config.offset.y) holdPosition.y += this.config.offset.y;
@@ -142,7 +152,7 @@ export class HoldPositionStrategy<T extends PingCompensatedCharacter> implements
 }
 
 export type KiteInCircleConfig = {
-    centre: IPosition | PingCompensatedCharacter
+    centre: IPosition | CharacterRunner<PingCompensatedCharacter>
     radius: number
     typeList: MonsterName[]
     sensitivity: number
@@ -153,6 +163,7 @@ export class KiteInCircleStrategy<T extends PingCompensatedCharacter> implements
     protected config: KiteInCircleConfig;
 
     private _name: StrategyName = "move";
+    private lastCentre: IPosition = undefined;
 
     public constructor(config: KiteInCircleConfig) {
         this.config = config;
@@ -171,7 +182,21 @@ export class KiteInCircleStrategy<T extends PingCompensatedCharacter> implements
     }
 
     private async move(bot: T): Promise<unknown> {
-        const { centre, radius, typeList: typeList, sensitivity } = this.config;
+        let configPosition: IPosition | CharacterRunner<PingCompensatedCharacter> = this.config.centre;
+        let configCentre: IPosition = undefined;
+        if (configPosition instanceof CharacterRunner<PingCompensatedCharacter>) {
+            if (configPosition.isReady()) { this.lastCentre = { map: configPosition.bot.map, x: configPosition.bot.x, y: configPosition.bot.y }; }
+            else if (this.lastCentre === undefined) { this.lastCentre = { map: bot.map, x: bot.x, y: bot.y }; }
+
+            configCentre = this.lastCentre;
+        } else {
+            configCentre = configPosition;
+        }
+
+        const centre: IPosition = configCentre;
+        const radius: number = this.config.radius;
+        const typeList: MonsterName[] = this.config.typeList;
+        const sensitivity: number = this.config.sensitivity;
 
         if (Tools.distance(bot, centre) > radius * sensitivity) {
             await bot.smartMove(centre, { getWithin: radius, useBlink: true }).catch(ignoreExceptions);
@@ -242,6 +267,7 @@ export class MoveInCircleStrategy<T extends PingCompensatedCharacter> implements
     protected config: MoveInCircleStrategyConfig;
 
     private _name: StrategyName = "move";
+    private lastCentre: IPosition = undefined;
 
     public constructor(config: MoveInCircleStrategyConfig) {
         if (config.sides === undefined) {
@@ -266,8 +292,19 @@ export class MoveInCircleStrategy<T extends PingCompensatedCharacter> implements
     }
 
     private async move(bot: T): Promise<unknown> {
+        let configPosition: IPosition | CharacterRunner<PingCompensatedCharacter> = this.config.centre;
+        let configCentre: IPosition = undefined;
+        if (configPosition instanceof CharacterRunner<PingCompensatedCharacter>) {
+            if (configPosition.isReady()) { this.lastCentre = { map: configPosition.bot.map, x: configPosition.bot.x, y: configPosition.bot.y }; }
+            else if (this.lastCentre === undefined) { this.lastCentre = { map: bot.map, x: bot.x, y: bot.y }; }
+
+            configCentre = this.lastCentre;
+        } else {
+            configCentre = configPosition;
+        }
+
         const angle: number = (2 * Math.PI) / this.config.sides;
-        const centre = this.config.centre;
+        const centre = configCentre;
         const radius = this.config.radius;
 
         let direction: number = 1;

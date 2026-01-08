@@ -1,7 +1,7 @@
 import { PingCompensatedCharacter, Player } from "alclient";
+import { PLAYER_MIN_DISTANCE } from "../base/constants";
 import { ignoreExceptions } from "../base/functions/general";
 import { Loop, LoopName, Strategy, StrategyName } from "./character_runner";
-import { PLAYER_MIN_DISTANCE } from "../base/constants";
 
 
 export class UnstackStrategy<T extends PingCompensatedCharacter> implements Strategy<T> {
@@ -20,10 +20,7 @@ export class UnstackStrategy<T extends PingCompensatedCharacter> implements Stra
     }
 
     private async unstack(bot: PingCompensatedCharacter): Promise<void> {
-        let players: Player[] = bot.getPlayers({ withinRange: PLAYER_MIN_DISTANCE });
-        if (players.length == 0) return;
-
-        let player: Player = players[0];
+        let player: Player = bot.getPlayer({ withinRange: PLAYER_MIN_DISTANCE, returnNearest: true });
         let angleFromPlayerToBot: number = Math.atan2(bot.y - player.y, bot.x - player.x);
 
         let x: number = PLAYER_MIN_DISTANCE * Math.cos(angleFromPlayerToBot);
