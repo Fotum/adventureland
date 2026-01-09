@@ -1,9 +1,9 @@
 import { MonsterName } from "alclient";
-import { PartyController } from "../controller/party_controller";
-import { MageAttackStrategy } from "../strategies/mage/mage_attack_strategy";
-import { BaseMoveStrategy, HoldPositionStrategy, KiteInCircleStrategy } from "../strategies/move_strategies";
-import { MAGE_AOE, MAGE_DPS, MAGE_FAST } from "./equipment_setups";
-import { SpotConfig } from "./spot_configs";
+import { PartyController } from "../../controller/party_controller";
+import { MageAttackStrategy } from "../../strategies/mage/mage_attack_strategy";
+import { BaseMoveStrategy, HoldPositionStrategy, KiteInCircleStrategy } from "../../strategies/move_strategies";
+import { MAGE_AOE, MAGE_DPS, MAGE_FAST } from "../equipment_setups";
+import { SpotConfig } from "../spots/spot_configs";
 
 
 export function getQuestConfig(partyController: PartyController, questName: MonsterName): SpotConfig | undefined {
@@ -16,7 +16,7 @@ export function getQuestConfig(partyController: PartyController, questName: Mons
                         notType: "plantoid",
                         equipmentSet: MAGE_FAST
                     }),
-                    move: new HoldPositionStrategy({ map: "desertland", x: -819, y: 179 })
+                    move: new HoldPositionStrategy({ position: { map: "desertland", x: -819, y: 179 } })
                 }
             };
         case "bee":
@@ -27,7 +27,7 @@ export function getQuestConfig(partyController: PartyController, questName: Mons
                         enableGreedyAggro: ["cutebee"],
                         equipmentSet: MAGE_AOE
                     }),
-                    move: new HoldPositionStrategy({ map: "main", x: 547, y: 1064 })
+                    move: new HoldPositionStrategy({ position: { map: "main", x: 547, y: 1064 } })
                 }
             };
         case "goo":
@@ -49,7 +49,7 @@ export function getQuestConfig(partyController: PartyController, questName: Mons
                         enableGreedyAggro: true,
                         equipmentSet: MAGE_AOE
                     }),
-                    move: new HoldPositionStrategy({ map: "main", x: -62, y: 1895 })
+                    move: new HoldPositionStrategy({ position: { map: "main", x: -62, y: 1895 } })
                 }
             };
         case "crab":
@@ -95,8 +95,7 @@ export function getQuestConfig(partyController: PartyController, questName: Mons
                     move: new KiteInCircleStrategy({
                         centre: { map: "spookytown", x: 860, y: -14 },
                         radius: 300,
-                        typeList: ["stoneworm"],
-                        sensitivity: 15
+                        typeList: ["stoneworm"]
                     })
                 }
             };
@@ -132,7 +131,7 @@ export function getQuestConfig(partyController: PartyController, questName: Mons
                         enableGreedyAggro: ["phoenix", "minimush"],
                         equipmentSet: MAGE_AOE
                     }),
-                    move: new HoldPositionStrategy({ map: "halloween", x: 14, y: 414 })
+                    move: new HoldPositionStrategy({ position: { map: "halloween", x: 14, y: 414 } })
                 }
             };
         case "bat":
@@ -154,7 +153,7 @@ export function getQuestConfig(partyController: PartyController, questName: Mons
                         enableGreedyAggro: ["phoenix"],
                         equipmentSet: MAGE_AOE
                     }),
-                    move: new HoldPositionStrategy({ map: "main", x: 506, y: 1817 })
+                    move: new HoldPositionStrategy({ position: { map: "main", x: 506, y: 1817 } })
                 }
             };
         default:

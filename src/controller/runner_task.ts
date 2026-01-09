@@ -105,6 +105,8 @@ export class RunnerTask {
     public setStepComplete(stepNum: number): void {
         if (stepNum < this._length) {
             this.taskSteps[stepNum].isComplete = true;
+            this._step++;
+
             if (this.taskSteps.every((step) => step.isComplete)) {
                 this._status = "COMPLETE";
                 this._isComplete = true;
@@ -113,8 +115,11 @@ export class RunnerTask {
     }
 
     public getCurrentStep(): ExecutableRunnerTaskStep | undefined {
-        if (["COMPLETE", "INTERRUPTED", "ERROR"].includes(this._status)) return undefined;
-        return this.taskSteps[this._step];
+        return this._isComplete ? undefined : this.taskSteps[this._step];
+    }
+
+    public get currentStepNumber(): number {
+        return this._isComplete ? -1 : this._step;
     }
 
     public reset(): void {

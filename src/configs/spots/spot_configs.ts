@@ -1,12 +1,12 @@
 import { CharacterType, PingCompensatedCharacter } from "alclient";
-import { SpotName } from "../base/constants";
-import { PartyController } from "../controller/party_controller";
-import { Strategy } from "../strategies/character_runner";
-import { MageAttackStrategy } from "../strategies/mage/mage_attack_strategy";
-import { BaseMoveStrategy, HoldPositionStrategy, KiteInCircleStrategy, KiteMonsterStrategy } from "../strategies/move_strategies";
-import { PriestAttackStrategy } from "../strategies/priest/priest_attack_strategy";
-import { WarriorAttackStrategy } from "../strategies/warrior/warrior_attack_strategy";
-import { MAGE_AOE, PRIEST_MF, PRIEST_TANKY, WARRIOR_AOE, WARRIOR_DPS } from "./equipment_setups";
+import { SpotName } from "../../base/constants";
+import { PartyController } from "../../controller/party_controller";
+import { Strategy } from "../../strategies/character_runner";
+import { MageAttackStrategy } from "../../strategies/mage/mage_attack_strategy";
+import { BaseMoveStrategy, HoldPositionStrategy, KiteInCircleStrategy, KiteMonsterStrategy } from "../../strategies/move_strategies";
+import { PriestAttackStrategy } from "../../strategies/priest/priest_attack_strategy";
+import { WarriorAttackStrategy } from "../../strategies/warrior/warrior_attack_strategy";
+import { MAGE_AOE, PRIEST_MF, PRIEST_TANKY, WARRIOR_AOE, WARRIOR_DPS } from "../equipment_setups";
 
 
 export type SpotConfig = {
@@ -35,7 +35,11 @@ export function getSpotConfig(partyController: PartyController, spotName?: SpotN
                         equipmentSet: WARRIOR_DPS,
                         enableEquipForCleave: true
                     }),
-                    move: new BaseMoveStrategy(["bat", "mvampire", "phoenix"])
+                    move: new KiteInCircleStrategy({
+                        centre: { map: "cave", x: -200, y: -478 },
+                        radius: 100,
+                        typeList: ["bat", "mvampire", "phoenix"]
+                    })
                 },
                 mage: {
                     attack: new MageAttackStrategy(partyController, {
@@ -49,8 +53,7 @@ export function getSpotConfig(partyController: PartyController, spotName?: SpotN
                     move: new KiteInCircleStrategy({
                         centre: { map: "cave", x: -200, y: -478 },
                         radius: 100,
-                        typeList: ["bat", "mvampire", "phoenix"],
-                        sensitivity: 20
+                        typeList: ["bat", "mvampire", "phoenix"]
                     })
                 },
                 priest: {
@@ -66,8 +69,7 @@ export function getSpotConfig(partyController: PartyController, spotName?: SpotN
                     move: new KiteInCircleStrategy({
                         centre: { map: "cave", x: -200, y: -478 },
                         radius: 100,
-                        typeList: ["bat", "mvampire", "phoenix"],
-                        sensitivity: 20
+                        typeList: ["bat", "mvampire", "phoenix"]
                     })
                 },
                 merchant: {
@@ -179,7 +181,7 @@ export function getSpotConfig(partyController: PartyController, spotName?: SpotN
                     move: new BaseMoveStrategy(["booboo"])
                 }
             };
-        case "bees":
+        case "bee":
             return {
                 warrior: {
                     attack: new WarriorAttackStrategy(partyController, {
@@ -214,7 +216,7 @@ export function getSpotConfig(partyController: PartyController, spotName?: SpotN
                     move: new BaseMoveStrategy(["bee", "cutebee"])
                 }
             };
-        case "crabs":
+        case "crab":
             return {
                 warrior: {
                     attack: new WarriorAttackStrategy(partyController, {
@@ -249,7 +251,7 @@ export function getSpotConfig(partyController: PartyController, spotName?: SpotN
                     move: new BaseMoveStrategy(["crab", "phoenix"])
                 }
             };
-        case "crabxs":
+        case "crabx":
             return {
                 warrior: {
                     attack: new WarriorAttackStrategy(partyController, {
@@ -284,7 +286,7 @@ export function getSpotConfig(partyController: PartyController, spotName?: SpotN
                     move: new BaseMoveStrategy(["crabx", "phoenix"])
                 }
             };
-        case "squigs":
+        case "squig":
             return {
                 warrior: {
                     attack: new WarriorAttackStrategy(partyController, {
@@ -424,7 +426,7 @@ export function getSpotConfig(partyController: PartyController, spotName?: SpotN
                     move: new BaseMoveStrategy(["armadillo", "phoenix"])
                 }
             };
-        case "rats":
+        case "rat":
             return {
                 warrior: {
                     attack: new WarriorAttackStrategy(partyController, {
@@ -459,7 +461,7 @@ export function getSpotConfig(partyController: PartyController, spotName?: SpotN
                     move: new BaseMoveStrategy(["rat"])
                 }
             };
-        case "moles":
+        case "mole":
             return {
                 warrior: {
                     attack: new WarriorAttackStrategy(partyController, {
@@ -529,7 +531,7 @@ export function getSpotConfig(partyController: PartyController, spotName?: SpotN
                     move: new HoldPositionStrategy({ position: { x: -585, y: 320, map: "desertland" } })
                 }
             };
-        case "goos":
+        case "goo":
             return {
                 warrior: {
                     attack: new WarriorAttackStrategy(partyController, {
@@ -574,7 +576,7 @@ export function getSpotConfig(partyController: PartyController, spotName?: SpotN
                     move: new HoldPositionStrategy({ position: { x: -1, y: 648, map: "main" } })
                 }
             };
-        case "snakes":
+        case "snake":
             return {
                 warrior: {
                     attack: new WarriorAttackStrategy(partyController, {
@@ -829,8 +831,7 @@ export function getSpotConfig(partyController: PartyController, spotName?: SpotN
                     move: new KiteInCircleStrategy({
                         centre: { map: "main", x: 1309, y: -215 },
                         radius: 30,
-                        typeList: ["scorpion", "phoenix"],
-                        sensitivity: 10
+                        typeList: ["scorpion", "phoenix"]
                     })
                 },
                 merchant: {
@@ -870,8 +871,62 @@ export function getSpotConfig(partyController: PartyController, spotName?: SpotN
                     move: new KiteInCircleStrategy({
                         centre: { map: "main", x: 1309, y: -215 },
                         radius: 30,
-                        typeList: ["spider", "phoenix"],
-                        sensitivity: 10
+                        typeList: ["spider", "phoenix"]
+                    })
+                },
+                merchant: {
+                    move: new HoldPositionStrategy({ position: {x: 1308, y: -331, map: "main"} })
+                }
+            };
+        case "fireroamer":
+            return {
+                warrior: {
+                    attack: new WarriorAttackStrategy(partyController, {
+                        type: "fireroamer",
+                        notType: "ent",
+                        maximumTargets: 2,
+                        equipmentSet: WARRIOR_AOE,
+                        enableEquipForCleave: true,
+                        enableEquipForStomp: true,
+                        disableKillSteal: true
+                    }),
+                    move: new KiteInCircleStrategy({
+                        centre: partyController.getRunner(partyController.config.mainTank),
+                        radius: 100,
+                        typeList: ["fireroamer"]
+                    })
+                },
+                mage: {
+                    attack: new MageAttackStrategy(partyController, {
+                        type: "fireroamer",
+                        notType: "ent",
+                        enableGreedyAggro: false,
+                        maximumTargets: 2,
+                        equipmentSet: MAGE_AOE,
+                        disableCburst: true,
+                        disableKillSteal: true,
+                        energize: defaultEnergize
+                    }),
+                    move: new KiteInCircleStrategy({
+                        centre: partyController.getRunner(partyController.config.mainTank),
+                        radius: 100,
+                        typeList: ["fireroamer"]
+                    })
+                },
+                priest: {
+                    attack: new PriestAttackStrategy(partyController, {
+                        type: "fireroamer",
+                        notType: "ent",
+                        maximumTargets: 2,
+                        equipmentSet: PRIEST_TANKY,
+                        startHealingAtRatio: 0.8,
+                        disableKillSteal: true,
+                        disableZapper: true
+                    }),
+                    move: new KiteInCircleStrategy({
+                        centre: { map: "desertland", x: 241, y: -835 },
+                        radius: 140,
+                        typeList: ["fireroamer"]
                     })
                 },
                 merchant: {

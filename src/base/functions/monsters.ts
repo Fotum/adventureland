@@ -1,5 +1,5 @@
 import { CharacterType, Entity, Game, IPosition, MapName, MonsterName, PingCompensatedCharacter } from "alclient";
-import { EventConfig, getEventConfig } from "../../configs/event_configs";
+import { EventConfig, getEventConfig } from "../../configs/events/event_configs";
 import { PartyController } from "../../controller/party_controller";
 import { Strategy } from "../../strategies/character_runner";
 import { EventName, SpecialName } from "../constants";
@@ -46,7 +46,7 @@ export function getActiveScheduleEvents(partyController: PartyController): Prepa
                     destination: joinTo ? joinTo : { map: bot.S[key].map, x: bot.S[key].x, y: bot.S[key].y },
                     waitForRespawnMs: eventConfig.waitForRespawnMs,
                     override: eventConfig.override,
-                    strategies: eventConfig.configs
+                    strategies: eventConfig.strategies
                 });
             }
         });
@@ -77,7 +77,7 @@ export function getBossesAroundCharacters(partyController: PartyController): Pre
     for (const runner of partyController.getRunners()) {
         let specialsAround: Entity[] = runner.bot.getEntities({ typeList: Array.from(lookFor.keys()) });
         for (let special of specialsAround) {
-            PartyController.BOSS_TIMERS.set(special.type, Date.now());
+            partyController.bossTimers.set(special.type, Date.now());
 
             let specialConfig: EventConfig = getEventConfig(special.type, partyController);
             preparedSpecials.push({
@@ -85,7 +85,7 @@ export function getBossesAroundCharacters(partyController: PartyController): Pre
                 name: (special.type as SpecialName),
                 targets: specialConfig.targets,
                 moveTo: { map: special.map, x: special.x, y: special.y },
-                strategies: specialConfig.configs
+                strategies: specialConfig.strategies
             });
         }
     }

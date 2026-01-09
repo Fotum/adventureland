@@ -21,8 +21,9 @@ export class UnstackStrategy<T extends PingCompensatedCharacter> implements Stra
 
     private async unstack(bot: PingCompensatedCharacter): Promise<void> {
         let player: Player = bot.getPlayer({ withinRange: PLAYER_MIN_DISTANCE, returnNearest: true });
-        let angleFromPlayerToBot: number = Math.atan2(bot.y - player.y, bot.x - player.x);
+        if (!player) { return; }
 
+        let angleFromPlayerToBot: number = Math.atan2(bot.y - player.y, bot.x - player.x);
         let x: number = PLAYER_MIN_DISTANCE * Math.cos(angleFromPlayerToBot);
         let y: number = PLAYER_MIN_DISTANCE * Math.sin(angleFromPlayerToBot);
 

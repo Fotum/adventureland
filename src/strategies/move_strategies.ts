@@ -97,10 +97,10 @@ export class FollowMoveStrategy<T extends PingCompensatedCharacter> implements S
 
 export type HoldPositionStrategyConfig = {
     position: IPosition | CharacterRunner<PingCompensatedCharacter>
+    delta?: number
     offset?: {
         x?: number
         y?: number
-        d?: number
     }
 }
 export class HoldPositionStrategy<T extends PingCompensatedCharacter> implements Strategy<T> {
@@ -139,10 +139,10 @@ export class HoldPositionStrategy<T extends PingCompensatedCharacter> implements
         }
 
         let delta: number = 0;
+        if (this.config.delta) { delta = this.config.delta; }
         if (this.config?.offset) {
             if (this.config.offset.x) holdPosition.x += this.config.offset.x;
             if (this.config.offset.y) holdPosition.y += this.config.offset.y;
-            if (this.config.offset.d) delta = this.config.offset.d;
         }
 
         if (holdPosition.map != bot.map || (delta > 0 && Tools.distance(bot, holdPosition) > delta)) {
@@ -155,7 +155,6 @@ export type KiteInCircleConfig = {
     centre: IPosition | CharacterRunner<PingCompensatedCharacter>
     radius: number
     typeList: MonsterName[]
-    sensitivity: number
 }
 export class KiteInCircleStrategy<T extends PingCompensatedCharacter> implements Strategy<T> {
     public loops: Map<LoopName, Loop<T>> = new Map<LoopName, Loop<T>>;
@@ -196,9 +195,8 @@ export class KiteInCircleStrategy<T extends PingCompensatedCharacter> implements
         const centre: IPosition = configCentre;
         const radius: number = this.config.radius;
         const typeList: MonsterName[] = this.config.typeList;
-        const sensitivity: number = this.config.sensitivity;
 
-        if (Tools.distance(bot, centre) > radius * sensitivity) {
+        if (Tools.distance(bot, centre) > radius) {
             await bot.smartMove(centre, { getWithin: radius, useBlink: true }).catch(ignoreExceptions);
         }
 

@@ -1,11 +1,11 @@
 import { CharacterType, Game, Pathfinder, PingCompensatedCharacter, ServerIdentifier, ServerRegion } from "alclient";
 import { MY_CHARACTERS, SpotName } from "./base/constants";
-import { startCharacter } from "./base/functions/general";
+import { sleep, startCharacter } from "./base/functions/general";
 import { FRIENDLY_CHARACTERS } from "./base/settings";
 import { BWIReporter } from "./bwi_reporter";
-import { SpotConfig, getSpotConfig } from "./configs/spot_configs";
+import { getSpotConfig } from "./configs/spots/spot_configs";
 import { PartyController } from "./controller/party_controller";
-import { CharacterRunner } from "./strategies/character_runner";
+import { CharacterRunner, Strategy } from "./strategies/character_runner";
 
 
 // await Promise.all([Game.loginJSONFile("credentials.json"), Game.getGData(true, true)]);
@@ -33,23 +33,17 @@ const PARTY_CONTROLLER: PartyController = new PartyController({
     doQuests: new Set<CharacterType>(),
     doBosses: true,
     doCyberland: true,
-    doBanking: true
+    doBanking: false
 });
 async function run(): Promise<void> {
     // Start characters
-    await startCharacters();
-
-    // #TODO: Load and apply character state or use default
-    let spotConfig: SpotConfig = getSpotConfig(PARTY_CONTROLLER);
-    for (let runner of PARTY_CONTROLLER.getRunners()) {
-        let ctype: CharacterType = runner.bot.ctype;
-        let config = spotConfig[ctype];
-
-        if (config.attack) runner.applyStrategy(config.attack);
-        if (config.move) runner.applyStrategy(config.move);
+    for (const [name, ctype] of MY_CHARACTERS) {
+        startRunner(name, ctype);
     }
 
-    PARTY_CONTROLLER.startControler();
+    while (PARTY_CONTROLLER.getRunners().length < MY_CHARACTERS.size || !PARTY_CONTROLLER.getRunners().every((r) => r.isReady())) {
+        await sleep(1000);
+    }
 
     // Initialize and start bwi
     new BWIReporter(PARTY_CONTROLLER);
@@ -57,11 +51,7 @@ async function run(): Promise<void> {
 }
 run();
 
-async function startCharacters(): Promise<void> {
-    for (let [name, ctype] of MY_CHARACTERS) {
-        let runner: CharacterRunner<PingCompensatedCharacter> = await startCharacter(PARTY_CONTROLLER, name, ctype, HOME_SERVER_NAME, HOME_SERVER_ID);
-        if (!runner) return;
-
-        PARTY_CONTROLLER.addRunner(runner);
-    }
+async function startRunner(name: string, ctype: CharacterType): Promise<void> {
+    let runner: CharacterRunner<PingCompensatedCharacter> = await startCharacter(PARTY_CONTROLLER, name, ctype, HOME_SERVER_NAME, HOME_SERVER_ID);
+    PARTY_CONTROLLER.addRunner(runner);
 }

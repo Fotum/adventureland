@@ -1,18 +1,18 @@
 import { CharacterType, MonsterName, PingCompensatedCharacter } from "alclient";
-import { PartyController } from "../controller/party_controller";
-import { Strategy } from "../strategies/character_runner";
-import { MageAttackStrategy } from "../strategies/mage/mage_attack_strategy";
-import { BaseMoveStrategy, FollowMoveStrategy } from "../strategies/move_strategies";
-import { PriestAttackStrategy } from "../strategies/priest/priest_attack_strategy";
-import { WarriorAttackStrategy } from "../strategies/warrior/warrior_attack_strategy";
-import { MAGE_AOE, MAGE_DPS, MAGE_FAST, PRIEST_GF, PRIEST_MF, PRIEST_TANKY, WARRIOR_AOE, WARRIOR_DPS } from "./equipment_setups";
+import { PartyController } from "../../controller/party_controller";
+import { Strategy } from "../../strategies/character_runner";
+import { MageAttackStrategy } from "../../strategies/mage/mage_attack_strategy";
+import { BaseMoveStrategy, FollowMoveStrategy, HoldPositionStrategy } from "../../strategies/move_strategies";
+import { PriestAttackStrategy } from "../../strategies/priest/priest_attack_strategy";
+import { WarriorAttackStrategy } from "../../strategies/warrior/warrior_attack_strategy";
+import { MAGE_AOE, MAGE_DPS, MAGE_FAST, PRIEST_GF, PRIEST_MF, PRIEST_TANKY, WARRIOR_AOE, WARRIOR_DPS } from "../equipment_setups";
 
 
 export type EventConfig = {
     targets: MonsterName[]
     waitForRespawnMs?: number
     override?: boolean
-    configs: {
+    strategies: {
         [T in CharacterType]?: {
             attack?: Strategy<PingCompensatedCharacter>,
             move?: Strategy<PingCompensatedCharacter>
@@ -34,7 +34,7 @@ export function getEventConfig(eventName: string, partyController: PartyControll
                 targets: ["pinkgoo", "bgoo", "rgoo"],
                 waitForRespawnMs: 10_000,
                 override: true,
-                configs: {
+                strategies: {
                     warrior: {
                         attack: new WarriorAttackStrategy(partyController, {
                             typeList: ["pinkgoo", "bgoo", "rgoo"],
@@ -77,7 +77,7 @@ export function getEventConfig(eventName: string, partyController: PartyControll
             return {
                 targets: ["dragold"],
                 override: true,
-                configs: {
+                strategies: {
                     warrior: {
                         attack: new WarriorAttackStrategy(partyController, {
                             type: "dragold",
@@ -117,7 +117,7 @@ export function getEventConfig(eventName: string, partyController: PartyControll
             return {
                 targets: ["icegolem"],
                 override: true,
-                configs: {
+                strategies: {
                     warrior: {
                         attack: new WarriorAttackStrategy(partyController, {
                             type: "icegolem",
@@ -127,7 +127,7 @@ export function getEventConfig(eventName: string, partyController: PartyControll
                             disableCleave: true,
                             disableStomp: true
                         }),
-                        move: new BaseMoveStrategy(["icegolem"])
+                        move: new HoldPositionStrategy({ position: { map: "winterland", x: 824, y: 415 } , delta: 45 })
                     },
                     mage: {
                         attack: new MageAttackStrategy(partyController, {
@@ -138,7 +138,7 @@ export function getEventConfig(eventName: string, partyController: PartyControll
                             disableCburst: true,
                             energize: defaultEnergize
                         }),
-                        move: new BaseMoveStrategy(["icegolem"])
+                        move: new HoldPositionStrategy({ position: { map: "winterland", x: 824, y: 415 } , delta: 45 })
                     },
                     priest: {
                         attack: new PriestAttackStrategy(partyController, {
@@ -150,7 +150,7 @@ export function getEventConfig(eventName: string, partyController: PartyControll
                             enableHealStrangers: true,
                             startHealingAtRatio: 0.8
                         }),
-                        move: new BaseMoveStrategy(["icegolem"])
+                        move: new HoldPositionStrategy({ position: { map: "winterland", x: 824, y: 415 } , delta: 45 })
                     }
                 }
             };
@@ -158,7 +158,7 @@ export function getEventConfig(eventName: string, partyController: PartyControll
             return {
                 targets: ["pinkgoo"],
                 override: false,
-                configs: {
+                strategies: {
                     warrior: {
                         attack: new WarriorAttackStrategy(partyController, {
                             type: "pinkgoo",
@@ -196,7 +196,7 @@ export function getEventConfig(eventName: string, partyController: PartyControll
             return {
                 targets: ["snowman"],
                 override: false,
-                configs: {
+                strategies: {
                     warrior: {
                         attack: new WarriorAttackStrategy(partyController, {
                             type: "snowman",
@@ -233,7 +233,7 @@ export function getEventConfig(eventName: string, partyController: PartyControll
             return {
                 targets: ["phoenix", "frog"],
                 override: false,
-                configs: {
+                strategies: {
                     warrior: {
                         attack: new WarriorAttackStrategy(partyController, {
                             type: "phoenix",
@@ -266,7 +266,7 @@ export function getEventConfig(eventName: string, partyController: PartyControll
             return {
                 targets: ["frog", "phoenix"],
                 override: false,
-                configs: {
+                strategies: {
                     mage: {
                         attack: new MageAttackStrategy(partyController, {
                             type: "frog",
@@ -281,7 +281,7 @@ export function getEventConfig(eventName: string, partyController: PartyControll
             return {
                 targets: ["fvampire"],
                 override: false,
-                configs: {
+                strategies: {
                     warrior: {
                         attack: new WarriorAttackStrategy(partyController, {
                             type: "fvampire",
@@ -315,7 +315,7 @@ export function getEventConfig(eventName: string, partyController: PartyControll
             return {
                 targets: ["mvampire"],
                 override: false,
-                configs: {
+                strategies: {
                     warrior: {
                         attack: new WarriorAttackStrategy(partyController, {
                             type: "mvampire",
@@ -349,7 +349,7 @@ export function getEventConfig(eventName: string, partyController: PartyControll
             return {
                 targets: ["jr"],
                 override: false,
-                configs: {
+                strategies: {
                     mage: {
                         attack: new MageAttackStrategy(partyController, {
                             type: "jr",
@@ -364,7 +364,7 @@ export function getEventConfig(eventName: string, partyController: PartyControll
             return {
                 targets: ["greenjr"],
                 override: false,
-                configs: {
+                strategies: {
                     mage: {
                         attack: new MageAttackStrategy(partyController, {
                             type: "greenjr",
@@ -379,7 +379,7 @@ export function getEventConfig(eventName: string, partyController: PartyControll
             return {
                 targets: ["skeletor"],
                 override: false,
-                configs: {
+                strategies: {
                     warrior: {
                         attack: new WarriorAttackStrategy(partyController, {
                             type: "skeletor",

@@ -1,10 +1,13 @@
-import { CharacterType, Game, Mage, Merchant, Paladin, PingCompensatedCharacter, Priest, Ranger, Rogue, ServerData, ServerIdentifier, ServerRegion, Warrior } from "alclient"
-import { PartyController } from "../../controller/party_controller"
+import { CharacterType, Game, IPosition, Mage, MapName, Merchant, MonsterName, Paladin, PingCompensatedCharacter, Priest, Ranger, Rogue, ServerData, ServerIdentifier, ServerRegion, Warrior } from "alclient"
+import * as fs from "fs"
+import { EventConfig, getEventConfig } from "../../configs/events/event_configs"
+import { PartyController, RunnerState } from "../../controller/party_controller"
+import { RunnerTask, RunnerTaskName } from "../../controller/runner_task"
+import { getCheckBossesTask, getEventTask } from "../../controller/runner_task_collection"
 import { RunnerException } from "../../exceptions/exceptions"
 import { AdminCommandStrategy } from "../../strategies/admin_command_strategy"
 import { NoAttackScareStrategy } from "../../strategies/base_attack_strategy"
-import { BaseInventoryStrategy } from "../../strategies/base_inventory_strategy"
-import { BaseStrategy } from "../../strategies/base_strategy"
+import { BaseInventoryStrategy, BaseStrategy } from "../../strategies/base_strategy"
 import { CharacterRunner } from "../../strategies/character_runner"
 import { MagiportSmartMovingStrategy } from "../../strategies/mage/magiport_strategy"
 import { MerchantStrategy } from "../../strategies/merchant/merchant_strategy"
@@ -12,7 +15,8 @@ import { MerchantUpgradeStrategy } from "../../strategies/merchant/merchant_upgr
 import { AcceptPartyRequest, RequestParty } from "../../strategies/party_strategy"
 import { PartyHealStrategy } from "../../strategies/priest/party_heal_strategy"
 import { UnstackStrategy } from "../../strategies/unstack_strategy"
-import { MY_CHARACTERS } from "../constants"
+import { EventName, MY_CHARACTERS, SAVE_FILES_LOCATION } from "../constants"
+import { EVENTS } from "../settings"
 
 
 export type FilterRunnersOptions = {
@@ -67,10 +71,7 @@ export async function startCharacter(partyController: PartyController, name: str
         if (!serverId) serverId = partyController.config.homeServerId;
 
         if (!ctype) {
-            if (!MY_CHARACTERS.has(name)) {
-                throw new RunnerException("InitializationException", `Could not find character with name ${name} in list of MY_CHARACTERS`);
-            }
-
+            if (!MY_CHARACTERS.has(name)) { throw new RunnerException("InitializationException", `Could not find character with name ${name} in list of MY_CHARACTERS`); }
             ctype = MY_CHARACTERS.get(name);
         }
 
@@ -157,11 +158,149 @@ export async function startCharacter(partyController: PartyController, name: str
 
         if (!(ex instanceof RunnerException)) {
             // Reconnect again
-            setTimeout(async () => { startCharacter(partyController, name, ctype, serverName, serverId); }, 5000);
+            await sleep(5000);
+            return startCharacter(partyController, name, ctype, serverName, serverId);
+        } else if (ex.message.includes("wait_")) {
+            await sleep(5000);
+            return startCharacter(partyController, name, ctype, serverName, serverId);
         }
     }
 }
 
 function checkRunner(runner: CharacterRunner<PingCompensatedCharacter>, name: string, ctype: CharacterType): void {
     if (!runner) throw new RunnerException("InitializationException", `Failed to initialize runner for character ${name} of ctype ${ctype}`);
+}
+
+export function saveBossTimersToFile(bossTimers: Map<MonsterName, number>): void {
+    try {
+        let filePath: string = `${SAVE_FILES_LOCATION}/boss_timers.json`;
+
+        let saveToFile: [string, number][] = [];
+        for (const [name, timer] of bossTimers) {
+            saveToFile.push([name, timer]);
+        }
+
+        if (saveToFile.length == 0) { if (fs.existsSync(filePath)) { fs.unlinkSync(filePath); } }
+        else { fs.writeFileSync(filePath, JSON.stringify(saveToFile), { encoding: "utf8" }); }
+    } catch (ex) {
+        console.log(ex);
+    }
+}
+
+export function loadBossTimersFromFile(): Map<MonsterName, number> | undefined {
+    try {
+        let filePath: string = `${SAVE_FILES_LOCATION}/boss_timSers.json`;
+
+        if (!fs.existsSync(filePath)) { return undefined; }
+        
+        let dataFromFile: [string, number][] = JSON.parse(fs.readFileSync(filePath, { encoding: "utf8" }));
+        let bossTimers: Map<MonsterName, number> = new Map<MonsterName, number>();
+        for (const [name, timer] of dataFromFile) {
+            bossTimers.set((name as MonsterName), timer);
+        }
+
+        return bossTimers;
+    } catch (ex) {
+        console.error(ex);
+        return undefined;
+    }
+}
+
+type StateSaveJson = {
+    taskId: string
+    taskName: RunnerTaskName
+    taskStep?: number
+    position?: IPosition
+}
+export function saveStateToFile(botName: string, state: RunnerState): void {
+    try {
+        let filePath: string = `${SAVE_FILES_LOCATION}/${botName}.json`;
+
+        let queueToSave: StateSaveJson[] = [];
+        if (EVENTS.has(state.currTask.name) || state.currTask.name == "bcheck") {
+            queueToSave.push({
+                taskId: state.currTask.id,
+                taskName: state.currTask.name,
+                taskStep: state.currTask.currentStepNumber,
+                position: isValidIPosition(state.currTask.targetPosition) ? state.currTask.targetPosition : undefined
+            });
+        }
+
+        for (const task of state.taskQueue) {
+            if (EVENTS.has(task.name) || task.name == "bcheck") {
+                queueToSave.push({
+                    taskId: task.id,
+                    taskName: task.name,
+                    taskStep: task.currentStepNumber,
+                    position: isValidIPosition(task.targetPosition) ? task.targetPosition : undefined
+                });
+            }
+        }
+
+        if (queueToSave.length == 0) { if (fs.existsSync(filePath)) { fs.unlinkSync(filePath); } }
+        else { fs.writeFileSync(filePath, JSON.stringify(queueToSave), { encoding: "utf8" }); }
+    } catch (ex) {
+        console.log(ex);
+    }
+}
+
+export function loadStateFromFile(partyController: PartyController, runner: CharacterRunner<PingCompensatedCharacter>): RunnerState {
+    let placeHolder: RunnerTask = new RunnerTask("-9999", "unknown", runner).setComplete("COMPLETE");
+    try {
+        let filePath: string = `${SAVE_FILES_LOCATION}/${runner.bot.id}.json`;
+
+        if (!fs.existsSync(filePath)) { return { currTask: placeHolder, taskQueue: [], taskTimers: new Map<RunnerTaskName, number>() }; }
+
+        let dataFromFile: string = fs.readFileSync(filePath, { encoding: "utf8" });
+        let stateSave: StateSaveJson[] = JSON.parse(dataFromFile);
+
+        let restoredQueue: RunnerTask[] = [];
+        for (const state of stateSave) {
+            let restoredTask: RunnerTask = undefined;
+            let taskName: RunnerTaskName = state.taskName;
+
+            if (EVENTS.has(taskName)) {
+                let canJoin: boolean = Game.G.events[state.taskName]?.join ?? false;
+                let joinTo: MonsterName | MapName = undefined;
+                if (canJoin) {
+                    if (state.taskName in Game.G.maps) { joinTo = (state.taskName as MapName); }
+                    else if (state.taskName in Game.G.monsters) { joinTo = (state.taskName as MonsterName); }
+                }
+
+                let eventConfig: EventConfig = getEventConfig(taskName, partyController);
+                restoredTask = getEventTask(runner, {
+                    id: state.taskId,
+                    name: (state.taskName as EventName),
+                    targets: eventConfig.targets,
+                    destination: joinTo ? joinTo : state.position,
+                    waitForRespawnMs: eventConfig.waitForRespawnMs,
+                    strategies: eventConfig.strategies[runner.bot.ctype]
+                });
+            } else if (taskName == "bcheck") {
+                restoredTask = getCheckBossesTask(partyController, runner);
+            }
+
+            if (state.taskStep !== undefined) {
+                for (let i = 0; i < state.taskStep; i++) {
+                    restoredTask.setStepComplete(i);
+                }
+            }
+            restoredQueue.push(restoredTask);
+        }
+
+        return { currTask: placeHolder, taskQueue: restoredQueue, taskTimers: new Map<RunnerTaskName, number>() };
+    } catch (ex) {
+        console.log(ex);
+        return { currTask: placeHolder, taskQueue: [], taskTimers: new Map<RunnerTaskName, number>() };
+    }
+}
+
+function isValidIPosition(value: unknown): value is Omit<IPosition, "map"> {
+    return (
+        typeof value === "object"
+        && value !== null
+        && (!("map" in value) || ("map" in value && typeof (value as any).map === "string"))
+        && ("x" in value && typeof (value as any).x === "number")
+        && ("y" in value && typeof (value as any).y === "number")
+    );
 }

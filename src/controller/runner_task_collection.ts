@@ -1,11 +1,11 @@
 import { Constants, Entity, GItem, Game, IPosition, MonsterName, PingCompensatedCharacter } from "alclient";
 import { EventName, KEEP_GOLD, MERCHANT_KEEP_GOLD, SEND_GOLD_AT, SpecialName } from "../base/constants";
-import { generateRandomId, ignoreExceptions, mssince, sleep, ssince } from "../base/functions/general";
+import { generateRandomId, mssince, sleep, ssince } from "../base/functions/general";
 import { SPECIAL_MONSTERS, STORE_ITEMS } from "../base/settings";
 import { NoAttackScareStrategy } from "../strategies/base_attack_strategy";
 import { CharacterRunner, Strategy } from "../strategies/character_runner";
-import { RunnerTask, RunnerTaskName } from "./runner_task";
 import { PartyController } from "./party_controller";
+import { RunnerTask, RunnerTaskName } from "./runner_task";
 
 
 export function getChangeSpotTask(taskName: RunnerTaskName, runner: CharacterRunner<PingCompensatedCharacter>, config: { attack?: Strategy<PingCompensatedCharacter>, move?: Strategy<PingCompensatedCharacter> }): RunnerTask {
@@ -40,7 +40,10 @@ export function getSpecialMonsterTask(runner: CharacterRunner<PingCompensatedCha
                     fn: async (runner: CharacterRunner<PingCompensatedCharacter>, signal: AbortSignal) => {
                         runner.removeStrategy("move");
 
-                        runner.applyStrategy(new NoAttackScareStrategy());
+                        if (runner.bot.isEquipped("jacko") || runner.bot.hasItem("jacko")) {
+                            runner.applyStrategy(new NoAttackScareStrategy());
+                        }
+
                         await runner.bot.smartMove(specialInfo.moveTo, {
                             useBlink: (runner.bot.ctype == "mage"),
                             stopIfTrue: async () => { return signal.aborted; }
@@ -77,7 +80,10 @@ export function getEventTask(runner: CharacterRunner<PingCompensatedCharacter>, 
                     fn: async (runner: CharacterRunner<PingCompensatedCharacter>, signal: AbortSignal) => {
                         runner.removeStrategy("move");
 
-                        runner.applyStrategy(new NoAttackScareStrategy());
+                        if (runner.bot.isEquipped("jacko") || runner.bot.hasItem("jacko")) {
+                            runner.applyStrategy(new NoAttackScareStrategy());
+                        }
+
                         await runner.bot.smartMove(eventInfo.destination, {
                             useBlink: (runner.bot.ctype == "mage"),
                             stopIfTrue: async () => { return signal.aborted; }
@@ -174,12 +180,12 @@ const BOSS_CHECK_ROUTE: ({ name: MonsterName } & IPosition)[] = [
     {name: "jr", map: "spookytown", x: -784,  y: -301},
     {name: "skeletor", map: "arena", x: 191, y: -348}
 ];
-export function getCheckBossesTask(runner: CharacterRunner<PingCompensatedCharacter>): RunnerTask | undefined {
+export function getCheckBossesTask(partyController: PartyController, runner: CharacterRunner<PingCompensatedCharacter>): RunnerTask | undefined {
     const bossesToCheck: Set<MonsterName> = new Set<MonsterName>();
     for (const [specialName, isActive] of SPECIAL_MONSTERS) {
         if (!isActive) continue;
 
-        let lastCheck: number = PartyController.BOSS_TIMERS.get(specialName);
+        let lastCheck: number = partyController.bossTimers.get(specialName);
         if (!lastCheck || ssince(lastCheck) >= Game.G.monsters[specialName].respawn) {
             bossesToCheck.add((specialName as MonsterName));
         }
