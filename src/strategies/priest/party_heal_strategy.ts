@@ -59,8 +59,8 @@ export class PartyHealStrategy implements Strategy<Priest> {
             if (myBot.party !== bot.party) continue;
 
             if (
-                (this.options.when.hpRatio !== undefined && myBot.max_hp / myBot.hp < this.options.when.hpRatio) ||
                 (this.options.when.hp !== undefined && myBot.hp < this.options.when.hp) ||
+                (this.options.when.hpRatio !== undefined && myBot.hp / myBot.max_hp < this.options.when.hpRatio) ||
                 (this.options.when.hpMissing !== undefined && myBot.max_hp - myBot.hp > this.options.when.hpMissing)
             ) {
                 return bot.partyHeal().catch(ignoreExceptions);

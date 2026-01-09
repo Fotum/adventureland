@@ -17,7 +17,7 @@ import {
     Warrior
 } from "alclient";
 import * as fs from "fs";
-import { EventConfig, getEventConfig } from "../../configs/events/event_configs";
+import { EventConfig, getEventConfig } from "../../configs/event_configs";
 import { PartyController, RunnerState } from "../../controller/party_controller";
 import { RunnerTask, RunnerTaskName } from "../../controller/runner_task";
 import { getCheckBossesTask, getEventTask } from "../../controller/runner_task_collection";

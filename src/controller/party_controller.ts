@@ -9,8 +9,8 @@ import {
     getBossesAroundCharacters
 } from "../base/functions/monsters";
 import { QUESTS } from "../base/settings";
-import { getQuestConfig } from "../configs/quests/quest_configs";
-import { getSpotConfig } from "../configs/spots/spot_configs";
+import { getQuestConfig } from "../configs/quest_configs";
+import { getSpotConfig } from "../configs/spot_configs";
 import { CharacterRunner, Strategy } from "../strategies/character_runner";
 import { RunnerTask, RunnerTaskName } from "./runner_task";
 import {

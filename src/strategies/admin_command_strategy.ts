@@ -1,6 +1,6 @@
 import { CharacterType, PingCompensatedCharacter, ServerIdentifier, ServerRegion } from "alclient";
 import { startCharacter } from "../base/functions/general";
-import { SpotConfig, getSpotConfig } from "../configs/spots/spot_configs";
+import { SpotConfig, getSpotConfig } from "../configs/spot_configs";
 import { PartyController } from "../controller/party_controller";
 import { CharacterRunner, Strategy, StrategyName } from "./character_runner";
 

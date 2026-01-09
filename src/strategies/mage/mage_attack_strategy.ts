@@ -33,6 +33,12 @@ export type MageAttackConfig = BaseAttackConfig & {
 };
 
 export const DO_NOT_KILL_STEAL: MonsterName[] = ["kitty1", "kitty2", "kitty3", "kitty4", "puppy1", "puppy2", "puppy3", "puppy4"];
+export const DEFAULT_ENERGIZE = {
+    onMpRatio: 0.8,
+    when: {
+        mpRatio: 0.1
+    }
+};
 
 export class MageAttackStrategy extends BaseAttackStrategy<Mage> {
     protected config: MageAttackConfig;

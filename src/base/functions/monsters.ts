@@ -1,5 +1,5 @@
 import { CharacterType, Entity, Game, IPosition, MapName, MonsterName, PingCompensatedCharacter } from "alclient";
-import { EventConfig, getEventConfig } from "../../configs/events/event_configs";
+import { EventConfig, getEventConfig } from "../../configs/event_configs";
 import { PartyController } from "../../controller/party_controller";
 import { Strategy } from "../../strategies/character_runner";
 import { EventName, SpecialName } from "../constants";
