@@ -1,4 +1,16 @@
-import { Attribute, Character, ChestData, ChestOpenedData, Constants, GItem, Game, IPosition, ItemName, PingCompensatedCharacter, Tools } from "alclient";
+import {
+    Attribute,
+    Character,
+    ChestData,
+    ChestOpenedData,
+    Constants,
+    GItem,
+    Game,
+    IPosition,
+    ItemName,
+    PingCompensatedCharacter,
+    Tools
+} from "alclient";
 import { LRUCache } from "lru-cache";
 import { KEEP_GOLD, KEEP_ITEMS, PotionName, REPLENISHABLES, REPLENISH_RATIO, SEND_GOLD_AT } from "../base/constants";
 import { ignoreExceptions } from "../base/functions/general";
@@ -6,18 +18,17 @@ import { SELL_ITMES } from "../base/settings";
 import { PartyController } from "../controller/party_controller";
 import { Loop, LoopName, Loops, Strategy, StrategyName } from "./character_runner";
 
-
 export type BaseStrategyConfig = {
-    hpPotType: PotionName
-    mpPotType: PotionName
-    useHpAt: number
-    useMpAt: number
+    hpPotType: PotionName;
+    mpPotType: PotionName;
+    useHpAt: number;
+    useMpAt: number;
     keepPotions: {
-        max: number
-        min: number
-    }
-    disableLoot?: boolean
-}
+        max: number;
+        min: number;
+    };
+    disableLoot?: boolean;
+};
 export class BaseStrategy<T extends PingCompensatedCharacter> implements Strategy<T> {
     public loops: Loops<T> = new Map<LoopName, Loop<T>>();
 
@@ -39,7 +50,7 @@ export class BaseStrategy<T extends PingCompensatedCharacter> implements Strateg
                 await this.respawnIfDead(bot).catch(ignoreExceptions);
             },
             interval: 5000
-        })
+        });
         this.loops.set("use_pots", {
             fn: async (bot: T) => {
                 await this.usePotions(bot).catch(ignoreExceptions);
@@ -48,7 +59,9 @@ export class BaseStrategy<T extends PingCompensatedCharacter> implements Strateg
         });
         this.loops.set("loot", {
             fn: async (bot: T) => {
-                if (this.config.disableLoot) { return; }
+                if (this.config.disableLoot) {
+                    return;
+                }
                 for (let [, chest] of bot.chests) {
                     await this.lootChest(bot, chest).catch(ignoreExceptions);
                 }
@@ -116,7 +129,11 @@ export class BaseStrategy<T extends PingCompensatedCharacter> implements Strateg
         const mpRatio: number = bot.mp / bot.max_mp;
 
         // Just regen hp, since we are still pretty good
-        if ((bot.c.town || bot.c.fishing || bot.c.mining || bot.c.pickpocket) ||
+        if (
+            bot.c.town ||
+            bot.c.fishing ||
+            bot.c.mining ||
+            bot.c.pickpocket ||
             (hpRatio < this.config.useHpAt && mpRatio < this.config.useMpAt)
         ) {
             if (hpRatio <= mpRatio) return bot.regenHP();
@@ -229,9 +246,8 @@ export class BaseStrategy<T extends PingCompensatedCharacter> implements Strateg
     }
 }
 
-
 export class BaseInventoryStrategy<T extends PingCompensatedCharacter> implements Strategy<T> {
-    public loops = new Map<LoopName, Loop<T>>;
+    public loops = new Map<LoopName, Loop<T>>();
 
     private _name: StrategyName = "inventory";
 
@@ -265,10 +281,12 @@ export class BaseInventoryStrategy<T extends PingCompensatedCharacter> implement
         const sendToName: string = this.partyController.config.sendToName;
         if (!sendToName) return;
 
-        const sendToBot: PingCompensatedCharacter | undefined = this.partyController.getRunners().find((runner) => runner.bot.name == sendToName)?.bot;
+        const sendToBot: PingCompensatedCharacter | undefined = this.partyController
+            .getRunners()
+            .find((runner) => runner.bot.name == sendToName)?.bot;
         const hasDistance: boolean = sendToBot && Tools.squaredDistance(bot, sendToBot) < Constants.NPC_INTERACTION_DISTANCE_SQUARED;
-        
-        if (hasDistance && bot.gold >= (KEEP_GOLD * SEND_GOLD_AT)) {
+
+        if (hasDistance && bot.gold >= KEEP_GOLD * SEND_GOLD_AT) {
             bot.sendGold(sendToName, bot.gold - KEEP_GOLD).catch(console.error);
         }
 
@@ -284,8 +302,8 @@ export class BaseInventoryStrategy<T extends PingCompensatedCharacter> implement
                 if (sendToBot.esize == 0) {
                     if (item.q) {
                         let maxStack: number = Game.G.items[item.name].s ?? 1;
-                        let targetHas: number = sendToBot.countItem(item.name, sendToBot.items, { pvpMarked: (item.v !== undefined) });
-                        canSend = targetHas > 0 && (targetHas + item.q) <= maxStack;
+                        let targetHas: number = sendToBot.countItem(item.name, sendToBot.items, { pvpMarked: item.v !== undefined });
+                        canSend = targetHas > 0 && targetHas + item.q <= maxStack;
                     } else {
                         canSend = false;
                     }

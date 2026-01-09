@@ -1,40 +1,56 @@
-import { ActionData, Constants, EntitiesData, Entity, Game, GetEntityFilters, ItemData, ItemName, LocateItemFilters, MonsterName, PingCompensatedCharacter, Player, SkillName, SlotType, Tools, WeaponType } from "alclient"
-import FastPriorityQueue from "fastpriorityqueue"
-import { filterRunners, ignoreExceptions, sleep } from "../base/functions/general"
-import { sortPriority } from "../base/functions/sort"
-import { generateEquipmentSet } from "../configs/equipment_setups"
-import { PartyController } from "../controller/party_controller"
-import { Loop, LoopName, Loops, Strategy, StrategyName } from "./character_runner"
-
+import {
+    ActionData,
+    Constants,
+    EntitiesData,
+    Entity,
+    Game,
+    GetEntityFilters,
+    ItemData,
+    ItemName,
+    LocateItemFilters,
+    MonsterName,
+    PingCompensatedCharacter,
+    Player,
+    SkillName,
+    SlotType,
+    Tools,
+    WeaponType
+} from "alclient";
+import FastPriorityQueue from "fastpriorityqueue";
+import { filterRunners, ignoreExceptions, sleep } from "../base/functions/general";
+import { sortPriority } from "../base/functions/sort";
+import { generateEquipmentSet } from "../configs/equipment_setups";
+import { PartyController } from "../controller/party_controller";
+import { Loop, LoopName, Loops, Strategy, StrategyName } from "./character_runner";
 
 export type EquipInSlot = {
-    name: ItemName
-    filters?: LocateItemFilters
-    unequip?: boolean
-}
+    name: ItemName;
+    filters?: LocateItemFilters;
+    unequip?: boolean;
+};
 
 export type EquipmentSet = {
-    [T in SlotType]?: EquipInSlot
-}
+    [T in SlotType]?: EquipInSlot;
+};
 
 export type BaseAttackConfig = GetEntityFilters & {
-    disableBasicAttack?: boolean
-    disableIdleAttack?: boolean
-    disableDefensiveAttack?: boolean
-    disableZapperAttack?: boolean
-    disableScare?: boolean
-    disableZapper?: boolean
-    disableKillSteal?: boolean
-    enableGreedyAggro?: boolean | MonsterName[]
-    equipmentSet?: EquipmentSet
-    maximumTargets?: number
-}
+    disableBasicAttack?: boolean;
+    disableIdleAttack?: boolean;
+    disableDefensiveAttack?: boolean;
+    disableZapperAttack?: boolean;
+    disableScare?: boolean;
+    disableZapper?: boolean;
+    disableKillSteal?: boolean;
+    enableGreedyAggro?: boolean | MonsterName[];
+    equipmentSet?: EquipmentSet;
+    maximumTargets?: number;
+};
 
 export const KILL_AVOID_MONSTERS: MonsterName[] = ["kitty1", "kitty2", "kitty3", "kitty4", "puppy1", "puppy2", "puppy3", "puppy4"];
 export const IDLE_ATTACK_MONSTERS: MonsterName[] = ["cutebee", "goldenbat", "frog", "wabbit", "rooster"];
 
 export class BaseAttackStrategy<T extends PingCompensatedCharacter> implements Strategy<T> {
-    public loops: Loops<T> = new Map<LoopName, Loop<T>>;
+    public loops: Loops<T> = new Map<LoopName, Loop<T>>();
 
     protected partyController: PartyController;
     protected config: BaseAttackConfig;
@@ -52,11 +68,9 @@ export class BaseAttackStrategy<T extends PingCompensatedCharacter> implements S
         this.partyController = partyController;
         this.config = config;
 
-        if (this.config.willDieToProjectiles === undefined)
-            this.config.willDieToProjectiles = false;
+        if (this.config.willDieToProjectiles === undefined) this.config.willDieToProjectiles = false;
 
-        if (!this.config.disableZapper)
-            this.interval.push("zapperzap");
+        if (!this.config.disableZapper) this.interval.push("zapperzap");
 
         if (this.config.type) {
             this.config.typeList = [this.config.type];
@@ -68,7 +82,7 @@ export class BaseAttackStrategy<T extends PingCompensatedCharacter> implements S
                 if (bot.rip) return;
 
                 if (this.shouldScare(bot)) await this.scare(bot);
-                await this.attack(bot).catch(ignoreExceptions)
+                await this.attack(bot).catch(ignoreExceptions);
             },
             interval: this.interval
         });
@@ -97,7 +111,7 @@ export class BaseAttackStrategy<T extends PingCompensatedCharacter> implements S
 
                 this.preventOverkill(bot, target);
                 return bot.zapperZap(data.target).catch(console.error);
-            }
+            };
 
             bot.socket.on("action", this.stealOnAction);
         }
@@ -135,9 +149,9 @@ export class BaseAttackStrategy<T extends PingCompensatedCharacter> implements S
                         return bot.basicAttack(monster.id).catch(console.error);
                     }
                 }
-            }
+            };
 
-            bot.socket.on("entities", this.greedyOnEntities)
+            bot.socket.on("entities", this.greedyOnEntities);
         }
     }
 
@@ -171,9 +185,7 @@ export class BaseAttackStrategy<T extends PingCompensatedCharacter> implements S
             let entities: Entity[] = bot.getEntities({
                 canDamage: "attack",
                 hasTarget: false,
-                typeList: Array.isArray(this.config.enableGreedyAggro)
-                    ? this.config.enableGreedyAggro
-                    : this.config.typeList,
+                typeList: Array.isArray(this.config.enableGreedyAggro) ? this.config.enableGreedyAggro : this.config.typeList,
                 withinRange: "attack"
             });
 
@@ -296,9 +308,7 @@ export class BaseAttackStrategy<T extends PingCompensatedCharacter> implements S
             let entities: Entity[] = bot.getEntities({
                 canDamage: "zapperzap",
                 hasTarget: false,
-                typeList: Array.isArray(this.config.enableGreedyAggro)
-                    ? this.config.enableGreedyAggro
-                    : this.config.typeList,
+                typeList: Array.isArray(this.config.enableGreedyAggro) ? this.config.enableGreedyAggro : this.config.typeList,
                 withinRange: "zapperzap"
             });
 
@@ -387,10 +397,7 @@ export class BaseAttackStrategy<T extends PingCompensatedCharacter> implements S
 
         if (this.config.typeList) {
             let targetingMe: Entity[] = bot.getEntities({
-                notTypeList: [
-                    ...this.config.typeList,
-                    ...(this.config.disableIdleAttack ? [] : IDLE_ATTACK_MONSTERS)
-                ],
+                notTypeList: [...this.config.typeList, ...(this.config.disableIdleAttack ? [] : IDLE_ATTACK_MONSTERS)],
                 targetingMe: true,
                 willDieToProjectiles: false
             });
@@ -410,9 +417,9 @@ export class BaseAttackStrategy<T extends PingCompensatedCharacter> implements S
         const equipSetup: EquipmentSet = this.equipmentSet.get(bot.id);
         if (!equipSetup) return;
 
-        let equipBatch: { num: number, slot: SlotType }[] = [];
+        let equipBatch: { num: number; slot: SlotType }[] = [];
         for (let sType in equipSetup) {
-            let slotType: SlotType = (sType as SlotType);
+            let slotType: SlotType = sType as SlotType;
             let equipInSlot: EquipInSlot = equipSetup[slotType];
 
             if (equipInSlot.unequip) {
@@ -420,14 +427,14 @@ export class BaseAttackStrategy<T extends PingCompensatedCharacter> implements S
                 continue;
             }
 
-            if (!bot.slots[slotType] ||
+            if (
+                !bot.slots[slotType] ||
                 bot.slots[slotType].name !== equipInSlot.name ||
                 (equipInSlot.filters?.returnHighestLevel &&
                     bot.hasItem(equipInSlot.name, bot.items, {
                         ...equipInSlot.filters,
                         levelGreaterThan: bot.slots[slotType].level
-                    })
-                )
+                    }))
             ) {
                 let toEquip: number = bot.locateItem(equipInSlot.name, bot.items, equipInSlot.filters);
                 if (toEquip === undefined) {
@@ -468,7 +475,7 @@ export class BaseAttackStrategy<T extends PingCompensatedCharacter> implements S
 }
 
 export class NoAttackScareStrategy<T extends PingCompensatedCharacter> implements Strategy<T> {
-    public loops: Loops<T> = new Map<LoopName, Loop<T>>;
+    public loops: Loops<T> = new Map<LoopName, Loop<T>>();
 
     private _name: StrategyName = "attack";
 

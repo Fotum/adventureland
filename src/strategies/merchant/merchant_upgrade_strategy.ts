@@ -2,12 +2,11 @@ import { GItem, Game, Item, ItemName, Merchant } from "alclient";
 import { Loop, LoopName, Strategy, StrategyName } from "../character_runner";
 import { MERCHANT_UPGRADE, UpgradeConfig } from "../../base/settings";
 
-
 export class MerchantUpgradeStrategy implements Strategy<Merchant> {
-    public loops? = new Map<LoopName, Loop<Merchant>>;
+    public loops? = new Map<LoopName, Loop<Merchant>>();
 
     private _name: StrategyName = "upgrade";
-    
+
     public constructor() {
         this.loops.set("upgrade", {
             fn: async (bot: Merchant) => {
@@ -26,7 +25,7 @@ export class MerchantUpgradeStrategy implements Strategy<Merchant> {
 
     protected async upgradeItems(bot: Merchant): Promise<boolean> {
         if (bot.isUpgrading() || bot.map.startsWith("bank")) return;
-        
+
         let itemsToUpgrade: [number, Item][] = [];
         for (let [slot, item] of bot.getItems()) {
             if (!item.upgrade || item.l || !MERCHANT_UPGRADE.has(item.name)) continue;
@@ -45,7 +44,7 @@ export class MerchantUpgradeStrategy implements Strategy<Merchant> {
 
             if (offering && !bot.hasItem(offering)) continue;
 
-            let scroll: ItemName = (`scroll${item.calculateGrade()}` as ItemName);
+            let scroll: ItemName = `scroll${item.calculateGrade()}` as ItemName;
             let scrollSlot: number = bot.locateItem(scroll, bot.items, { returnLowestQuantity: true });
             if (scrollSlot === undefined) return;
 
@@ -77,7 +76,7 @@ export class MerchantUpgradeStrategy implements Strategy<Merchant> {
 
             if (offering && !bot.hasItem(offering)) continue;
 
-            let cscroll: ItemName = (`cscroll${item.calculateGrade()}` as ItemName);
+            let cscroll: ItemName = `cscroll${item.calculateGrade()}` as ItemName;
             let cscrollSlot: number = bot.locateItem(cscroll);
             if (cscrollSlot === undefined) return;
 

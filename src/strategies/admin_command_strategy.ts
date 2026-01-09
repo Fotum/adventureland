@@ -4,7 +4,6 @@ import { SpotConfig, getSpotConfig } from "../configs/spots/spot_configs";
 import { PartyController } from "../controller/party_controller";
 import { CharacterRunner, Strategy, StrategyName } from "./character_runner";
 
-
 export class AdminCommandStrategy<T extends PingCompensatedCharacter> implements Strategy<T> {
     private partyController: PartyController;
     private _name: StrategyName = "admin";
@@ -32,13 +31,13 @@ export class AdminCommandStrategy<T extends PingCompensatedCharacter> implements
                     if (args.length < 4) break;
                     if (this.partyController.getRunner(args[0])) break;
 
-                    let ctype: CharacterType = (args[1] as CharacterType);
+                    let ctype: CharacterType = args[1] as CharacterType;
                     let newRunner: CharacterRunner<PingCompensatedCharacter> = await startCharacter(
                         this.partyController,
                         args[0],
                         ctype,
-                        (args[2] as ServerRegion),
-                        (args[3] as ServerIdentifier)
+                        args[2] as ServerRegion,
+                        args[3] as ServerIdentifier
                     );
                     if (!newRunner) {
                         console.error(`Error deploying character ${args[0]}`);

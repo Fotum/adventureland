@@ -5,20 +5,19 @@ import { BUY_FROM_PONTY, DISMANTLE_ITEMS, EXCHANGE_ITMES, SELL_ITMES } from "../
 import { PartyController } from "../../controller/party_controller";
 import { Loop, LoopName, Strategy, StrategyName } from "../character_runner";
 
-
 export type MerchantConfig = {
-    enableExchange?: boolean
-    enableDismantle?: boolean
-    enableFishing?: boolean
-    enableMining?: boolean
-    enablePonty?: boolean
+    enableExchange?: boolean;
+    enableDismantle?: boolean;
+    enableFishing?: boolean;
+    enableMining?: boolean;
+    enablePonty?: boolean;
     enableMluck?: {
-        runners?: boolean
-        others?: boolean
-        travel?: boolean
-        when?: number
-    }
-}
+        runners?: boolean;
+        others?: boolean;
+        travel?: boolean;
+        when?: number;
+    };
+};
 
 export const DEFAULT_MERCHANT_CONFIG: MerchantConfig = {
     enableExchange: true,
@@ -32,7 +31,7 @@ export const DEFAULT_MERCHANT_CONFIG: MerchantConfig = {
 };
 
 export class MerchantStrategy implements Strategy<Merchant> {
-    public loops = new Map<LoopName, Loop<Merchant>>;
+    public loops = new Map<LoopName, Loop<Merchant>>();
 
     private config: MerchantConfig;
     private _name: StrategyName = "utility";
@@ -140,7 +139,7 @@ export class MerchantStrategy implements Strategy<Merchant> {
             if (item.l) continue;
             if (MERCHANT_KEEP_ITEMS.has(item.name)) continue;
 
-            let isLeveled: boolean = (item.level && item.level > 0);
+            let isLeveled: boolean = item.level && item.level > 0;
             if (!isLeveled && bot.canSell() && SELL_ITMES.has(item.name)) {
                 bot.sell(ix, item.q ?? 1).catch(console.error);
             } else if (this.config.enableExchange && bot.esize > 0 && bot.canExchange(item.name) && EXCHANGE_ITMES.has(item.name)) {
@@ -152,16 +151,21 @@ export class MerchantStrategy implements Strategy<Merchant> {
     }
 
     protected async buyFromPonty(bot: Merchant): Promise<void> {
-        if (Pathfinder.locateNPC("secondhands").every((loc) => { return Tools.squaredDistance(bot, loc) > Constants.NPC_INTERACTION_DISTANCE_SQUARED })) return;
+        if (
+            Pathfinder.locateNPC("secondhands").every((loc) => {
+                return Tools.squaredDistance(bot, loc) > Constants.NPC_INTERACTION_DISTANCE_SQUARED;
+            })
+        )
+            return;
         let pontyItems: ItemDataTrade[] = await bot.getPontyItems();
 
         for (let item of pontyItems) {
             if (!BUY_FROM_PONTY.has(item.name)) continue;
             let buyPrice: number = BUY_FROM_PONTY.get(item.name);
-            
+
             let itemData: Item = new Item(item, Game.G);
             let pontyPrice: number = itemData.calculateNpcValue() * Game.G.multipliers.lostandfound_mult;
-            if (bot.gold < ((item.q ?? 1) * pontyPrice)) continue;
+            if (bot.gold < (item.q ?? 1) * pontyPrice) continue;
             if (buyPrice < pontyPrice) continue;
 
             if (bot.esize <= 0) {

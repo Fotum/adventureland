@@ -1,13 +1,28 @@
-import { Constants, Entity, GData, GMap, GMonster, Game, IPosition, MapName, MonsterName, Pathfinder, PingCompensatedCharacter, Player, ServerInfoDataLive, SmartMoveOptions, Tools } from "alclient";
+import {
+    Constants,
+    Entity,
+    GData,
+    GMap,
+    GMonster,
+    Game,
+    IPosition,
+    MapName,
+    MonsterName,
+    Pathfinder,
+    PingCompensatedCharacter,
+    Player,
+    ServerInfoDataLive,
+    SmartMoveOptions,
+    Tools
+} from "alclient";
 import { HEAL_RETREAT_RATIO, PLAYER_MIN_DISTANCE } from "../base/constants";
 import { filterRunners, ignoreExceptions } from "../base/functions/general";
 import { sortClosestDistance } from "../base/functions/sort";
 import { PartyController } from "../controller/party_controller";
 import { CharacterRunner, Loop, LoopName, Strategy, StrategyName } from "./character_runner";
 
-
 export class BaseMoveStrategy<T extends PingCompensatedCharacter> implements Strategy<T> {
-    public loops = new Map<LoopName, Loop<T>>;
+    public loops = new Map<LoopName, Loop<T>>();
 
     private _name: StrategyName = "move";
     private types: MonsterName[];
@@ -32,10 +47,10 @@ export class BaseMoveStrategy<T extends PingCompensatedCharacter> implements Str
     private async move(bot: T): Promise<unknown> {
         if (bot.ctype == "priest") {
             let lowHpFriend: Player = bot.getPlayer({ isDead: false, isPartyMember: true, returnLowestHP: true });
-            if (lowHpFriend && lowHpFriend.hp < (lowHpFriend.max_hp * HEAL_RETREAT_RATIO) && Tools.distance(bot, lowHpFriend) > bot.range) {
+            if (lowHpFriend && lowHpFriend.hp < lowHpFriend.max_hp * HEAL_RETREAT_RATIO && Tools.distance(bot, lowHpFriend) > bot.range) {
                 return bot.smartMove(lowHpFriend, { getWithin: bot.range * 0.8 }).catch(ignoreExceptions);
             }
-        } else if (bot.hp < (bot.max_hp * HEAL_RETREAT_RATIO)) {
+        } else if (bot.hp < bot.max_hp * HEAL_RETREAT_RATIO) {
             let priest: Player = bot.getPlayer({ isDead: false, isPartyMember: true, ctype: "priest", returnNearest: true });
             if (priest && Tools.distance(bot, priest) > priest.range) {
                 return bot.smartMove(priest, { getWithin: priest.range * 0.8 }).catch(ignoreExceptions);
@@ -61,7 +76,7 @@ export class BaseMoveStrategy<T extends PingCompensatedCharacter> implements Str
 }
 
 export class FollowMoveStrategy<T extends PingCompensatedCharacter> implements Strategy<T> {
-    public loops: Map<LoopName, Loop<T>> = new Map<LoopName, Loop<T>>;
+    public loops: Map<LoopName, Loop<T>> = new Map<LoopName, Loop<T>>();
 
     private _name: StrategyName = "move";
     private friendToFollow: CharacterRunner<PingCompensatedCharacter> | string;
@@ -96,15 +111,15 @@ export class FollowMoveStrategy<T extends PingCompensatedCharacter> implements S
 }
 
 export type HoldPositionStrategyConfig = {
-    position: IPosition | CharacterRunner<PingCompensatedCharacter>
-    delta?: number
+    position: IPosition | CharacterRunner<PingCompensatedCharacter>;
+    delta?: number;
     offset?: {
-        x?: number
-        y?: number
-    }
-}
+        x?: number;
+        y?: number;
+    };
+};
 export class HoldPositionStrategy<T extends PingCompensatedCharacter> implements Strategy<T> {
-    public loops = new Map<LoopName, Loop<T>>;
+    public loops = new Map<LoopName, Loop<T>>();
 
     private _name: StrategyName = "move";
     private config: HoldPositionStrategyConfig;
@@ -130,8 +145,11 @@ export class HoldPositionStrategy<T extends PingCompensatedCharacter> implements
         let configPosition: IPosition | CharacterRunner<PingCompensatedCharacter> = this.config.position;
         let holdPosition: IPosition = undefined;
         if (configPosition instanceof CharacterRunner<PingCompensatedCharacter>) {
-            if (configPosition.isReady()) { this.lastPosition = { map: configPosition.bot.map, x: configPosition.bot.x, y: configPosition.bot.y }; }
-            else if (this.lastPosition === undefined) { this.lastPosition = { map: bot.map, x: bot.x, y: bot.y }; }
+            if (configPosition.isReady()) {
+                this.lastPosition = { map: configPosition.bot.map, x: configPosition.bot.x, y: configPosition.bot.y };
+            } else if (this.lastPosition === undefined) {
+                this.lastPosition = { map: bot.map, x: bot.x, y: bot.y };
+            }
 
             holdPosition = this.lastPosition;
         } else {
@@ -139,7 +157,9 @@ export class HoldPositionStrategy<T extends PingCompensatedCharacter> implements
         }
 
         let delta: number = 0;
-        if (this.config.delta) { delta = this.config.delta; }
+        if (this.config.delta) {
+            delta = this.config.delta;
+        }
         if (this.config?.offset) {
             if (this.config.offset.x) holdPosition.x += this.config.offset.x;
             if (this.config.offset.y) holdPosition.y += this.config.offset.y;
@@ -152,12 +172,12 @@ export class HoldPositionStrategy<T extends PingCompensatedCharacter> implements
 }
 
 export type KiteInCircleConfig = {
-    centre: IPosition | CharacterRunner<PingCompensatedCharacter>
-    radius: number
-    typeList: MonsterName[]
-}
+    centre: IPosition | CharacterRunner<PingCompensatedCharacter>;
+    radius: number;
+    typeList: MonsterName[];
+};
 export class KiteInCircleStrategy<T extends PingCompensatedCharacter> implements Strategy<T> {
-    public loops: Map<LoopName, Loop<T>> = new Map<LoopName, Loop<T>>;
+    public loops: Map<LoopName, Loop<T>> = new Map<LoopName, Loop<T>>();
 
     protected config: KiteInCircleConfig;
 
@@ -184,8 +204,11 @@ export class KiteInCircleStrategy<T extends PingCompensatedCharacter> implements
         let configPosition: IPosition | CharacterRunner<PingCompensatedCharacter> = this.config.centre;
         let configCentre: IPosition = undefined;
         if (configPosition instanceof CharacterRunner<PingCompensatedCharacter>) {
-            if (configPosition.isReady()) { this.lastCentre = { map: configPosition.bot.map, x: configPosition.bot.x, y: configPosition.bot.y }; }
-            else if (this.lastCentre === undefined) { this.lastCentre = { map: bot.map, x: bot.x, y: bot.y }; }
+            if (configPosition.isReady()) {
+                this.lastCentre = { map: configPosition.bot.map, x: configPosition.bot.x, y: configPosition.bot.y };
+            } else if (this.lastCentre === undefined) {
+                this.lastCentre = { map: bot.map, x: bot.x, y: bot.y };
+            }
 
             configCentre = this.lastCentre;
         } else {
@@ -203,10 +226,10 @@ export class KiteInCircleStrategy<T extends PingCompensatedCharacter> implements
         // #TODO: Rewrite using vectors and multiple entities insted of one closest
         if (bot.ctype == "priest") {
             let lowHpFriend: Player = bot.getPlayer({ isDead: false, isPartyMember: true, returnLowestHP: true });
-            if (lowHpFriend && lowHpFriend.hp < (lowHpFriend.max_hp * HEAL_RETREAT_RATIO) && Tools.distance(bot, lowHpFriend) > bot.range) {
+            if (lowHpFriend && lowHpFriend.hp < lowHpFriend.max_hp * HEAL_RETREAT_RATIO && Tools.distance(bot, lowHpFriend) > bot.range) {
                 return bot.smartMove(lowHpFriend, { getWithin: bot.range * 0.8 }).catch(ignoreExceptions);
             }
-        } else if (bot.hp < (bot.max_hp * HEAL_RETREAT_RATIO)) {
+        } else if (bot.hp < bot.max_hp * HEAL_RETREAT_RATIO) {
             let priest: Player = bot.getPlayer({ isDead: false, isPartyMember: true, ctype: "priest", returnNearest: true });
             if (priest && Tools.distance(bot, priest) > priest.range) {
                 return bot.smartMove(priest, { getWithin: priest.range * 0.8 }).catch(ignoreExceptions);
@@ -230,7 +253,7 @@ export class KiteInCircleStrategy<T extends PingCompensatedCharacter> implements
             y: centre.y + radius * Math.sin(ccw)
         };
 
-        let distanceFromCwToMonster:  number = Tools.distance({ x: monster.x, y: monster.y }, cwPoint);
+        let distanceFromCwToMonster: number = Tools.distance({ x: monster.x, y: monster.y }, cwPoint);
         let distanceFromCcwToMonster: number = Tools.distance({ x: monster.x, y: monster.y }, ccwPoint);
 
         let moveToPoint: IPosition = undefined;
@@ -253,14 +276,14 @@ export class KiteInCircleStrategy<T extends PingCompensatedCharacter> implements
 }
 
 export type MoveInCircleStrategyConfig = {
-    centre: IPosition | PingCompensatedCharacter
-    radius: number
-    sides?: number
-    ccw?: boolean
-    rnd?: boolean
-}
+    centre: IPosition | PingCompensatedCharacter;
+    radius: number;
+    sides?: number;
+    ccw?: boolean;
+    rnd?: boolean;
+};
 export class MoveInCircleStrategy<T extends PingCompensatedCharacter> implements Strategy<T> {
-    public loops: Map<LoopName, Loop<T>> = new Map<LoopName, Loop<T>>;
+    public loops: Map<LoopName, Loop<T>> = new Map<LoopName, Loop<T>>();
 
     protected config: MoveInCircleStrategyConfig;
 
@@ -281,7 +304,7 @@ export class MoveInCircleStrategy<T extends PingCompensatedCharacter> implements
                 if (bot.rip) return;
                 await this.move(bot).catch(ignoreExceptions);
             },
-            interval: 250,
+            interval: 250
         });
     }
 
@@ -293,8 +316,11 @@ export class MoveInCircleStrategy<T extends PingCompensatedCharacter> implements
         let configPosition: IPosition | CharacterRunner<PingCompensatedCharacter> = this.config.centre;
         let configCentre: IPosition = undefined;
         if (configPosition instanceof CharacterRunner<PingCompensatedCharacter>) {
-            if (configPosition.isReady()) { this.lastCentre = { map: configPosition.bot.map, x: configPosition.bot.x, y: configPosition.bot.y }; }
-            else if (this.lastCentre === undefined) { this.lastCentre = { map: bot.map, x: bot.x, y: bot.y }; }
+            if (configPosition.isReady()) {
+                this.lastCentre = { map: configPosition.bot.map, x: configPosition.bot.x, y: configPosition.bot.y };
+            } else if (this.lastCentre === undefined) {
+                this.lastCentre = { map: bot.map, x: bot.x, y: bot.y };
+            }
 
             configCentre = this.lastCentre;
         } else {
@@ -311,7 +337,7 @@ export class MoveInCircleStrategy<T extends PingCompensatedCharacter> implements
 
         if (Pathfinder.canWalkPath(bot, centre)) {
             let angleFromCentreToCurrent: number = Math.atan2(bot.y - centre.y, bot.x - centre.x);
-            let endPositionAngle: number = angleFromCentreToCurrent + (angle * direction);
+            let endPositionAngle: number = angleFromCentreToCurrent + angle * direction;
             let endPosition: IPosition = {
                 x: centre.x + radius * Math.cos(endPositionAngle),
                 y: centre.y + radius * Math.sin(endPositionAngle)
@@ -325,17 +351,19 @@ export class MoveInCircleStrategy<T extends PingCompensatedCharacter> implements
 }
 
 export type SpecialMonsterKiteStrategyConfig = {
-    partyController: PartyController
-    ignoreMaps?: MapName[]
-    typeList: MonsterName[]
-}
-type CheckedBossData = undefined | {
-    map: MapName
-    x: number
-    y: number
-}
+    partyController: PartyController;
+    ignoreMaps?: MapName[];
+    typeList: MonsterName[];
+};
+type CheckedBossData =
+    | undefined
+    | {
+          map: MapName;
+          x: number;
+          y: number;
+      };
 export class SpecialMonsterKiteStrategy<T extends PingCompensatedCharacter> implements Strategy<T> {
-    public loops: Map<LoopName, Loop<T>> = new Map<LoopName, Loop<T>>;
+    public loops: Map<LoopName, Loop<T>> = new Map<LoopName, Loop<T>>();
 
     protected config: SpecialMonsterKiteStrategyConfig;
     protected spawns: IPosition[];
@@ -358,7 +386,7 @@ export class SpecialMonsterKiteStrategy<T extends PingCompensatedCharacter> impl
                 await this.move(bot).catch(ignoreExceptions);
                 await this.kiteToNpc(bot).catch(ignoreExceptions);
             },
-            interval: 250,
+            interval: 250
         });
     }
 
@@ -505,29 +533,35 @@ export class SpecialMonsterKiteStrategy<T extends PingCompensatedCharacter> impl
             }
 
             if (lastD) {
-                return bot.smartMove(target, {
-                    costs: this.avoidDoorsCosts,
-                    getWithin: d - (bot.range - lastD),
-                    resolveOnFinalMoveStart: true
-                }).catch(ignoreExceptions);
+                return bot
+                    .smartMove(target, {
+                        costs: this.avoidDoorsCosts,
+                        getWithin: d - (bot.range - lastD),
+                        resolveOnFinalMoveStart: true
+                    })
+                    .catch(ignoreExceptions);
             } else {
-                return bot.smartMove(target, {
-                    costs: this.avoidDoorsCosts,
-                    resolveOnFinalMoveStart: true
-                }).catch(ignoreExceptions);
+                return bot
+                    .smartMove(target, {
+                        costs: this.avoidDoorsCosts,
+                        resolveOnFinalMoveStart: true
+                    })
+                    .catch(ignoreExceptions);
             }
         }
 
         if (lastD) {
-            return bot.smartMove(targets[1], {
-                costs: this.avoidDoorsCosts,
-                getWithin: Tools.distance({ x: bot.x, y: bot.y }, { x: targets[1].x, y: targets[1].y }) - (bot.range = lastD),
-                resolveOnFinalMoveStart: true
-            }).catch(ignoreExceptions);
+            return bot
+                .smartMove(targets[1], {
+                    costs: this.avoidDoorsCosts,
+                    getWithin: Tools.distance({ x: bot.x, y: bot.y }, { x: targets[1].x, y: targets[1].y }) - (bot.range = lastD),
+                    resolveOnFinalMoveStart: true
+                })
+                .catch(ignoreExceptions);
         }
     }
 
-    protected returnUndefinedIfMapIgnored(position: { map: MapName, x: number, y: number }): CheckedBossData {
+    protected returnUndefinedIfMapIgnored(position: { map: MapName; x: number; y: number }): CheckedBossData {
         if (!this.config.ignoreMaps) return position;
         if (this.config.ignoreMaps.includes(position.map)) return undefined;
 
@@ -549,7 +583,7 @@ export class SpecialMonsterKiteStrategy<T extends PingCompensatedCharacter> impl
         for (let type of this.config.typeList) {
             let sInfo: ServerInfoDataLive = bot.S?.[type] as ServerInfoDataLive;
             if (sInfo?.live && sInfo.map && sInfo.x !== undefined && sInfo.y !== undefined) {
-                return this.returnUndefinedIfMapIgnored(sInfo as { map: MapName, x: number, y: number });
+                return this.returnUndefinedIfMapIgnored(sInfo as { map: MapName; x: number; y: number });
             }
 
             if (sInfo?.live && sInfo.map && bot.map != sInfo.map) {
@@ -577,7 +611,7 @@ export class KiteMonsterStrategy<T extends PingCompensatedCharacter> extends Spe
                 if (bot.rip) return;
                 await this.move(bot).catch(ignoreExceptions);
             },
-            interval: 250,
+            interval: 250
         });
     }
 
@@ -596,10 +630,10 @@ export class KiteMonsterStrategy<T extends PingCompensatedCharacter> extends Spe
         // #TODO: Rewrite using vectors and multiple entities insted of one closest
         if (bot.ctype == "priest") {
             let lowHpFriend: Player = bot.getPlayer({ isDead: false, isPartyMember: true, returnLowestHP: true });
-            if (lowHpFriend && lowHpFriend.hp < (lowHpFriend.max_hp * HEAL_RETREAT_RATIO) && Tools.distance(bot, lowHpFriend) > bot.range) {
+            if (lowHpFriend && lowHpFriend.hp < lowHpFriend.max_hp * HEAL_RETREAT_RATIO && Tools.distance(bot, lowHpFriend) > bot.range) {
                 return bot.smartMove(lowHpFriend, { getWithin: bot.range * 0.8 }).catch(ignoreExceptions);
             }
-        } else if (bot.hp < (bot.max_hp * HEAL_RETREAT_RATIO)) {
+        } else if (bot.hp < bot.max_hp * HEAL_RETREAT_RATIO) {
             let priest: Player = bot.getPlayer({ isDead: false, isPartyMember: true, ctype: "priest", returnNearest: true });
             if (priest && Tools.distance(bot, priest) > priest.range) {
                 return bot.smartMove(priest, { getWithin: priest.range * 0.8 }).catch(ignoreExceptions);
@@ -612,7 +646,7 @@ export class KiteMonsterStrategy<T extends PingCompensatedCharacter> extends Spe
         let numAngles: number = 40;
 
         for (let i = 1; i < numAngles; i++) {
-            let angle: number = angleFromEntityToBot + (i % 2 ? 1: -1) * (Math.PI * ((i - (i % 2)) / numAngles));
+            let angle: number = angleFromEntityToBot + (i % 2 ? 1 : -1) * (Math.PI * ((i - (i % 2)) / numAngles));
             let angleCos: number = Math.cos(angle);
             let angleSin: number = Math.sin(angle);
             let kitePosition: IPosition = {
@@ -631,11 +665,13 @@ export class KiteMonsterStrategy<T extends PingCompensatedCharacter> extends Spe
                 if (bot.smartMoving) bot.stopSmartMove().catch(ignoreExceptions);
                 return bot.move(kitePosition.x, kitePosition.y, { resolveOnStart: true }).catch(ignoreExceptions);
             } else if (!bot.smartMoving) {
-                return bot.smartMove(kitePosition, {
-                    avoidTownWarps: true,
-                    costs: { enter: 9999, transport: 9999 },
-                    resolveOnFinalMoveStart: true
-                }).catch(ignoreExceptions);
+                return bot
+                    .smartMove(kitePosition, {
+                        avoidTownWarps: true,
+                        costs: { enter: 9999, transport: 9999 },
+                        resolveOnFinalMoveStart: true
+                    })
+                    .catch(ignoreExceptions);
             }
             break;
         }
@@ -643,7 +679,7 @@ export class KiteMonsterStrategy<T extends PingCompensatedCharacter> extends Spe
 }
 
 export class GetHolidaySpiritStrategy<T extends PingCompensatedCharacter> implements Strategy<T> {
-    public loops: Map<LoopName, Loop<T>> = new Map<LoopName, Loop<T>>;
+    public loops: Map<LoopName, Loop<T>> = new Map<LoopName, Loop<T>>();
 
     private _name: StrategyName = "move";
 
@@ -665,10 +701,12 @@ export class GetHolidaySpiritStrategy<T extends PingCompensatedCharacter> implem
         if (!bot.S.holidayseason) return;
         if (bot.s.holidayspirit) return;
 
-        await bot.smartMove("newyear_tree", {
-            getWithin: Constants.NPC_INTERACTION_DISTANCE / 2,
-            avoidTownWarps: true
-        }).catch(ignoreExceptions);
+        await bot
+            .smartMove("newyear_tree", {
+                getWithin: Constants.NPC_INTERACTION_DISTANCE / 2,
+                avoidTownWarps: true
+            })
+            .catch(ignoreExceptions);
         await bot.getHolidaySpirit();
     }
 }

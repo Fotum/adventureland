@@ -4,20 +4,19 @@ import { ignoreExceptions } from "../../base/functions/general";
 import { PartyController } from "../../controller/party_controller";
 import { BaseAttackConfig, BaseAttackStrategy } from "../base_attack_strategy";
 
-
 export type PriestAttackConfig = BaseAttackConfig & {
-    startHealingAtRatio: number
-    disableAbsorb?: true
-    disableCurse?: true
-    disableDarkBlessing?: true
-    enableAbsorbToTank?: true
-    enableHealStrangers?: true
-}
+    startHealingAtRatio: number;
+    disableAbsorb?: true;
+    disableCurse?: true;
+    disableDarkBlessing?: true;
+    enableAbsorbToTank?: true;
+    enableHealStrangers?: true;
+};
 
 export class PriestAttackStrategy extends BaseAttackStrategy<Priest> {
     protected config: PriestAttackConfig;
     protected healPriority: (a: PingCompensatedCharacter, b: PingCompensatedCharacter) => boolean;
-    
+
     public constructor(partyController: PartyController, options: PriestAttackConfig) {
         super(partyController, options);
 
@@ -161,7 +160,12 @@ export class PriestAttackStrategy extends BaseAttackStrategy<Priest> {
         if (target.s.curse) return;
         if (target.immune && !Game.G.skills["curse"].pierces_immunity) return;
         if (!bot.canUse("curse")) return;
-        if (bot.canKillInOneShot(target) || target.willBurnToDeath() || target.willDieToProjectiles(bot, bot.projectiles, bot.players, bot.entities)) return;
+        if (
+            bot.canKillInOneShot(target) ||
+            target.willBurnToDeath() ||
+            target.willDieToProjectiles(bot, bot.projectiles, bot.players, bot.entities)
+        )
+            return;
 
         return bot.curse(target.id);
     }

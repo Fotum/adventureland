@@ -9,7 +9,7 @@ export class RunnerException extends Error {
         this.name = name;
         this.message = message;
         this.cause = cause;
-        
+
         Object.setPrototypeOf(this, RunnerException.prototype);
     }
 }

@@ -8,22 +8,23 @@ import { PriestAttackStrategy } from "../../strategies/priest/priest_attack_stra
 import { WarriorAttackStrategy } from "../../strategies/warrior/warrior_attack_strategy";
 import { MAGE_AOE, PRIEST_MF, PRIEST_TANKY, WARRIOR_AOE, WARRIOR_DPS } from "../equipment_setups";
 
-
 export type SpotConfig = {
     [T in CharacterType]?: {
-        attack?: Strategy<PingCompensatedCharacter>,
-        move?: Strategy<PingCompensatedCharacter>
-    }
-}
+        attack?: Strategy<PingCompensatedCharacter>;
+        move?: Strategy<PingCompensatedCharacter>;
+    };
+};
 export function getSpotConfig(partyController: PartyController, spotName?: SpotName): SpotConfig | undefined {
     let defaultEnergize = {
         onMpRatio: 0.8,
-        when: { 
+        when: {
             mpRatio: 0.1
         }
     };
 
-    if (!spotName) { spotName = partyController.config.defaultSpot; }
+    if (!spotName) {
+        spotName = partyController.config.defaultSpot;
+    }
 
     switch (spotName) {
         case "cave_first":
@@ -719,7 +720,7 @@ export function getSpotConfig(partyController: PartyController, spotName?: SpotN
                     move: new BaseMoveStrategy(["osnake"])
                 },
                 merchant: {
-                    move: new HoldPositionStrategy({ position: {x: -519, y: -234, map: "halloween"} })
+                    move: new HoldPositionStrategy({ position: { x: -519, y: -234, map: "halloween" } })
                 }
             };
         case "minimush":
@@ -757,7 +758,7 @@ export function getSpotConfig(partyController: PartyController, spotName?: SpotN
                     move: new BaseMoveStrategy(["minimush", "phoenix"])
                 },
                 merchant: {
-                    move: new HoldPositionStrategy({ position: {x: 14, y: 414, map: "halloween"} })
+                    move: new HoldPositionStrategy({ position: { x: 14, y: 414, map: "halloween" } })
                 }
             };
         case "bigbird":
@@ -795,7 +796,7 @@ export function getSpotConfig(partyController: PartyController, spotName?: SpotN
                     move: new BaseMoveStrategy(["bigbird"])
                 },
                 merchant: {
-                    move: new HoldPositionStrategy({ position: {x: 1378, y: 418, map: "main"} })
+                    move: new HoldPositionStrategy({ position: { x: 1378, y: 418, map: "main" } })
                 }
             };
         case "scorpion":
@@ -835,7 +836,7 @@ export function getSpotConfig(partyController: PartyController, spotName?: SpotN
                     })
                 },
                 merchant: {
-                    move: new HoldPositionStrategy({ position: {x: 1308, y: -331, map: "main"} })
+                    move: new HoldPositionStrategy({ position: { x: 1308, y: -331, map: "main" } })
                 }
             };
         case "spider":
@@ -875,7 +876,7 @@ export function getSpotConfig(partyController: PartyController, spotName?: SpotN
                     })
                 },
                 merchant: {
-                    move: new HoldPositionStrategy({ position: {x: 1308, y: -331, map: "main"} })
+                    move: new HoldPositionStrategy({ position: { x: 1308, y: -331, map: "main" } })
                 }
             };
         case "fireroamer":
@@ -930,7 +931,7 @@ export function getSpotConfig(partyController: PartyController, spotName?: SpotN
                     })
                 },
                 merchant: {
-                    move: new HoldPositionStrategy({ position: {x: 1308, y: -331, map: "main"} })
+                    move: new HoldPositionStrategy({ position: { x: 1308, y: -331, map: "main" } })
                 }
             };
         default:

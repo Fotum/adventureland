@@ -1,7 +1,7 @@
 import { BankPackName, ItemName, MonsterName } from "alclient";
 
 
-export const FRIENDLY_CHARACTERS: string[] = [];
+export const FRIENDLY_CHARACTERS: string[] = ["arMAGEdon", "aRanDonDon", "Archealer", "MerchanDiser", "Warious", "DonWar"];
 
 export const SPECIAL_MONSTERS: Map<MonsterName, boolean> = new Map<MonsterName, boolean>([
     ["phoenix", true],

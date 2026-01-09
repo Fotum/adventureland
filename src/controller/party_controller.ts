@@ -2,34 +2,47 @@ import { CharacterType, MonsterName, PingCompensatedCharacter, ServerIdentifier,
 import { SpotName } from "../base/constants";
 import { shouldGoBank } from "../base/functions/characters";
 import { loadBossTimersFromFile, loadStateFromFile, msince, saveBossTimersToFile, saveStateToFile } from "../base/functions/general";
-import { PreparedScheduleEvent, PreparedSpecialMonster, getActiveScheduleEvents, getBossesAroundCharacters } from "../base/functions/monsters";
+import {
+    PreparedScheduleEvent,
+    PreparedSpecialMonster,
+    getActiveScheduleEvents,
+    getBossesAroundCharacters
+} from "../base/functions/monsters";
 import { QUESTS } from "../base/settings";
 import { getQuestConfig } from "../configs/quests/quest_configs";
 import { getSpotConfig } from "../configs/spots/spot_configs";
 import { CharacterRunner, Strategy } from "../strategies/character_runner";
 import { RunnerTask, RunnerTaskName } from "./runner_task";
-import { getBankStoreTask, getChangeSpotTask, getCheckBossesTask, getCheckCyberlandTask, getEventTask, getHolidayBuffTask, getInteractWithQuestNpcTask, getSpecialMonsterTask } from "./runner_task_collection";
-
+import {
+    getBankStoreTask,
+    getChangeSpotTask,
+    getCheckBossesTask,
+    getCheckCyberlandTask,
+    getEventTask,
+    getHolidayBuffTask,
+    getInteractWithQuestNpcTask,
+    getSpecialMonsterTask
+} from "./runner_task_collection";
 
 export type PartyControllerConfig = {
-    homeServerName: ServerRegion
-    homeServerId: ServerIdentifier
-    defaultSpot: SpotName
-    partyLeader: string
-    partyAllow: string[]
-    mainTank?: string
-    sendToName?: string
+    homeServerName: ServerRegion;
+    homeServerId: ServerIdentifier;
+    defaultSpot: SpotName;
+    partyLeader: string;
+    partyAllow: string[];
+    mainTank?: string;
+    sendToName?: string;
 
-    doQuests: Set<CharacterType>
-    doBosses?: boolean
-    doCyberland?: boolean
-    doBanking?: boolean
-}
+    doQuests: Set<CharacterType>;
+    doBosses?: boolean;
+    doCyberland?: boolean;
+    doBanking?: boolean;
+};
 export type RunnerState = {
-    currTask: RunnerTask
-    taskQueue: RunnerTask[]
-    taskTimers: Map<RunnerTaskName, number>
-}
+    currTask: RunnerTask;
+    taskQueue: RunnerTask[];
+    taskTimers: Map<RunnerTaskName, number>;
+};
 export class PartyController {
     public config: PartyControllerConfig;
 
@@ -46,8 +59,11 @@ export class PartyController {
         this.runnerStates = new Map<string, RunnerState>();
 
         let loadedBossTimers: Map<MonsterName, number> = loadBossTimersFromFile();
-        if (loadedBossTimers) { this._bossTimers = loadedBossTimers; }
-        else { this._bossTimers = new Map<MonsterName, number>(); }
+        if (loadedBossTimers) {
+            this._bossTimers = loadedBossTimers;
+        } else {
+            this._bossTimers = new Map<MonsterName, number>();
+        }
 
         this.logicLoop();
 
@@ -74,7 +90,12 @@ export class PartyController {
                 }
 
                 // Holiday buff task
-                if (runner.bot.S.holidayseason && !runner.bot.s.holidayspirit && currState.currTask.name != "holiday" && !currState.taskQueue.some((task) => task.name == "holiday")) {
+                if (
+                    runner.bot.S.holidayseason &&
+                    !runner.bot.s.holidayspirit &&
+                    currState.currTask.name != "holiday" &&
+                    !currState.taskQueue.some((task) => task.name == "holiday")
+                ) {
                     currState.taskQueue.push(getHolidayBuffTask(runner));
                 }
 
@@ -82,10 +103,14 @@ export class PartyController {
                 if (this.config.doQuests.has(runner.bot.ctype) && !currState.taskQueue.some((task) => task.name == "quest")) {
                     if (!runner.bot.s.monsterhunt) {
                         let questTask: RunnerTask | undefined = getInteractWithQuestNpcTask(runner, "get");
-                        if (questTask) { currState.taskQueue.push(questTask); }
+                        if (questTask) {
+                            currState.taskQueue.push(questTask);
+                        }
                     } else if (runner.bot.s.monsterhunt && runner.bot.s.monsterhunt.c == 0) {
                         let questTask: RunnerTask | undefined = getInteractWithQuestNpcTask(runner, "complete");
-                        if (questTask) { currState.taskQueue.push(questTask); }
+                        if (questTask) {
+                            currState.taskQueue.push(questTask);
+                        }
                     }
                 }
 
@@ -93,19 +118,38 @@ export class PartyController {
                 if (runner.bot.ctype == "merchant") {
                     let taskTimers = currState.taskTimers;
                     // Go default merchant route checking bosses
-                    if (this.config.doBosses && currState.currTask.name != "bcheck" && (!taskTimers.get("bcheck") || msince(taskTimers.get("bcheck")) >= 3) && !currState.taskQueue.some((task) => task.name == "bcheck")) {
+                    if (
+                        this.config.doBosses &&
+                        currState.currTask.name != "bcheck" &&
+                        (!taskTimers.get("bcheck") || msince(taskTimers.get("bcheck")) >= 3) &&
+                        !currState.taskQueue.some((task) => task.name == "bcheck")
+                    ) {
                         let checkBossesTask: RunnerTask = getCheckBossesTask(this, runner);
-                        if (checkBossesTask) { currState.taskQueue.push(checkBossesTask); }
+                        if (checkBossesTask) {
+                            currState.taskQueue.push(checkBossesTask);
+                        }
                     }
 
                     // Check cyberland
-                    if (this.config.doCyberland && currState.currTask.name != "cyberland" && (!taskTimers.get("cyberland") || msince(taskTimers.get("cyberland")) >= 5) && !currState.taskQueue.some((task) => task.name == "cyberland")) {
+                    if (
+                        this.config.doCyberland &&
+                        currState.currTask.name != "cyberland" &&
+                        (!taskTimers.get("cyberland") || msince(taskTimers.get("cyberland")) >= 5) &&
+                        !currState.taskQueue.some((task) => task.name == "cyberland")
+                    ) {
                         currState.taskQueue.push(getCheckCyberlandTask(runner));
                     }
 
                     // Do banking
-                    if (this.config.doBanking && currState.currTask.name != "bank" && (!taskTimers.get("bank") || msince(taskTimers.get("bank")) >= 5) && !currState.taskQueue.some((task) => task.name == "bank")) {
-                        if (shouldGoBank(runner.bot)) { currState.taskQueue.push(getBankStoreTask(runner)); }
+                    if (
+                        this.config.doBanking &&
+                        currState.currTask.name != "bank" &&
+                        (!taskTimers.get("bank") || msince(taskTimers.get("bank")) >= 5) &&
+                        !currState.taskQueue.some((task) => task.name == "bank")
+                    ) {
+                        if (shouldGoBank(runner.bot)) {
+                            currState.taskQueue.push(getBankStoreTask(runner));
+                        }
                     }
                 }
 
@@ -116,14 +160,16 @@ export class PartyController {
                         // Check if we can complete it
                         let questTarget: MonsterName = runner.bot.s.monsterhunt.id;
                         if (QUESTS.get(questTarget)) {
-                            let strategies: { attack?: Strategy<PingCompensatedCharacter>, move?: Strategy<PingCompensatedCharacter> } = getQuestConfig(this, questTarget)[runner.bot.ctype];
+                            let strategies: { attack?: Strategy<PingCompensatedCharacter>; move?: Strategy<PingCompensatedCharacter> } =
+                                getQuestConfig(this, questTarget)[runner.bot.ctype];
                             currState.taskQueue.push(getChangeSpotTask("quest", runner, strategies));
                         }
                     }
 
                     if (currState.currTask.name != "farming" && currState.currTask.name != "quest") {
                         // Go back to farm
-                        let strategies: { attack?: Strategy<PingCompensatedCharacter>, move?: Strategy<PingCompensatedCharacter> } = getSpotConfig(this)[runner.bot.ctype];
+                        let strategies: { attack?: Strategy<PingCompensatedCharacter>; move?: Strategy<PingCompensatedCharacter> } =
+                            getSpotConfig(this)[runner.bot.ctype];
                         currState.taskQueue.push(getChangeSpotTask("farming", runner, strategies));
                     }
                 }
@@ -138,7 +184,9 @@ export class PartyController {
 
                 // #TODO: set boss check steps complete for found boss. In bcheck step.name == bossName
 
-                if (preparedSpecials.length == 0 && preparedEvents.length == 0) { return; }
+                if (preparedSpecials.length == 0 && preparedEvents.length == 0) {
+                    return;
+                }
 
                 for (const [name, runner] of this.activeRunners) {
                     if (!runner.isReady()) continue;
@@ -149,13 +197,15 @@ export class PartyController {
                         if (currState.currTask.id == preparedSpecial.id) continue;
                         if (currState.taskQueue.some((task) => task.id == preparedSpecial.id)) continue;
 
-                        currState.taskQueue.push(getSpecialMonsterTask(runner, {
-                            id: preparedSpecial.id,
-                            name: preparedSpecial.name,
-                            moveTo: preparedSpecial.moveTo,
-                            targets: preparedSpecial.targets,
-                            strategies: preparedSpecial.strategies[runner.bot.ctype]
-                        }));
+                        currState.taskQueue.push(
+                            getSpecialMonsterTask(runner, {
+                                id: preparedSpecial.id,
+                                name: preparedSpecial.name,
+                                moveTo: preparedSpecial.moveTo,
+                                targets: preparedSpecial.targets,
+                                strategies: preparedSpecial.strategies[runner.bot.ctype]
+                            })
+                        );
                     }
 
                     for (let preparedEvent of preparedEvents) {
@@ -181,7 +231,9 @@ export class PartyController {
                             waitForRespawnMs: preparedEvent.waitForRespawnMs,
                             strategies: preparedEvent.strategies[runner.bot.ctype]
                         });
-                        if (preparedEvent.override) { eventTask.canOverride = false; }
+                        if (preparedEvent.override) {
+                            eventTask.canOverride = false;
+                        }
 
                         currState.taskQueue.splice(1, 0, eventTask);
                     }
@@ -190,7 +242,9 @@ export class PartyController {
         } catch (ex) {
             console.error(ex);
         } finally {
-            setTimeout(() => { this.logicLoop() }, 1000);
+            setTimeout(() => {
+                this.logicLoop();
+            }, 1000);
         }
     }
 
@@ -233,7 +287,7 @@ export class PartyController {
     }
 
     public saveAndExit(): void {
-        for (const [name, ] of this.activeRunners) {
+        for (const [name] of this.activeRunners) {
             this.removeRunner(name);
         }
         saveBossTimersToFile(this._bossTimers);
@@ -242,9 +296,7 @@ export class PartyController {
     }
 
     public getRunnerState(name: string): RunnerTaskName {
-        return this.runnerStates.has(name)
-            ? this.runnerStates.get(name).currTask.name
-            : "unknown";
+        return this.runnerStates.has(name) ? this.runnerStates.get(name).currTask.name : "unknown";
     }
 
     public get bossTimers(): Map<MonsterName, number> {

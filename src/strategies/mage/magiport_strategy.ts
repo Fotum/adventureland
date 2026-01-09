@@ -3,11 +3,10 @@ import { filterRunners } from "../../base/functions/general";
 import { PartyController } from "../../controller/party_controller";
 import { Loop, LoopName, Strategy, StrategyName } from "../character_runner";
 
-
 export type MagiportConfig = {
-    delay: number
-    range: number
-}
+    delay: number;
+    range: number;
+};
 
 export const DEFAULT_MAGIPORT_CONFIG: MagiportConfig = {
     delay: 1000,
@@ -52,11 +51,11 @@ export class MagiportSmartMovingStrategy implements Strategy<Mage> {
             if (friend.map.startsWith("bank")) continue;
             if (Pathfinder.canWalkPath(bot, friend)) continue;
             if (!Pathfinder.canWalkPath(bot, friend.smartMoving)) continue;
-            if (Tools.distance(friend, friend.smartMoving) < (2 * this.config.range)) continue;
+            if (Tools.distance(friend, friend.smartMoving) < 2 * this.config.range) continue;
             if (Tools.distance(bot, friend.smartMoving) > this.config.range) continue;
 
             let lastMagiport = MagiportSmartMovingStrategy.recentlyMagiported.get(friend.id);
-            if (lastMagiport && (lastMagiport + this.config.delay) > Date.now()) continue;
+            if (lastMagiport && lastMagiport + this.config.delay > Date.now()) continue;
 
             try {
                 await bot.magiport(friend.id);
@@ -73,8 +72,8 @@ export class MagiportSmartMovingStrategy implements Strategy<Mage> {
 }
 
 export type MagiportServiceConfig = {
-    allowList?: string[]
-}
+    allowList?: string[];
+};
 export class MagiportServiceStrategy implements Strategy<Mage> {
     public loops = new Map<LoopName, Loop<PingCompensatedCharacter>>();
 
@@ -94,7 +93,7 @@ export class MagiportServiceStrategy implements Strategy<Mage> {
             if (!bot.canUse("magiport")) return;
 
             return bot.magiport(data.name);
-        }
+        };
         bot.socket.on("cm", this.inviteListener);
     }
 

@@ -3,10 +3,8 @@ import { MY_CHARACTERS, SpotName } from "./base/constants";
 import { sleep, startCharacter } from "./base/functions/general";
 import { FRIENDLY_CHARACTERS } from "./base/settings";
 import { BWIReporter } from "./bwi_reporter";
-import { getSpotConfig } from "./configs/spots/spot_configs";
 import { PartyController } from "./controller/party_controller";
-import { CharacterRunner, Strategy } from "./strategies/character_runner";
-
+import { CharacterRunner } from "./strategies/character_runner";
 
 // await Promise.all([Game.loginJSONFile("credentials.json"), Game.getGData(true, true)]);
 await Promise.all([Game.loginJSONFile("credentials_debug.json"), Game.getGData(true, true)]);
@@ -52,6 +50,12 @@ async function run(): Promise<void> {
 run();
 
 async function startRunner(name: string, ctype: CharacterType): Promise<void> {
-    let runner: CharacterRunner<PingCompensatedCharacter> = await startCharacter(PARTY_CONTROLLER, name, ctype, HOME_SERVER_NAME, HOME_SERVER_ID);
+    let runner: CharacterRunner<PingCompensatedCharacter> = await startCharacter(
+        PARTY_CONTROLLER,
+        name,
+        ctype,
+        HOME_SERVER_NAME,
+        HOME_SERVER_ID
+    );
     PARTY_CONTROLLER.addRunner(runner);
 }

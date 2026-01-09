@@ -1,12 +1,10 @@
 import { BankPackName, CharacterType, ItemName, MonsterName } from "alclient";
 
-
 export type PotionName = "hpot0" | "hpot1" | "hpotx" | "mpot0" | "mpot1" | "mpotx";
 
 export type SpotName = "cave_first" | "cave_second" | MonsterName;
 export type EventName = "goobrawl" | "dragold" | "icegolem" | "valentines" | "snowman" | "mrpumpkin" | "mrgreen";
 export type SpecialName = "phoenix" | "frog" | "fvampire" | "mvampire" | "jr" | "greenjr" | "skeletor" | "stompy";
-
 
 export const SAVE_FILES_LOCATION: string = "./settings";
 
@@ -32,8 +30,17 @@ export const MY_CHARACTERS: Map<string, CharacterType> = new Map<string, Charact
 export const KEEP_GOLD: number = 1_000_000;
 export const SEND_GOLD_AT: number = 1.5;
 export const KEEP_ITEMS: Set<ItemName> = new Set<ItemName>([
-    "hpot0", "hpot1", "mpot0", "mpot1", "tracker", "computer", "elixirluck",
-    "luckbooster", "supercomputer", "xpbooster", "xptome"
+    "hpot0",
+    "hpot1",
+    "mpot0",
+    "mpot1",
+    "tracker",
+    "computer",
+    "elixirluck",
+    "luckbooster",
+    "supercomputer",
+    "xpbooster",
+    "xptome"
 ]);
 
 export const REPLENISH_RATIO: number = 0.3;
@@ -44,7 +51,17 @@ export const REPLENISHABLES: Map<ItemName, number> = new Map<ItemName, number>([
 
 export const MERCHANT_KEEP_GOLD: number = 500_000_000;
 export const MERCHANT_KEEP_ITEMS: Set<ItemName> = new Set<ItemName>([
-    ...KEEP_ITEMS, "cscroll0", "cscroll1", "cscroll2", "scroll0", "scroll1", "scroll2", "pickaxe", "rod", "offeringp", "offering"
+    ...KEEP_ITEMS,
+    "cscroll0",
+    "cscroll1",
+    "cscroll2",
+    "scroll0",
+    "scroll1",
+    "scroll2",
+    "pickaxe",
+    "rod",
+    "offeringp",
+    "offering"
 ]);
 export const MERCHANT_REPLENISH_RATIO: number = 0.5;
 export const MERCHANT_REPLENISHABLES: Map<ItemName, number> = new Map<ItemName, number>([

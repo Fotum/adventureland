@@ -7,22 +7,21 @@ import { PriestAttackStrategy } from "../../strategies/priest/priest_attack_stra
 import { WarriorAttackStrategy } from "../../strategies/warrior/warrior_attack_strategy";
 import { MAGE_AOE, MAGE_DPS, MAGE_FAST, PRIEST_GF, PRIEST_MF, PRIEST_TANKY, WARRIOR_AOE, WARRIOR_DPS } from "../equipment_setups";
 
-
 export type EventConfig = {
-    targets: MonsterName[]
-    waitForRespawnMs?: number
-    override?: boolean
+    targets: MonsterName[];
+    waitForRespawnMs?: number;
+    override?: boolean;
     strategies: {
         [T in CharacterType]?: {
-            attack?: Strategy<PingCompensatedCharacter>,
-            move?: Strategy<PingCompensatedCharacter>
-        }
-    }
-}
+            attack?: Strategy<PingCompensatedCharacter>;
+            move?: Strategy<PingCompensatedCharacter>;
+        };
+    };
+};
 export function getEventConfig(eventName: string, partyController: PartyController): EventConfig | undefined {
     let defaultEnergize = {
         onMpRatio: 0.8,
-        when: { 
+        when: {
             mpRatio: 0.1
         }
     };
@@ -127,7 +126,7 @@ export function getEventConfig(eventName: string, partyController: PartyControll
                             disableCleave: true,
                             disableStomp: true
                         }),
-                        move: new HoldPositionStrategy({ position: { map: "winterland", x: 824, y: 415 } , delta: 45 })
+                        move: new HoldPositionStrategy({ position: { map: "winterland", x: 824, y: 415 }, delta: 45 })
                     },
                     mage: {
                         attack: new MageAttackStrategy(partyController, {
@@ -138,7 +137,7 @@ export function getEventConfig(eventName: string, partyController: PartyControll
                             disableCburst: true,
                             energize: defaultEnergize
                         }),
-                        move: new HoldPositionStrategy({ position: { map: "winterland", x: 824, y: 415 } , delta: 45 })
+                        move: new HoldPositionStrategy({ position: { map: "winterland", x: 824, y: 415 }, delta: 45 })
                     },
                     priest: {
                         attack: new PriestAttackStrategy(partyController, {
@@ -150,7 +149,7 @@ export function getEventConfig(eventName: string, partyController: PartyControll
                             enableHealStrangers: true,
                             startHealingAtRatio: 0.8
                         }),
-                        move: new HoldPositionStrategy({ position: { map: "winterland", x: 824, y: 415 } , delta: 45 })
+                        move: new HoldPositionStrategy({ position: { map: "winterland", x: 824, y: 415 }, delta: 45 })
                     }
                 }
             };

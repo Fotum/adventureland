@@ -5,7 +5,6 @@ import { BaseMoveStrategy, HoldPositionStrategy, KiteInCircleStrategy } from "..
 import { MAGE_AOE, MAGE_DPS, MAGE_FAST } from "../equipment_setups";
 import { SpotConfig } from "../spots/spot_configs";
 
-
 export function getQuestConfig(partyController: PartyController, questName: MonsterName): SpotConfig | undefined {
     switch (questName) {
         case "porcupine":

@@ -1,16 +1,27 @@
 import { Game, IPosition, PingCompensatedCharacter } from "alclient";
-import { CharacterRunner } from "../strategies/character_runner";
-import { sleep } from "../base/functions/general";
 import { EventName, SpecialName } from "../base/constants";
+import { sleep } from "../base/functions/general";
+import { CharacterRunner } from "../strategies/character_runner";
 
+export type RunnerTaskName =
+    | "unknown"
+    | "afk"
+    | "return"
+    | "farming"
+    | "quest"
+    | "quest_npc"
+    | "holiday"
+    | "bcheck"
+    | "cyberland"
+    | "bank"
+    | EventName
+    | SpecialName;
 
-export type RunnerTaskName = "unknown" | "afk" | "return" | "farming" | "quest" | "quest_npc" | "holiday" | "bcheck" | "cyberland" | "bank" | EventName | SpecialName;
 type RunnerTaskStep = {
-    name: string
-    fn: (runner: CharacterRunner<PingCompensatedCharacter>, signal: AbortSignal) => Promise<unknown>
-}
-
-type ExecutableRunnerTaskStep = RunnerTaskStep & { isComplete: boolean }
+    name: string;
+    fn: (runner: CharacterRunner<PingCompensatedCharacter>, signal: AbortSignal) => Promise<unknown>;
+};
+type ExecutableRunnerTaskStep = RunnerTaskStep & { isComplete: boolean };
 type RunnerTaskStatus = "CREATED" | "RUNNING" | "COMPLETE" | "ABORTED" | "ERROR";
 export class RunnerTask {
     private _id: string;
@@ -28,7 +39,12 @@ export class RunnerTask {
     private taskSteps: ExecutableRunnerTaskStep[] = [];
     private abortController: AbortController = new AbortController();
 
-    constructor(id: string, name: RunnerTaskName, runner: CharacterRunner<PingCompensatedCharacter>, targetPosition?: IPosition | keyof typeof Game.G.events) {
+    constructor(
+        id: string,
+        name: RunnerTaskName,
+        runner: CharacterRunner<PingCompensatedCharacter>,
+        targetPosition?: IPosition | keyof typeof Game.G.events
+    ) {
         this._id = id;
         this._name = name;
         this._runner = runner;
@@ -50,7 +66,7 @@ export class RunnerTask {
 
                 step = this.taskSteps[this._step];
                 if (step.isComplete) continue;
-    
+
                 console.log(`[${this._runner.bot.id}]: Executing step ${step.name}(${this._step})`);
                 await step.fn(this._runner, this.abortController.signal);
                 console.log(`[${this._runner.bot.id}]: Step execution finished ${step.name}(${this._step})`);
@@ -58,8 +74,6 @@ export class RunnerTask {
                 step.isComplete = true;
                 this._step++;
             } catch (ex: any) {
-                // #TODO: Catch disconnection and reset step with isComplete = false, this._step--
-    
                 // Workaround because throwIfAborted does not getting caught
                 if (typeof ex == "string" && ex.startsWith("Abort request received")) {
                     console.warn(ex);
@@ -84,7 +98,9 @@ export class RunnerTask {
     }
 
     public abortTask(reason?: string): void {
-        if (reason) { reason = `, reason: ${reason}`; }
+        if (reason) {
+            reason = `, reason: ${reason}`;
+        }
         this.abortController.abort(`Abort request received${reason}`);
     }
 
@@ -127,7 +143,7 @@ export class RunnerTask {
         this._step = 0;
 
         this.abortController = new AbortController();
-        this.taskSteps.forEach((step) => step.isComplete = false);
+        this.taskSteps.forEach((step) => (step.isComplete = false));
         this._isComplete = false;
     }
 
@@ -150,7 +166,7 @@ export class RunnerTask {
     public setComplete(status: RunnerTaskStatus): RunnerTask {
         this._status = status;
         this._step = this.taskSteps.length - 1;
-        this.taskSteps.forEach((step) => step.isComplete = true);
+        this.taskSteps.forEach((step) => (step.isComplete = true));
         this._isComplete = true;
 
         return this;
