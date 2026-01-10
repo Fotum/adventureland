@@ -14,18 +14,18 @@ export const INFINITE_FUTURE: Date = new Date("2100-01-01Z00:00:00:000");
 export const PLAYER_MIN_DISTANCE: number = 15;
 export const HEAL_RETREAT_RATIO: number = 0.5;
 
-// export const MY_CHARACTERS: Map<string, CharacterType> = new Map<string, CharacterType>([
-//     ["Shalfey", "warrior"],
-//     ["Flamme", "priest"],
-//     ["MagicFotum", "mage"],
-//     ["Momental", "merchant"]
-// ]);
 export const MY_CHARACTERS: Map<string, CharacterType> = new Map<string, CharacterType>([
-    ["Ardy", "warrior"],
-    ["NIami", "priest"],
-    ["Memph1s", "mage"],
-    ["Fotum", "merchant"]
+    ["Shalfey", "warrior"],
+    ["Flamme", "priest"],
+    ["MagicFotum", "mage"]
+    // ["Momental", "merchant"]
 ]);
+// export const MY_CHARACTERS: Map<string, CharacterType> = new Map<string, CharacterType>([
+//     ["Ardy", "warrior"],
+//     ["NIami", "priest"],
+//     ["Memph1s", "mage"],
+//     ["Fotum", "merchant"]
+// ]);
 
 export const KEEP_GOLD: number = 1_000_000;
 export const SEND_GOLD_AT: number = 1.5;

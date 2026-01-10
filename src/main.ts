@@ -6,17 +6,17 @@ import { BWIReporter } from "./bwi_reporter";
 import { PartyController } from "./controller/party_controller";
 import { CharacterRunner } from "./strategies/character_runner";
 
-// await Promise.all([Game.loginJSONFile("credentials.json"), Game.getGData(true, true)]);
-await Promise.all([Game.loginJSONFile("credentials_debug.json"), Game.getGData(true, true)]);
+await Promise.all([Game.loginJSONFile("credentials.json"), Game.getGData(true, true)]);
+// await Promise.all([Game.loginJSONFile("credentials_debug.json"), Game.getGData(true, true)]);
 await Pathfinder.prepare(Game.G, { remove_abtesting: true, remove_test: true });
 
 const HOME_SERVER_NAME: ServerRegion = "EU";
 const HOME_SERVER_ID: ServerIdentifier = "II";
-const DEFAULT_SPOT: SpotName = "cave_first";
-const MAIN_TANK: string = "NIami";
+const DEFAULT_SPOT: SpotName = "fireroamer";
+const MAIN_TANK: string = "Flamme";
 
-const SEND_TO_NAME: string = "Fotum";
-const PARTY_LEADER: string = "NIami";
+const SEND_TO_NAME: string = "Momental";
+const PARTY_LEADER: string = "Flamme";
 const PARTY_ALLOW: string[] = [...MY_CHARACTERS.keys(), ...FRIENDLY_CHARACTERS];
 
 const PARTY_CONTROLLER: PartyController = new PartyController({

@@ -169,13 +169,13 @@ export class BaseAttackStrategy<T extends PingCompensatedCharacter> implements S
             return;
         }
 
-        await this.equipItems(bot);
+        await this.equipItems(bot).catch(console.error);
 
         if (!this.config.disableBasicAttack) await this.basicAttack(bot, this.botSort).catch(ignoreExceptions);
         if (!this.config.disableZapperAttack) await this.zapperAttack(bot, this.botSort).catch(ignoreExceptions);
         if (!this.config.disableIdleAttack) await this.idleAttack(bot, this.botSort).catch(ignoreExceptions);
 
-        await this.equipItems(bot);
+        await this.equipItems(bot).catch(console.error);
     }
 
     protected async basicAttack(bot: T, priority: (a: Entity, b: Entity) => boolean): Promise<unknown> {
@@ -413,14 +413,14 @@ export class BaseAttackStrategy<T extends PingCompensatedCharacter> implements S
         return bot.isScared();
     }
 
-    protected async equipItems(bot: T): Promise<unknown> {
-        const equipSetup: EquipmentSet = this.equipmentSet.get(bot.id);
-        if (!equipSetup) return;
+    protected async equipItems(bot: T): Promise<void> {
+        const equipmentSet: EquipmentSet = this.equipmentSet.get(bot.id);
+        if (!equipmentSet) return;
 
         let equipBatch: { num: number; slot: SlotType }[] = [];
-        for (let sType in equipSetup) {
+        for (let sType in equipmentSet) {
             let slotType: SlotType = sType as SlotType;
-            let equipInSlot: EquipInSlot = equipSetup[slotType];
+            let equipInSlot: EquipInSlot = equipmentSet[slotType];
 
             if (equipInSlot.unequip) {
                 if (bot.slots[slotType]) await bot.unequip(slotType);
@@ -438,19 +438,55 @@ export class BaseAttackStrategy<T extends PingCompensatedCharacter> implements S
             ) {
                 let toEquip: number = bot.locateItem(equipInSlot.name, bot.items, equipInSlot.filters);
                 if (toEquip === undefined) {
-                    console.error(`Could not find item to equip: "${equipInSlot.name}"`);
+                    if (
+                        slotType == "mainhand" &&
+                        bot.slots["offhand"]?.name == equipInSlot.name &&
+                        (!equipmentSet["offhand"] || equipmentSet["offhand"].name != equipInSlot.name) &&
+                        bot.esize > 0
+                    ) {
+                        toEquip = await bot.unequip("offhand");
+                    } else if (
+                        slotType == "offhand" &&
+                        bot.slots["mainhand"]?.name == equipInSlot.name &&
+                        (!equipmentSet["mainhand"] || equipmentSet["mainhand"].name != equipInSlot.name) &&
+                        bot.esize > 0
+                    ) {
+                        toEquip = await bot.unequip("mainhand");
+                    } else if (slotType == "ring1" && bot.slots["ring2"]?.name == equipInSlot.name && bot.esize > 0) {
+                        toEquip = await bot.unequip("ring2");
+                    } else if (slotType == "ring2" && bot.slots["ring1"]?.name == equipInSlot.name && bot.esize > 0) {
+                        toEquip = await bot.unequip("ring1");
+                    } else if (slotType == "earring1" && bot.slots["earring2"]?.name == equipInSlot.name && bot.esize > 0) {
+                        toEquip = await bot.unequip("earring2");
+                    } else if (slotType == "earring2" && bot.slots["earring1"]?.name == equipInSlot.name && bot.esize > 0) {
+                        toEquip = await bot.unequip("earring1");
+                    } else {
+                        throw new Error(`[${bot.id}]: Could not find ${equipInSlot.name} to equip in slot ${slotType}`);
+                    }
                 }
 
                 let doubleHandTypes = Game.G.classes[bot.ctype].doublehand;
                 if (slotType == "mainhand") {
                     let weaponType: WeaponType = Game.G.items[equipInSlot.name].wtype;
-                    if (weaponType && doubleHandTypes && doubleHandTypes[weaponType] && bot.slots.offhand && bot.esize > 0) {
-                        await bot.unequip("offhand");
+
+                    if (weaponType && doubleHandTypes && doubleHandTypes[weaponType]) {
+                        if (equipmentSet.offhand && !equipmentSet.offhand.unequip) {
+                            throw new Error(
+                                `[${bot.id}]: ${equipInSlot.name} is a doublehand for ${bot.ctype}. We can't equip ${equipmentSet.offhand.name} in our offhand`
+                            );
+                        }
+
+                        if (bot.slots.offhand) {
+                            if (bot.esize <= 0) continue;
+                            await bot.unequip("offhand");
+                        }
                     }
                 } else if (slotType == "offhand" && bot.slots["mainhand"]) {
                     let equippedName: ItemName = bot.slots["mainhand"].name;
                     let weaponType = Game.G.items[equippedName].wtype;
-                    if (weaponType && doubleHandTypes && doubleHandTypes[weaponType] && bot.slots.offhand && bot.esize > 0) {
+
+                    if (weaponType && doubleHandTypes && doubleHandTypes[weaponType]) {
+                        if (bot.esize <= 0) continue;
                         await bot.unequip("mainhand");
                     }
                 }

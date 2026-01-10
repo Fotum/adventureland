@@ -1,43 +1,67 @@
+import { Constants, Mage, Player, Tools, Warrior } from "alclient";
 import { PartyController } from "../../controller/party_controller";
-import { MageAttackStrategy, DEFAULT_ENERGIZE } from "../../strategies/mage/mage_attack_strategy";
-import { KiteInCircleStrategy, HoldPositionStrategy } from "../../strategies/move_strategies";
+import { NoAttackScareStrategy } from "../../strategies/base_attack_strategy";
+import { DEFAULT_ENERGIZE, MageAttackStrategy } from "../../strategies/mage/mage_attack_strategy";
+import { HoldPositionStrategy, KiteInCircleStrategy } from "../../strategies/move_strategies";
 import { PriestAttackStrategy } from "../../strategies/priest/priest_attack_strategy";
 import { WarriorAttackStrategy } from "../../strategies/warrior/warrior_attack_strategy";
-import { WARRIOR_AOE, MAGE_AOE, PRIEST_TANKY } from "../equipment_setups";
+import { MAGE_AOE, PRIEST_TANKY_MAGIC, PRIEST_TANKY_PHYSICAL, WARRIOR_AOE } from "../equipment_setups";
 import { SpotConfig } from "../spot_configs";
+
+const MAIN_TANK: string = "Archealer";
+const MAX_DISTANCE: number = Constants.NPC_INTERACTION_DISTANCE_SQUARED;
+class FireroamerWarriorAttackStrategy extends WarriorAttackStrategy {
+    protected async attack(bot: Warrior): Promise<void> {
+        let tankEntity: Player = bot.getPlayers().find((player) => player.id == MAIN_TANK);
+        if (!tankEntity || Tools.squaredDistance(bot, tankEntity) > MAX_DISTANCE) {
+            return;
+        }
+
+        super.attack(bot);
+    }
+}
+
+class FireroamerMageAttackStrategy extends MageAttackStrategy {
+    protected async attack(bot: Mage): Promise<void> {
+        let tankEntity: Player = bot.getPlayers().find((player) => player.id == MAIN_TANK);
+        if (!tankEntity || Tools.squaredDistance(bot, tankEntity) > MAX_DISTANCE) {
+            return;
+        }
+
+        super.attack(bot);
+    }
+}
 
 export function getFireroamerSpotConfig(partyController: PartyController): SpotConfig {
     return {
         warrior: {
-            attack: new WarriorAttackStrategy(partyController, {
+            attack: new FireroamerWarriorAttackStrategy(partyController, {
                 type: "fireroamer",
                 notType: "ent",
                 maximumTargets: 2,
                 equipmentSet: WARRIOR_AOE,
                 enableEquipForCleave: true,
-                enableEquipForStomp: true,
-                disableKillSteal: true
+                enableEquipForStomp: true
             }),
             move: new KiteInCircleStrategy({
                 centre: partyController.getRunner(partyController.config.mainTank),
-                radius: 100,
+                radius: 35,
                 typeList: ["fireroamer"]
             })
         },
         mage: {
-            attack: new MageAttackStrategy(partyController, {
+            attack: new FireroamerMageAttackStrategy(partyController, {
                 type: "fireroamer",
                 notType: "ent",
-                enableGreedyAggro: false,
                 maximumTargets: 2,
+                enableGreedyAggro: false,
                 equipmentSet: MAGE_AOE,
                 disableCburst: true,
-                disableKillSteal: true,
                 energize: DEFAULT_ENERGIZE
             }),
             move: new KiteInCircleStrategy({
-                centre: partyController.getRunner(partyController.config.mainTank),
-                radius: 100,
+                centre: { map: "desertland", x: 241, y: -835 },
+                radius: 35,
                 typeList: ["fireroamer"]
             })
         },
@@ -46,19 +70,20 @@ export function getFireroamerSpotConfig(partyController: PartyController): SpotC
                 type: "fireroamer",
                 notType: "ent",
                 maximumTargets: 2,
-                equipmentSet: PRIEST_TANKY,
+                equipmentSet: PRIEST_TANKY_PHYSICAL,
                 startHealingAtRatio: 0.8,
-                disableKillSteal: true,
-                disableZapper: true
+                disableZapper: true,
+                disableAbsorb: true
             }),
             move: new KiteInCircleStrategy({
                 centre: { map: "desertland", x: 241, y: -835 },
-                radius: 140,
+                radius: 35,
                 typeList: ["fireroamer"]
             })
         },
         merchant: {
-            move: new HoldPositionStrategy({ position: { x: 1308, y: -331, map: "main" } })
+            attack: new NoAttackScareStrategy(),
+            move: new HoldPositionStrategy({ position: { map: "desertland", x: 102, y: -621 } })
         }
     };
 }

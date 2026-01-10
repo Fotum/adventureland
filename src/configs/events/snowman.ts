@@ -35,7 +35,8 @@ export function getSnowmanConfig(partyController: PartyController): EventConfig 
                 attack: new PriestAttackStrategy(partyController, {
                     type: "snowman",
                     equipmentSet: PRIEST_MF,
-                    startHealingAtRatio: 0.8
+                    startHealingAtRatio: 0.8,
+                    disableAbsorb: true
                 }),
                 move: new BaseMoveStrategy(["snowman"])
             }

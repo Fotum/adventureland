@@ -18,6 +18,7 @@ import {
 import { HEAL_RETREAT_RATIO, PLAYER_MIN_DISTANCE } from "../base/constants";
 import { filterRunners, ignoreExceptions } from "../base/functions/general";
 import { sortClosestDistance } from "../base/functions/sort";
+import { Vector } from "../base/geometry/vector";
 import { PartyController } from "../controller/party_controller";
 import { CharacterRunner, Loop, LoopName, Strategy, StrategyName } from "./character_runner";
 
@@ -192,7 +193,7 @@ export class KiteInCircleStrategy<T extends PingCompensatedCharacter> implements
                 if (bot.rip) return;
                 await this.move(bot).catch(ignoreExceptions);
             },
-            interval: 250
+            interval: 500
         });
     }
 
@@ -201,6 +202,20 @@ export class KiteInCircleStrategy<T extends PingCompensatedCharacter> implements
     }
 
     private async move(bot: T): Promise<unknown> {
+        // If priest -> run to our low HP party member and heal
+        // If not priest -> run to our priest so he can heal us
+        if (bot.ctype == "priest") {
+            let lowHpFriend: Player = bot.getPlayer({ isDead: false, isPartyMember: true, returnLowestHP: true });
+            if (lowHpFriend && lowHpFriend.hp < lowHpFriend.max_hp * HEAL_RETREAT_RATIO && Tools.distance(bot, lowHpFriend) > bot.range) {
+                return bot.smartMove(lowHpFriend, { getWithin: bot.range * 0.8 }).catch(ignoreExceptions);
+            }
+        } else if (bot.hp < bot.max_hp * HEAL_RETREAT_RATIO) {
+            let priest: Player = bot.getPlayer({ isDead: false, isPartyMember: true, ctype: "priest", returnNearest: true });
+            if (priest && Tools.distance(bot, priest) > priest.range) {
+                return bot.smartMove(priest, { getWithin: priest.range * 0.8 }).catch(ignoreExceptions);
+            }
+        }
+
         let configPosition: IPosition | CharacterRunner<PingCompensatedCharacter> = this.config.centre;
         let configCentre: IPosition = undefined;
         if (configPosition instanceof CharacterRunner<PingCompensatedCharacter>) {
@@ -219,59 +234,76 @@ export class KiteInCircleStrategy<T extends PingCompensatedCharacter> implements
         const radius: number = this.config.radius;
         const typeList: MonsterName[] = this.config.typeList;
 
+        // If we are too far away from centre -> return back
         if (Tools.distance(bot, centre) > radius) {
             await bot.smartMove(centre, { getWithin: radius, useBlink: true }).catch(ignoreExceptions);
         }
 
-        // #TODO: Rewrite using vectors and multiple entities insted of one closest
-        if (bot.ctype == "priest") {
-            let lowHpFriend: Player = bot.getPlayer({ isDead: false, isPartyMember: true, returnLowestHP: true });
-            if (lowHpFriend && lowHpFriend.hp < lowHpFriend.max_hp * HEAL_RETREAT_RATIO && Tools.distance(bot, lowHpFriend) > bot.range) {
-                return bot.smartMove(lowHpFriend, { getWithin: bot.range * 0.8 }).catch(ignoreExceptions);
+        // if we have some entities targeting us within our attack range -> calculate avoidance vector and kite
+        let monsters: Entity[] = bot.getEntities({ typeList: typeList, targetingMe: true, withinRange: bot.range });
+        if (monsters.length > 0) {
+            let botPositionVector: Vector = new Vector(bot.x, bot.y);
+            let kitingVector: Vector = new Vector();
+            for (const monster of monsters) {
+                let entityToPlayerVector: Vector = botPositionVector.clone().subtract(new Vector(monster.x, monster.y)).normalize();
+                kitingVector.add(entityToPlayerVector);
             }
-        } else if (bot.hp < bot.max_hp * HEAL_RETREAT_RATIO) {
-            let priest: Player = bot.getPlayer({ isDead: false, isPartyMember: true, ctype: "priest", returnNearest: true });
-            if (priest && Tools.distance(bot, priest) > priest.range) {
-                return bot.smartMove(priest, { getWithin: priest.range * 0.8 }).catch(ignoreExceptions);
-            }
-        }
 
-        let monster: Entity = bot.getEntity({ typeList: typeList, returnNearest: true });
-        if (!monster) return;
-
-        let angleFromCentreToBot: number = Math.atan2(bot.y - centre.y, bot.x - centre.x);
-
-        let cw: number = angleFromCentreToBot + Math.PI / 6;
-        let ccw: number = angleFromCentreToBot - Math.PI / 6;
-
-        let cwPoint: IPosition = {
-            x: centre.x + radius * Math.cos(cw),
-            y: centre.y + radius * Math.sin(cw)
-        };
-        let ccwPoint: IPosition = {
-            x: centre.x + radius * Math.cos(ccw),
-            y: centre.y + radius * Math.sin(ccw)
-        };
-
-        let distanceFromCwToMonster: number = Tools.distance({ x: monster.x, y: monster.y }, cwPoint);
-        let distanceFromCcwToMonster: number = Tools.distance({ x: monster.x, y: monster.y }, ccwPoint);
-
-        let moveToPoint: IPosition = undefined;
-        if (distanceFromCwToMonster > bot.range && distanceFromCcwToMonster > bot.range) {
-            if (distanceFromCwToMonster > distanceFromCcwToMonster) {
-                moveToPoint = ccwPoint;
+            let pathVector: Vector = botPositionVector.add(kitingVector).multiply(bot.range);
+            let moveToPoint: IPosition = { map: bot.map, x: pathVector.x, y: pathVector.y };
+            if (Pathfinder.canWalkPath(bot, moveToPoint)) {
+                return bot.move(moveToPoint.x, moveToPoint.y, { resolveOnStart: true, disableSafetyCheck: true }).catch(ignoreExceptions);
             } else {
-                moveToPoint = cwPoint;
+                await bot.smartMove(moveToPoint, { avoidTownWarps: true, resolveOnFinalMoveStart: true }).catch(ignoreExceptions);
             }
         } else {
-            if (distanceFromCwToMonster <= distanceFromCcwToMonster) {
-                moveToPoint = ccwPoint;
-            } else {
-                moveToPoint = cwPoint;
+            // Nothing is targeting us, just stay in range of our attack
+            let monster: Entity = bot.getEntity({ typeList: typeList, returnNearest: true });
+            if (!monster) return;
+
+            if (Tools.distance(bot, monster) > bot.range) {
+                return bot
+                    .smartMove(monster, { getWithin: bot.range, avoidTownWarps: true, resolveOnFinalMoveStart: true })
+                    .catch(ignoreExceptions);
             }
         }
 
-        return bot.smartMove(moveToPoint, { resolveOnFinalMoveStart: true }).catch(ignoreExceptions);
+        // let monster: Entity = bot.getEntity({ typeList: typeList, returnNearest: true });
+        // if (!monster) return;
+
+        // let angleFromCentreToBot: number = Math.atan2(bot.y - centre.y, bot.x - centre.x);
+
+        // let cw: number = angleFromCentreToBot + Math.PI / 6;
+        // let ccw: number = angleFromCentreToBot - Math.PI / 6;
+
+        // let cwPoint: IPosition = {
+        //     x: centre.x + radius * Math.cos(cw),
+        //     y: centre.y + radius * Math.sin(cw)
+        // };
+        // let ccwPoint: IPosition = {
+        //     x: centre.x + radius * Math.cos(ccw),
+        //     y: centre.y + radius * Math.sin(ccw)
+        // };
+
+        // let distanceFromCwToMonster: number = Tools.distance({ x: monster.x, y: monster.y }, cwPoint);
+        // let distanceFromCcwToMonster: number = Tools.distance({ x: monster.x, y: monster.y }, ccwPoint);
+
+        // let moveToPoint: IPosition = undefined;
+        // if (distanceFromCwToMonster > bot.range && distanceFromCcwToMonster > bot.range) {
+        //     if (distanceFromCwToMonster > distanceFromCcwToMonster) {
+        //         moveToPoint = ccwPoint;
+        //     } else {
+        //         moveToPoint = cwPoint;
+        //     }
+        // } else {
+        //     if (distanceFromCwToMonster <= distanceFromCcwToMonster) {
+        //         moveToPoint = ccwPoint;
+        //     } else {
+        //         moveToPoint = cwPoint;
+        //     }
+        // }
+
+        // return bot.smartMove(moveToPoint, { resolveOnFinalMoveStart: true }).catch(ignoreExceptions);
     }
 }
 

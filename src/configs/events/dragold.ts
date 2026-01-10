@@ -3,7 +3,7 @@ import { MageAttackStrategy, DEFAULT_ENERGIZE } from "../../strategies/mage/mage
 import { BaseMoveStrategy } from "../../strategies/move_strategies";
 import { PriestAttackStrategy } from "../../strategies/priest/priest_attack_strategy";
 import { WarriorAttackStrategy } from "../../strategies/warrior/warrior_attack_strategy";
-import { WARRIOR_DPS, MAGE_DPS, PRIEST_TANKY } from "../equipment_setups";
+import { WARRIOR_DPS, MAGE_DPS, PRIEST_TANKY_MAGIC } from "../equipment_setups";
 import { EventConfig } from "../event_configs";
 
 export function getDragoldConfig(partyController: PartyController): EventConfig {
@@ -38,7 +38,7 @@ export function getDragoldConfig(partyController: PartyController): EventConfig 
                     disableIdleAttack: true,
                     enableAbsorbToTank: true,
                     maximumTargets: 3,
-                    equipmentSet: PRIEST_TANKY,
+                    equipmentSet: PRIEST_TANKY_MAGIC,
                     enableHealStrangers: true,
                     startHealingAtRatio: 0.8
                 }),

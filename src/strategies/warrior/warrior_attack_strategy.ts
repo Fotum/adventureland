@@ -107,6 +107,7 @@ export class WarriorAttackStrategy extends BaseAttackStrategy<Warrior> {
         if (!this.config.disableStomp) await this.stomp(bot).catch(ignoreExceptions);
         if (!this.config.disableBasicAttack) await this.basicAttack(bot, priority).catch(ignoreExceptions);
         if (!this.config.disableCleave) await this.cleave(bot).catch(ignoreExceptions);
+        if (!this.config.disableZapper) await this.zapperAttack(bot, priority).catch(ignoreExceptions);
         if (!this.config.disableIdleAttack) await this.idleAttack(bot, priority).catch(ignoreExceptions);
 
         await this.equipItems(bot);

@@ -255,18 +255,21 @@ export class CharacterRunner<T extends PingCompensatedCharacter> {
             }
 
             console.error(`Couldn't reconnect ${this.bot.name}\nCause:`, ex);
-            console.error(`Retry is: ${retry}`);
             if (retry) {
                 let wait = /wait_(\d+)_second/.exec(ex);
                 if (wait && wait[1]) {
                     this.timeouts.set(
                         "connect",
-                        setTimeout(() => this.reconnect(), 2000 + Number.parseInt(wait[1]) * 1000)
+                        setTimeout(() => {
+                            this.reconnect();
+                        }, 2000 + Number.parseInt(wait[1]) * 1000)
                     );
                 } else if (/limits/.test(ex)) {
                     this.timeouts.set(
                         "connect",
-                        setTimeout(() => this.reconnect(), Constants.RECONNECT_TIMEOUT_MS)
+                        setTimeout(() => {
+                            this.reconnect();
+                        }, Constants.RECONNECT_TIMEOUT_MS)
                     );
                 } else if (/nouser/.test(ex)) {
                     this.stop();
@@ -274,7 +277,9 @@ export class CharacterRunner<T extends PingCompensatedCharacter> {
                 } else {
                     this.timeouts.set(
                         "connect",
-                        setTimeout(() => this.reconnect, 10000)
+                        setTimeout(() => {
+                            this.reconnect();
+                        }, 10000)
                     );
                 }
             }

@@ -108,8 +108,8 @@ export async function startCharacter(
         }
 
         let baseStrategy: BaseStrategy<PingCompensatedCharacter> = new BaseStrategy(partyController, {
-            hpPotType: "hpot0",
-            mpPotType: "mpot0",
+            hpPotType: "hpot1",
+            mpPotType: "mpot1",
             useHpAt: 0.8,
             useMpAt: 0.5,
             keepPotions: { max: 5000, min: 3000 }

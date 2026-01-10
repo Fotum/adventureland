@@ -3,7 +3,7 @@ import { MageAttackStrategy, DEFAULT_ENERGIZE } from "../../strategies/mage/mage
 import { BaseMoveStrategy, HoldPositionStrategy } from "../../strategies/move_strategies";
 import { PriestAttackStrategy } from "../../strategies/priest/priest_attack_strategy";
 import { WarriorAttackStrategy } from "../../strategies/warrior/warrior_attack_strategy";
-import { WARRIOR_AOE, MAGE_AOE, PRIEST_TANKY } from "../equipment_setups";
+import { WARRIOR_AOE, MAGE_AOE, PRIEST_TANKY_MAGIC } from "../equipment_setups";
 import { SpotConfig } from "../spot_configs";
 
 export function getMoleSpotConfig(partyController: PartyController): SpotConfig {
@@ -37,7 +37,7 @@ export function getMoleSpotConfig(partyController: PartyController): SpotConfig 
                 notType: "wabbit",
                 enableGreedyAggro: true,
                 maximumTargets: 5,
-                equipmentSet: PRIEST_TANKY,
+                equipmentSet: PRIEST_TANKY_MAGIC,
                 enableAbsorbToTank: true,
                 startHealingAtRatio: 0.8
             }),

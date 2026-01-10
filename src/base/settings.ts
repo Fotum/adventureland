@@ -1,6 +1,5 @@
 import { BankPackName, ItemName, MonsterName } from "alclient";
 
-
 export const FRIENDLY_CHARACTERS: string[] = ["arMAGEdon", "aRanDonDon", "Archealer", "MerchanDiser", "Warious", "DonWar"];
 
 export const SPECIAL_MONSTERS: Map<MonsterName, boolean> = new Map<MonsterName, boolean>([
@@ -38,10 +37,21 @@ export const QUESTS: Map<MonsterName, boolean> = new Map<MonsterName, boolean>([
     ["iceroamer", false]
 ]);
 
-
 export const EXCHANGE_ITMES: Set<ItemName> = new Set<ItemName>([
-    "weaponbox", "armorbox", "gem0", "gem1", "greenenvelope", "goldenegg", "candycane", "mistletoe",
-    "candy0", "candy1", "basketofeggs", "ornament", "xbox", "candypop"
+    "weaponbox",
+    "armorbox",
+    "gem0",
+    "gem1",
+    "greenenvelope",
+    "goldenegg",
+    "candycane",
+    "mistletoe",
+    "candy0",
+    "candy1",
+    "basketofeggs",
+    "ornament",
+    "xbox",
+    "candypop"
 ]);
 export const BUY_FROM_PONTY: Map<ItemName, number> = new Map<ItemName, number>([
     ["5bucks", 100_000_000],
@@ -85,20 +95,95 @@ export const BUY_FROM_PONTY: Map<ItemName, number> = new Map<ItemName, number>([
     ["ornament", 7_200],
     ["supermittens", 20_000_000]
 ]);
-export const DISMANTLE_ITEMS: Set<ItemName> = new Set<ItemName>([
-    "firebow"
-]);
+export const DISMANTLE_ITEMS: Set<ItemName> = new Set<ItemName>(["firebow"]);
 export const SELL_ITMES: Set<ItemName> = new Set<ItemName>([
-    "basher", "bowofthedead", "candycanesword", "carrotsword", "cclaw", "coat", "coat1", "crossbow", "cupid", "dagger", "daggerofthedead", "dexamulet", "dexbelt", "dexearring", "dexring", "firecrackers",
-    "glolipop", "gloves", "gloves1", "gphelmet", "gslime", "hboots", "hbow", "hdagger", "helmet", "helmet1", "hgloves", "hhelmet", "hpamulet", "hpants", "hpbelt", "iceskates", "maceofthedead", "merry",
-    "mushroomstaff", "pants", "pants1", "phelmet", "pmace", "pmaceofthedead", "pstem", "quiver", "rapier", "rednose", "ringsj", "santasbelt", "shield", "shoes", "shoes1", "skullamulet", "smoke", "smush",
-    "snowball", "snowflakes", "spear", "spores", "sstinger", "staffofthedead", "stinger", "swifty", "sword", "swordofthedead", "t2bow", "throwingstars", "vitearring", "vitring", "vitscroll", "warmscarf",
-    "wattire", "wbook0", "wcap", "wgloves", "whiteegg", "wshoes", "xmace", "xmashat", "xmaspants", "xmasshoes", "xmassweater"
+    "basher",
+    "bowofthedead",
+    "candycanesword",
+    "carrotsword",
+    "cclaw",
+    "coat",
+    "coat1",
+    "crossbow",
+    "cupid",
+    "dagger",
+    "daggerofthedead",
+    "dexamulet",
+    "dexbelt",
+    "dexearring",
+    "dexring",
+    "firecrackers",
+    "glolipop",
+    "gloves",
+    "gloves1",
+    "gphelmet",
+    "gslime",
+    "hbow",
+    "hdagger",
+    "helmet",
+    "helmet1",
+    // Heavy armor set
+    "hhelmet",
+    "harmor",
+    "hpants",
+    "hgloves",
+    "hboots",
+    //
+    "hpamulet",
+    "hpbelt",
+    "iceskates",
+    "maceofthedead",
+    "merry",
+    "mushroomstaff",
+    "pants",
+    "pants1",
+    "phelmet",
+    "pmace",
+    "pmaceofthedead",
+    "pstem",
+    "quiver",
+    "rapier",
+    "rednose",
+    "ringsj",
+    "santasbelt",
+    "shield",
+    "shoes",
+    "shoes1",
+    "skullamulet",
+    "smoke",
+    "smush",
+    "snowball",
+    "snowflakes",
+    "spear",
+    "spores",
+    "sstinger",
+    "staffofthedead",
+    "stinger",
+    "swifty",
+    "sword",
+    "swordofthedead",
+    "t2bow",
+    "throwingstars",
+    "vitearring",
+    "vitring",
+    "vitscroll",
+    "warmscarf",
+    "wattire",
+    "wbook0",
+    "wcap",
+    "wgloves",
+    "whiteegg",
+    "wshoes",
+    "xmace",
+    "xmashat",
+    "xmaspants",
+    "xmasshoes",
+    "xmassweater"
 ]);
 type StoreItemInfo = {
-    level?: number
-    bankTab: BankPackName
-}
+    level?: number;
+    bankTab: BankPackName;
+};
 export const STORE_ITEMS: Map<ItemName, StoreItemInfo> = new Map<ItemName, StoreItemInfo>([
     ["fireblade", { bankTab: "items3", level: 6 }],
     ["firestaff", { bankTab: "items3", level: 6 }],
@@ -192,43 +277,43 @@ export const STORE_ITEMS: Map<ItemName, StoreItemInfo> = new Map<ItemName, Store
     ["egg8", { bankTab: "items6" }]
 ]);
 
-
 export type UpgradeConfig = {
-    level: number,
-    primlingAt?: number
-    offeringAt?: number
-}
+    level: number;
+    primlingAt?: number;
+    offeringAt?: number;
+};
 export const MERCHANT_UPGRADE: Map<ItemName, UpgradeConfig> = new Map<ItemName, UpgradeConfig>([
     // --- UPGRADE SECTION --- \\
     ["staff", { level: 8 }],
     ["slimestaff", { level: 8 }],
-    ["angelwings", { level: 5 }],
+    ["angelwings", { level: 6 }],
     ["cape", { level: 5 }],
     ["sshield", { level: 7 }],
-    ["mshield", { level: 6 }],
+    ["mshield", { level: 7, primlingAt: 6 }],
     ["wbreeches", { level: 8 }],
-    
+
     // Heavy set
-    ["hhelmet", { level: 5 }],
-    ["harmor", { level: 5 }],
-    ["hpants", { level: 5 }],
+    // ["hhelmet", { level: 5 }],
+    // ["harmor", { level: 7, primlingAt: 5 }],
+    // ["hpants", { level: 5 }],
 
     // Darkforge set
-    ["xhelmet", { level: 3, primlingAt: 0 }],
-    ["xarmor", { level: 3, primlingAt: 0 }],
-    ["xpants", { level: 3, primlingAt: 0 }],
+    ["xhelmet", { level: 4, primlingAt: 0 }],
+    ["xarmor", { level: 4, primlingAt: 0 }],
+    ["xpants", { level: 4, primlingAt: 0 }],
 
-    ["firestaff", { level: 8, primlingAt: 7 }],
-    ["fireblade", { level: 8, primlingAt: 7 }],
+    ["firestaff", { level: 8 }],
+    ["fireblade", { level: 8 }],
 
     ["harbringer", { level: 6 }],
     ["oozingterror", { level: 6 }],
+    ["t2quiver", { level: 6 }],
 
     ["sweaterhs", { level: 6 }],
 
     // Halloween
-    ["phelmet", { level: 6 }],
-    ["gphelmet", { level: 3 }],
+    // ["phelmet", { level: 6 }],
+    // ["gphelmet", { level: 3 }],
     ["ololipop", { level: 8, primlingAt: 6 }],
     ["glolipop", { level: 8, primlingAt: 6 }],
 
@@ -244,40 +329,45 @@ export const MERCHANT_UPGRADE: Map<ItemName, UpgradeConfig> = new Map<ItemName, 
     ["lmace", { level: 3, primlingAt: 0 }],
     ["handofmidas", { level: 5 }],
     ["bataxe", { level: 5 }],
-    ["frankypants", { level: 5, primlingAt: 0 }],
+    ["frankypants", { level: 7, primlingAt: 3 }],
 
     // Winter holidays
     ["gcape", { level: 6 }],
-    ["mittens", { level: 7 }],
-    ["ornamentstaff", { level: 7 }],
-    ["supermittens", { level: 3, primlingAt: 0 }],
+    ["mittens", { level: 8, primlingAt: 6 }],
+    ["ornamentstaff", { level: 8 }],
+    ["supermittens", { level: 5, primlingAt: 3 }],
 
     // --- COMPOUND SECTION --- \\
     // Offhands
     ["wbookhs", { level: 3 }],
 
     // Earrings
-    ["strearring", { level: 4, offeringAt: 3 }],
-    ["intearring", { level: 4, offeringAt: 3 }],
+    ["strearring", { level: 4, primlingAt: 3 }],
+    ["intearring", { level: 4, primlingAt: 3 }],
     ["lostearring", { level: 2 }],
 
     // Rings
-    ["strring", { level: 4, offeringAt: 3 }],
-    ["intring", { level: 4, offeringAt: 3 }],
+    ["strring", { level: 4, primlingAt: 3 }],
+    ["intring", { level: 4, primlingAt: 3 }],
 
     // Amulets
-    ["intamulet", { level: 4, offeringAt: 3 }],
-    ["stramulet", { level: 4, offeringAt: 3 }],
+    ["intamulet", { level: 4, primlingAt: 3 }],
+    ["stramulet", { level: 4, primlingAt: 3 }],
 
-    ["t2stramulet", { level: 3, offeringAt: 2 }],
-    ["t2intamulet", { level: 3, offeringAt: 2 }],
-    ["t2dexamulet", { level: 3, offeringAt: 2 }],
+    ["t2stramulet", { level: 3, primlingAt: 2 }],
+    ["t2intamulet", { level: 3, primlingAt: 2 }],
+    ["t2dexamulet", { level: 3, primlingAt: 2 }],
 
     // Belts
-    ["intbelt", { level: 4, offeringAt: 3 }],
-    ["strbelt", { level: 4, offeringAt: 3 }],
+    ["intbelt", { level: 4, primlingAt: 3 }],
+    ["strbelt", { level: 4, primlingAt: 3 }],
 
     // Orbs
     ["orbg", { level: 3 }],
-    ["jacko", { level: 3 }]
+    ["jacko", { level: 4, primlingAt: 3 }],
+    ["talkingskull", { level: 3 }],
+
+    ["orbofstr", { level: 4, primlingAt: 2 }],
+    ["orbofdex", { level: 4, primlingAt: 2 }],
+    ["orbofint", { level: 4, primlingAt: 2 }]
 ]);
