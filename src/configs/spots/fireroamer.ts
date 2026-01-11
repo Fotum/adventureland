@@ -12,23 +12,23 @@ const MAIN_TANK: string = "Archealer";
 const MAX_DISTANCE: number = Constants.NPC_INTERACTION_DISTANCE_SQUARED;
 class FireroamerWarriorAttackStrategy extends WarriorAttackStrategy {
     protected async attack(bot: Warrior): Promise<void> {
-        let tankEntity: Player = bot.getPlayers().find((player) => player.id == MAIN_TANK);
+        let tankEntity: Player = bot.getPlayers({ isDead: false }).find((player) => player.id == MAIN_TANK);
         if (!tankEntity || Tools.squaredDistance(bot, tankEntity) > MAX_DISTANCE) {
             return;
         }
 
-        super.attack(bot);
+        return super.attack(bot);
     }
 }
 
 class FireroamerMageAttackStrategy extends MageAttackStrategy {
     protected async attack(bot: Mage): Promise<void> {
-        let tankEntity: Player = bot.getPlayers().find((player) => player.id == MAIN_TANK);
+        let tankEntity: Player = bot.getPlayers({ isDead: false }).find((player) => player.id == MAIN_TANK);
         if (!tankEntity || Tools.squaredDistance(bot, tankEntity) > MAX_DISTANCE) {
             return;
         }
 
-        super.attack(bot);
+        return super.attack(bot);
     }
 }
 
@@ -44,10 +44,15 @@ export function getFireroamerSpotConfig(partyController: PartyController): SpotC
                 enableEquipForStomp: true
             }),
             move: new KiteInCircleStrategy({
-                centre: partyController.getRunner(partyController.config.mainTank),
+                centre: { map: "desertland", x: 241, y: -835 },
                 radius: 35,
                 typeList: ["fireroamer"]
             })
+            // move: new KiteInCircleStrategy({
+            //     centre: partyController.getRunner(partyController.config.mainTank),
+            //     radius: 35,
+            //     typeList: ["fireroamer"]
+            // })
         },
         mage: {
             attack: new FireroamerMageAttackStrategy(partyController, {

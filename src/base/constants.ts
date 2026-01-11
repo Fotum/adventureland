@@ -11,14 +11,14 @@ export const SAVE_FILES_LOCATION: string = "./settings";
 export const INFINITE_PAST: Date = new Date("1900-01-01Z00:00:00:000");
 export const INFINITE_FUTURE: Date = new Date("2100-01-01Z00:00:00:000");
 
-export const PLAYER_MIN_DISTANCE: number = 15;
+export const PLAYER_MIN_DISTANCE: number = 5;
 export const HEAL_RETREAT_RATIO: number = 0.5;
 
 export const MY_CHARACTERS: Map<string, CharacterType> = new Map<string, CharacterType>([
     ["Shalfey", "warrior"],
     ["Flamme", "priest"],
-    ["MagicFotum", "mage"]
-    // ["Momental", "merchant"]
+    ["MagicFotum", "mage"],
+    ["Momental", "merchant"]
 ]);
 // export const MY_CHARACTERS: Map<string, CharacterType> = new Map<string, CharacterType>([
 //     ["Ardy", "warrior"],

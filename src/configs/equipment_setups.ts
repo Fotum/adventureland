@@ -10,12 +10,14 @@ export const UNEQUIP: EquipInSlot = {
 
 export const WARRIOR_DPS: EquipmentSet = {
     mainhand: { name: "fireblade", filters: FILTER_HIGHEST },
-    offhand: { name: "fireblade", filters: FILTER_HIGHEST }
+    offhand: { name: "fireblade", filters: FILTER_HIGHEST },
+    orb: { name: "orbofstr", filters: FILTER_HIGHEST }
 };
 
 export const WARRIOR_AOE: EquipmentSet = {
     mainhand: { name: "ololipop", filters: FILTER_HIGHEST },
-    offhand: { name: "ololipop", filters: FILTER_HIGHEST }
+    offhand: { name: "ololipop", filters: FILTER_HIGHEST },
+    orb: { name: "orbofstr", filters: FILTER_HIGHEST }
 };
 
 export const MAGE_FAST: EquipmentSet = {

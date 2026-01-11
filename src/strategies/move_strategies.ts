@@ -252,7 +252,7 @@ export class KiteInCircleStrategy<T extends PingCompensatedCharacter> implements
             let pathVector: Vector = botPositionVector.add(kitingVector).multiply(bot.range);
             let moveToPoint: IPosition = { map: bot.map, x: pathVector.x, y: pathVector.y };
             if (Pathfinder.canWalkPath(bot, moveToPoint)) {
-                return bot.move(moveToPoint.x, moveToPoint.y, { resolveOnStart: true, disableSafetyCheck: true }).catch(ignoreExceptions);
+                return bot.move(moveToPoint.x, moveToPoint.y, { resolveOnStart: true }).catch(ignoreExceptions);
             } else {
                 await bot.smartMove(moveToPoint, { avoidTownWarps: true, resolveOnFinalMoveStart: true }).catch(ignoreExceptions);
             }

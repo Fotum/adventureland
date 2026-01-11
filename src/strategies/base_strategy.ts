@@ -27,7 +27,6 @@ export type BaseStrategyConfig = {
         max: number;
         min: number;
     };
-    disableLoot?: boolean;
 };
 export class BaseStrategy<T extends PingCompensatedCharacter> implements Strategy<T> {
     public loops: Loops<T> = new Map<LoopName, Loop<T>>();
@@ -59,7 +58,7 @@ export class BaseStrategy<T extends PingCompensatedCharacter> implements Strateg
         });
         this.loops.set("loot", {
             fn: async (bot: T) => {
-                if (this.config.disableLoot) {
+                if (this.partyController.config.disableLooting) {
                     return;
                 }
                 for (let [, chest] of bot.chests) {
@@ -129,13 +128,7 @@ export class BaseStrategy<T extends PingCompensatedCharacter> implements Strateg
         const mpRatio: number = bot.mp / bot.max_mp;
 
         // Just regen hp, since we are still pretty good
-        if (
-            bot.c.town ||
-            bot.c.fishing ||
-            bot.c.mining ||
-            bot.c.pickpocket ||
-            (hpRatio < this.config.useHpAt && mpRatio < this.config.useMpAt)
-        ) {
+        if (bot.c.town || bot.c.fishing || bot.c.mining || bot.c.pickpocket) {
             if (hpRatio <= mpRatio) return bot.regenHP();
             else return bot.regenMP();
         }

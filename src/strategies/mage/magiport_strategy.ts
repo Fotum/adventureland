@@ -10,7 +10,7 @@ export type MagiportConfig = {
 
 export const DEFAULT_MAGIPORT_CONFIG: MagiportConfig = {
     delay: 1000,
-    range: 50
+    range: 150
 };
 
 export class MagiportSmartMovingStrategy implements Strategy<Mage> {

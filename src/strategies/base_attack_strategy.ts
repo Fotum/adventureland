@@ -429,7 +429,7 @@ export class BaseAttackStrategy<T extends PingCompensatedCharacter> implements S
 
             if (
                 !bot.slots[slotType] ||
-                bot.slots[slotType].name !== equipInSlot.name ||
+                bot.slots[slotType].name != equipInSlot.name ||
                 (equipInSlot.filters?.returnHighestLevel &&
                     bot.hasItem(equipInSlot.name, bot.items, {
                         ...equipInSlot.filters,
@@ -469,6 +469,7 @@ export class BaseAttackStrategy<T extends PingCompensatedCharacter> implements S
                 if (slotType == "mainhand") {
                     let weaponType: WeaponType = Game.G.items[equipInSlot.name].wtype;
 
+                    // Double hand logic for mainhand
                     if (weaponType && doubleHandTypes && doubleHandTypes[weaponType]) {
                         if (equipmentSet.offhand && !equipmentSet.offhand.unequip) {
                             throw new Error(
@@ -488,6 +489,17 @@ export class BaseAttackStrategy<T extends PingCompensatedCharacter> implements S
                     if (weaponType && doubleHandTypes && doubleHandTypes[weaponType]) {
                         if (bot.esize <= 0) continue;
                         await bot.unequip("mainhand");
+                    }
+                }
+
+                // Dual wield check
+                if (equipBatch.some((item) => item.num == toEquip)) {
+                    let newSearch: ItemData[] = [...bot.items];
+                    newSearch[toEquip] = undefined;
+
+                    toEquip = bot.locateItem(equipInSlot.name, newSearch, equipInSlot.filters);
+                    if (toEquip == undefined) {
+                        throw new Error(`[${bot.id}]: Could not find ${equipInSlot.name} for dualwield`);
                     }
                 }
 

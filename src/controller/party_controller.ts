@@ -32,6 +32,7 @@ export type PartyControllerConfig = {
     partyAllow: string[];
     mainTank?: string;
     sendToName?: string;
+    disableLooting?: boolean;
 
     doQuests: Set<CharacterType>;
     doBosses?: boolean;
