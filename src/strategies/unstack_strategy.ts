@@ -6,10 +6,10 @@ import { Loop, LoopName, Strategy, StrategyName } from "./character_runner";
 export class UnstackStrategy<T extends PingCompensatedCharacter> implements Strategy<T> {
     public loops = new Map<LoopName, Loop<PingCompensatedCharacter>>();
 
-    private _name: StrategyName = "utility";
+    private _name: StrategyName = "unstack";
 
     public constructor() {
-        this.loops.set("avoidance", {
+        this.loops.set("unstack", {
             fn: async (bot: PingCompensatedCharacter) => {
                 if (bot.rip || bot.smartMoving || bot.moving) return;
                 await this.unstack(bot);

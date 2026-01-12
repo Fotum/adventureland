@@ -1,6 +1,6 @@
 import { Constants, Entity, GItem, Game, IPosition, MonsterName, PingCompensatedCharacter } from "alclient";
 import { EventName, KEEP_GOLD, MERCHANT_KEEP_GOLD, SEND_GOLD_AT, SpecialName } from "../base/constants";
-import { generateRandomId, mssince, sleep, ssince } from "../base/functions/general";
+import { generateRandomId, ignoreExceptions, mssince, sleep, ssince } from "../base/functions/general";
 import { SPECIAL_MONSTERS, STORE_ITEMS } from "../base/settings";
 import { NoAttackScareStrategy } from "../strategies/base_attack_strategy";
 import { CharacterRunner, Strategy } from "../strategies/character_runner";
@@ -131,7 +131,7 @@ export function getBankStoreTask(runner: CharacterRunner<PingCompensatedCharacte
         let itemsToStore = [];
         for (const [invIx, invItem] of runner.bot.getItems()) {
             for (let [itemName, itemInfo] of STORE_ITEMS) {
-                if (invItem.name == itemName && (!invItem.level || invItem.level >= itemInfo.level)) {
+                if (invItem.name == itemName && (invItem.level === undefined || invItem.level >= itemInfo.level)) {
                     let gItem: GItem = Game.G.items[itemName];
                     itemsToStore.push({
                         name: itemName,
@@ -154,13 +154,13 @@ export function getBankStoreTask(runner: CharacterRunner<PingCompensatedCharacte
 
         // Deposit gold
         if (toDepostGold > 0) {
-            await runner.bot.depositGold(toDepostGold);
+            await runner.bot.depositGold(toDepostGold).catch(ignoreExceptions);
         }
 
         // Deposit items
         for (let toStore of itemsToStore) {
             try {
-                await runner.bot.depositItem(toStore.invIx, toStore.bankTab);
+                await runner.bot.depositItem(toStore.invIx, toStore.bankTab).catch(ignoreExceptions);
             } catch (ex) {
                 console.error("bank_store", ex);
             }

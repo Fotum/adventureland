@@ -178,7 +178,9 @@ export const SELL_ITMES: Set<ItemName> = new Set<ItemName>([
     "xmashat",
     "xmaspants",
     "xmasshoes",
-    "xmassweater"
+    "xmassweater",
+
+    "mcape"
 ]);
 type StoreItemInfo = {
     level?: number;
@@ -302,8 +304,8 @@ export const MERCHANT_UPGRADE: Map<ItemName, UpgradeConfig> = new Map<ItemName, 
     ["xarmor", { level: 4, primlingAt: 0 }],
     ["xpants", { level: 4, primlingAt: 0 }],
 
-    ["firestaff", { level: 8 }],
-    ["fireblade", { level: 8 }],
+    ["firestaff", { level: 8, primlingAt: 7 }],
+    ["fireblade", { level: 8, primlingAt: 7 }],
 
     ["harbringer", { level: 6 }],
     ["oozingterror", { level: 6 }],
@@ -324,7 +326,7 @@ export const MERCHANT_UPGRADE: Map<ItemName, UpgradeConfig> = new Map<ItemName, 
     ["pinkie", { level: 7 }],
     ["eslippers", { level: 7 }],
 
-    ["mcape", { level: 7, primlingAt: 6 }],
+    // ["mcape", { level: 7, primlingAt: 6 }],
     ["wingedboots", { level: 7 }],
     ["lmace", { level: 3, primlingAt: 0 }],
     ["handofmidas", { level: 5 }],

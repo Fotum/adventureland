@@ -40,23 +40,23 @@ export type FilterRunnersOptions = {
     serverData?: ServerData;
 };
 export function filterRunners(
-    executors: CharacterRunner<PingCompensatedCharacter>[],
+    runners: CharacterRunner<PingCompensatedCharacter>[],
     filters: FilterRunnersOptions = {}
 ): CharacterRunner<PingCompensatedCharacter>[] {
-    let filteredExecutors: CharacterRunner<PingCompensatedCharacter>[] = [];
-    for (let executor of executors) {
-        if (!executor.isReady()) continue;
-        if (filters.owner && executor.bot.owner !== filters.owner) continue;
+    let filteredRunners: CharacterRunner<PingCompensatedCharacter>[] = [];
+    for (let runner of runners) {
+        if (!runner.isReady()) continue;
+        if (filters.owner && runner.bot.owner !== filters.owner) continue;
         if (
             filters.serverData &&
-            (filters.serverData.region !== executor.bot.serverData.region || filters.serverData.name !== executor.bot.serverData.name)
+            (filters.serverData.region !== runner.bot.serverData.region || filters.serverData.name !== runner.bot.serverData.name)
         )
             continue;
 
-        filteredExecutors.push(executor);
+        filteredRunners.push(runner);
     }
 
-    return filteredExecutors;
+    return filteredRunners;
 }
 
 export async function sleep(ms: number): Promise<void> {
@@ -184,7 +184,11 @@ export async function startCharacter(
         }
 
         if (runner.bot.ctype != "merchant") {
-            runner.applyStrategy(new BaseInventoryStrategy(partyController));
+            runner.applyStrategy(new BaseInventoryStrategy(partyController, { enableSend: true, enableSell: true }));
+        } else {
+            runner.applyStrategy(
+                new BaseInventoryStrategy(partyController, { enableSell: true, enableExchange: true, enableDismantle: true })
+            );
         }
 
         runner.applyStrategy(new UnstackStrategy());

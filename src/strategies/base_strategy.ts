@@ -7,14 +7,28 @@ import {
     GItem,
     Game,
     IPosition,
+    Item,
+    ItemData,
     ItemName,
     PingCompensatedCharacter,
+    Player,
     Tools
 } from "alclient";
 import { LRUCache } from "lru-cache";
-import { KEEP_GOLD, KEEP_ITEMS, PotionName, REPLENISHABLES, REPLENISH_RATIO, SEND_GOLD_AT } from "../base/constants";
-import { ignoreExceptions } from "../base/functions/general";
-import { SELL_ITMES } from "../base/settings";
+import {
+    KEEP_GOLD,
+    KEEP_ITEMS,
+    MERCHANT_KEEP_GOLD,
+    MERCHANT_KEEP_ITEMS,
+    MERCHANT_REPLENISHABLES,
+    MERCHANT_REPLENISH_RATIO,
+    PotionName,
+    REPLENISHABLES,
+    REPLENISH_RATIO,
+    SEND_GOLD_AT
+} from "../base/constants";
+import { filterRunners, ignoreExceptions } from "../base/functions/general";
+import { DISMANTLE_ITEMS, EXCHANGE_ITMES, SELL_ITMES } from "../base/settings";
 import { PartyController } from "../controller/party_controller";
 import { Loop, LoopName, Loops, Strategy, StrategyName } from "./character_runner";
 
@@ -239,27 +253,53 @@ export class BaseStrategy<T extends PingCompensatedCharacter> implements Strateg
     }
 }
 
+export type BaseInventoryConfig = {
+    enableSend?: boolean;
+    enableSell?: boolean;
+    enableExchange?: boolean;
+    enableDismantle?: boolean;
+};
 export class BaseInventoryStrategy<T extends PingCompensatedCharacter> implements Strategy<T> {
     public loops = new Map<LoopName, Loop<T>>();
 
     private _name: StrategyName = "inventory";
 
     protected partyController: PartyController;
+    protected config: BaseInventoryConfig;
 
-    public constructor(partyController: PartyController) {
+    public constructor(partyController: PartyController, config: BaseInventoryConfig) {
         this.partyController = partyController;
+        this.config = config;
 
         this.loops.set("inventory", {
             fn: async (bot: T) => {
-                await this.handleInventory(bot).catch(ignoreExceptions);
+                if (bot.rip) return;
+
+                await this.moveOverflowItems(bot).catch(ignoreExceptions);
+                await this.stackItems(bot).catch(ignoreExceptions);
+                await this.sendItems(bot).catch(ignoreExceptions);
+                await this.sellItems(bot).catch(ignoreExceptions);
+                await this.dismantleItems(bot).catch(ignoreExceptions);
             },
-            interval: 1000
+            interval: 5000
         });
         this.loops.set("resuppply", {
             fn: async (bot: T) => {
-                await this.handleReplenishables(bot).catch(ignoreExceptions);
+                if (bot.rip) return;
+                if (bot.map.startsWith("bank")) return;
+
+                if (bot.ctype != "merchant") await this.restockReplenishables(bot).catch(ignoreExceptions);
+                else await this.restockScrolls(bot).catch(ignoreExceptions);
             },
             interval: 60_000
+        });
+        this.loops.set("exchange", {
+            fn: async (bot: T) => {
+                if (bot.rip) return;
+
+                await this.exchangeItems(bot).catch(ignoreExceptions);
+            },
+            interval: 250
         });
     }
 
@@ -267,48 +307,8 @@ export class BaseInventoryStrategy<T extends PingCompensatedCharacter> implement
         return this._name;
     }
 
-    protected async handleInventory(bot: T): Promise<void> {
-        if (bot.rip) return;
-        if (bot.map.startsWith("bank")) return;
-
-        const sendToName: string = this.partyController.config.sendToName;
-        if (!sendToName) return;
-
-        const sendToBot: PingCompensatedCharacter | undefined = this.partyController
-            .getRunners()
-            .find((runner) => runner.bot.name == sendToName)?.bot;
-        const hasDistance: boolean = sendToBot && Tools.squaredDistance(bot, sendToBot) < Constants.NPC_INTERACTION_DISTANCE_SQUARED;
-
-        if (hasDistance && bot.gold >= KEEP_GOLD * SEND_GOLD_AT) {
-            bot.sendGold(sendToName, bot.gold - KEEP_GOLD).catch(console.error);
-        }
-
-        for (const [ix, item] of bot.getItems()) {
-            if (item.l) continue;
-            if (item.level && item.level !== 0) continue;
-            if (KEEP_ITEMS.has(item.name)) continue;
-
-            if (SELL_ITMES.has(item.name) && bot.canSell()) {
-                bot.sell(ix, item.q ?? 1).catch(console.error);
-            } else if (hasDistance) {
-                let canSend: boolean = true;
-                if (sendToBot.esize == 0) {
-                    if (item.q) {
-                        let maxStack: number = Game.G.items[item.name].s ?? 1;
-                        let targetHas: number = sendToBot.countItem(item.name, sendToBot.items, { pvpMarked: item.v !== undefined });
-                        canSend = targetHas > 0 && targetHas + item.q <= maxStack;
-                    } else {
-                        canSend = false;
-                    }
-                }
-
-                if (canSend) await bot.sendItem(sendToName, ix, item.q ?? 1).catch(ignoreExceptions);
-            }
-        }
-    }
-
     // TODO#: This is not working that way. Have to create replenishables task for merchant? probably
-    protected async handleReplenishables(bot: T): Promise<void> {
+    private async restockReplenishables(bot: T): Promise<void> {
         for (const [item, amount] of REPLENISHABLES) {
             let currHave: number = bot.countItem(item);
 
@@ -319,6 +319,167 @@ export class BaseInventoryStrategy<T extends PingCompensatedCharacter> implement
             if (bot.canBuy(item, { quantity: toBuy })) {
                 await bot.buy(item, toBuy).catch(ignoreExceptions);
             }
+        }
+    }
+
+    private async restockScrolls(bot: T): Promise<void> {
+        for (const [scroll, amount] of MERCHANT_REPLENISHABLES) {
+            if (!amount || amount == 0) continue;
+
+            let replenishWhen: number = Math.round(amount * MERCHANT_REPLENISH_RATIO);
+            let currScrolls: number = bot.countItem(scroll);
+            if (currScrolls > replenishWhen) continue;
+
+            if (bot.esize <= 0 && currScrolls == 0) {
+                console.warn(`[${bot.ctype}]: Cannot buy scrolls of type "${scroll}". No inventory space left`);
+                continue;
+            }
+            let needToBuy: number = amount - currScrolls;
+            if (!bot.canBuy(scroll, { quantity: needToBuy })) continue;
+
+            await bot.buy(scroll, needToBuy).catch(console.error);
+        }
+    }
+
+    private async moveOverflowItems(bot: T): Promise<void> {
+        for (let i = bot.isize; i < bot.items.length; i++) {
+            let item1: ItemData = bot.items[i];
+            if (!item1) continue;
+
+            for (let j = 0; j < bot.isize; j++) {
+                let item2: ItemData = bot.items[j];
+                if (item2) continue;
+
+                await bot.swapItems(i, j).catch(ignoreExceptions);
+                break;
+            }
+        }
+    }
+
+    private async stackItems(bot: T): Promise<void> {
+        for (let i = 0; i < bot.isize - 1; i++) {
+            let item1: ItemData = bot.items[i];
+            if (!item1 || !item1.q) continue;
+
+            let gItem: GItem = Game.G.items[item1.name];
+            if (item1.q == gItem.s) continue;
+
+            for (let j = i + 1; j < bot.isize; j++) {
+                let item2: ItemData = bot.items[j];
+                if (!item2) continue;
+                if (item2.v && !item1.v) continue;
+
+                if (item2.name != item1.name || item2.p != item1.p || item2.q == gItem.s) continue;
+
+                if (item1.q + item2.q <= gItem.s) {
+                    await bot.swapItems(j, i).catch(ignoreExceptions);
+                } else if (bot.esize) {
+                    let newSlot: number = await bot.splitItem(j, gItem.s - item1.q);
+                    await bot.swapItems(newSlot, i).catch(ignoreExceptions);
+                }
+            }
+        }
+    }
+
+    private async sendItems(bot: T): Promise<void> {
+        if (!this.config.enableSend) return;
+        if (!this.partyController.config.sendToName) return;
+        if (bot.id == this.partyController.config.sendToName) return;
+
+        const sendToName: string = this.partyController.config.sendToName;
+        let sendTo: PingCompensatedCharacter | Player = bot.players.get(sendToName);
+        if (!sendTo || Tools.squaredDistance(bot, sendTo) >= Constants.NPC_INTERACTION_DISTANCE_SQUARED) return;
+
+        for (const runner of filterRunners(this.partyController.getRunners(), { serverData: bot.serverData })) {
+            if (runner.bot.id != sendToName) continue;
+            sendTo = runner.bot;
+            break;
+        }
+
+        // Send gold
+        let sendGoldAmt: number = 0;
+        if (bot.ctype != "merchant" && bot.gold >= KEEP_GOLD * SEND_GOLD_AT) {
+            sendGoldAmt = bot.gold - KEEP_GOLD;
+        } else if (bot.ctype == "merchant" && bot.gold >= MERCHANT_KEEP_GOLD * SEND_GOLD_AT) {
+            sendGoldAmt = bot.gold - MERCHANT_KEEP_GOLD;
+        }
+        if (sendGoldAmt > 0) await bot.sendGold(sendToName, bot.gold - KEEP_GOLD).catch(ignoreExceptions);
+
+        // Send items
+        let keepItems: Set<ItemName> = bot.ctype != "merchant" ? KEEP_ITEMS : MERCHANT_KEEP_ITEMS;
+        for (const [ix, item] of bot.getItems()) {
+            if (item.l) continue;
+            if (item.level && item.level > 0) continue;
+            if (keepItems.has(item.name)) continue;
+
+            if (SELL_ITMES.has(item.name) && bot.canSell()) continue;
+            if (DISMANTLE_ITEMS.has(item.name) && bot.canDismantle(item.name)) continue;
+
+            if (sendTo instanceof PingCompensatedCharacter && sendTo.esize == 0) {
+                if (!item.q) continue;
+                if (
+                    !sendTo.hasItem(item.name, sendTo.items, {
+                        pvpMarked: item.v !== undefined,
+                        quantityLessThan: Game.G.items[item.name].s + 1 - item.q
+                    })
+                )
+                    continue;
+            }
+
+            await bot.sendItem(sendToName, ix, item.q ?? 1).catch(ignoreExceptions);
+        }
+    }
+
+    private async sellItems(bot: T): Promise<void> {
+        if (!this.config.enableSell) return;
+        if (bot.map.startsWith("bank")) return;
+
+        let keepItems: Set<ItemName> = bot.ctype != "merchant" ? KEEP_ITEMS : MERCHANT_KEEP_ITEMS;
+        for (const [ix, item] of bot.getItems()) {
+            if (item.l) continue;
+            if (item.level && item.level > 0) continue;
+            if (keepItems.has(item.name)) continue;
+
+            if (bot.canSell()) {
+                await bot.sell(ix, item.q ?? 1).catch(ignoreExceptions);
+            }
+        }
+    }
+
+    private async exchangeItems(bot: T): Promise<unknown> {
+        if (!this.config.enableExchange) return;
+        if (bot.map.startsWith("bank")) return;
+        if (bot.esize <= 1) return;
+
+        let keepItems: Set<ItemName> = bot.ctype != "merchant" ? KEEP_ITEMS : MERCHANT_KEEP_ITEMS;
+        const itemsToExchange: [number, Item][] = [];
+        for (const [ix, item] of bot.getItems()) {
+            if (item.l) continue;
+            if (keepItems.has(item.name)) continue;
+            if (!EXCHANGE_ITMES.has(item.name)) continue;
+            if (!bot.canExchange(item.name)) continue;
+
+            itemsToExchange.push([ix, item]);
+        }
+        if (itemsToExchange.length == 0) return;
+
+        itemsToExchange.sort((a, b) => (a[1].q ?? 1) - (b[1].q ?? 1));
+        return bot.exchange(itemsToExchange[0][0]).catch(ignoreExceptions);
+    }
+
+    private async dismantleItems(bot: T): Promise<void> {
+        if (!this.config.enableDismantle) return;
+        if (bot.map.startsWith("bank")) return;
+
+        let keepItems: Set<ItemName> = bot.ctype != "merchant" ? KEEP_ITEMS : MERCHANT_KEEP_ITEMS;
+        for (const [ix, item] of bot.getItems()) {
+            if (item.l) continue;
+            if (item.level && item.level > 0) continue;
+            if (keepItems.has(item.name)) continue;
+            if (!DISMANTLE_ITEMS.has(item.name)) continue;
+            if (!bot.canDismantle(item.name)) continue;
+
+            await bot.dismantle(ix).catch(ignoreExceptions);
         }
     }
 }

@@ -31,7 +31,7 @@ const PARTY_CONTROLLER: PartyController = new PartyController({
     doQuests: new Set<CharacterType>(),
     doBosses: true,
     doCyberland: true,
-    doBanking: false
+    doBanking: true
 });
 async function run(): Promise<void> {
     // Start characters

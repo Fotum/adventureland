@@ -20,11 +20,22 @@ export type Loop<T> = {
 };
 export type Loops<T> = Map<LoopName, Loop<T>>;
 
-export type StrategyName = "admin" | "base" | "attack" | "move" | "party" | "party_heal" | "magiport" | "upgrade" | "inventory" | "utility";
+export type StrategyName =
+    | "admin"
+    | "base"
+    | "attack"
+    | "move"
+    | "unstack"
+    | "party"
+    | "party_heal"
+    | "magiport"
+    | "upgrade"
+    | "inventory"
+    | "utility";
 export type LoopName =
     | "attack"
     | "move"
-    | "avoidance"
+    | "unstack"
     | "use_pots"
     | "buy_pots"
     | "loot"
@@ -36,7 +47,8 @@ export type LoopName =
     | "upgrade"
     | "ponty"
     | "inventory"
-    | "resuppply";
+    | "resuppply"
+    | "exchange";
 
 export interface Strategy<T> {
     name: StrategyName;

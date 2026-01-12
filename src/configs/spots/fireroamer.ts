@@ -44,15 +44,10 @@ export function getFireroamerSpotConfig(partyController: PartyController): SpotC
                 enableEquipForStomp: true
             }),
             move: new KiteInCircleStrategy({
-                centre: { map: "desertland", x: 241, y: -835 },
-                radius: 35,
+                centre: { map: "desertland", x: 221, y: -804 },
+                radius: 150,
                 typeList: ["fireroamer"]
             })
-            // move: new KiteInCircleStrategy({
-            //     centre: partyController.getRunner(partyController.config.mainTank),
-            //     radius: 35,
-            //     typeList: ["fireroamer"]
-            // })
         },
         mage: {
             attack: new FireroamerMageAttackStrategy(partyController, {
@@ -65,8 +60,8 @@ export function getFireroamerSpotConfig(partyController: PartyController): SpotC
                 energize: DEFAULT_ENERGIZE
             }),
             move: new KiteInCircleStrategy({
-                centre: { map: "desertland", x: 241, y: -835 },
-                radius: 35,
+                centre: { map: "desertland", x: 221, y: -804 },
+                radius: 150,
                 typeList: ["fireroamer"]
             })
         },

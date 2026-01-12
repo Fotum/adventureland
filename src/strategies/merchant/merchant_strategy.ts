@@ -1,13 +1,10 @@
 import { Character, Constants, GItem, Game, Item, ItemDataTrade, Merchant, Pathfinder, Player, Tools } from "alclient";
-import { MERCHANT_KEEP_ITEMS, MERCHANT_REPLENISHABLES, MERCHANT_REPLENISH_RATIO } from "../../base/constants";
 import { filterRunners, ignoreExceptions } from "../../base/functions/general";
-import { BUY_FROM_PONTY, DISMANTLE_ITEMS, EXCHANGE_ITMES, SELL_ITMES } from "../../base/settings";
+import { BUY_FROM_PONTY } from "../../base/settings";
 import { PartyController } from "../../controller/party_controller";
 import { Loop, LoopName, Strategy, StrategyName } from "../character_runner";
 
 export type MerchantConfig = {
-    enableExchange?: boolean;
-    enableDismantle?: boolean;
     enableFishing?: boolean;
     enableMining?: boolean;
     enablePonty?: boolean;
@@ -20,8 +17,6 @@ export type MerchantConfig = {
 };
 
 export const DEFAULT_MERCHANT_CONFIG: MerchantConfig = {
-    enableExchange: true,
-    enableDismantle: true,
     enablePonty: true,
     enableMluck: {
         runners: true,
@@ -58,13 +53,6 @@ export class MerchantStrategy implements Strategy<Merchant> {
                 interval: 3000
             });
         }
-        this.loops.set("inventory", {
-            fn: async (bot: Merchant) => {
-                this.handleInventory(bot).catch(ignoreExceptions);
-                await this.restockScrolls(bot).catch(ignoreExceptions);
-            },
-            interval: 1000
-        });
     }
 
     public get name() {
@@ -105,47 +93,6 @@ export class MerchantStrategy implements Strategy<Merchant> {
             for (let player of bot.getPlayers({ isNPC: false, withinRange: "mluck" })) {
                 if (!shouldMluck(player)) continue;
                 return bot.mluck(player.id).catch(ignoreExceptions);
-            }
-        }
-    }
-
-    protected async restockScrolls(bot: Merchant): Promise<void> {
-        if (bot.rip) return;
-        if (bot.map.startsWith("bank")) return;
-
-        for (let [scroll, amount] of MERCHANT_REPLENISHABLES) {
-            if (!amount || amount == 0) continue;
-
-            let replenishWhen: number = Math.round(amount * MERCHANT_REPLENISH_RATIO);
-            let currScrolls: number = bot.countItem(scroll);
-            if (currScrolls > replenishWhen) continue;
-
-            if (bot.esize <= 0 && currScrolls == 0) {
-                console.warn(`[${bot.ctype}]: Cannot buy scrolls of type "${scroll}". No inventory space left`);
-                continue;
-            }
-            let needToBuy: number = amount - currScrolls;
-            if (!bot.canBuy(scroll, { quantity: needToBuy })) continue;
-
-            await bot.buy(scroll, needToBuy).catch(console.error);
-        }
-    }
-
-    protected async handleInventory(bot: Merchant): Promise<void> {
-        if (bot.rip) return;
-        if (bot.map.startsWith("bank")) return;
-
-        for (const [ix, item] of bot.getItems()) {
-            if (item.l) continue;
-            if (MERCHANT_KEEP_ITEMS.has(item.name)) continue;
-
-            let isLeveled: boolean = item.level && item.level > 0;
-            if (!isLeveled && bot.canSell() && SELL_ITMES.has(item.name)) {
-                bot.sell(ix, item.q ?? 1).catch(console.error);
-            } else if (this.config.enableExchange && bot.esize > 0 && bot.canExchange(item.name) && EXCHANGE_ITMES.has(item.name)) {
-                bot.exchange(ix).catch(console.error);
-            } else if (this.config.enableDismantle && !isLeveled && DISMANTLE_ITEMS.has(item.name) && bot.canDismantle(item.name)) {
-                bot.dismantle(ix).catch(console.error);
             }
         }
     }
