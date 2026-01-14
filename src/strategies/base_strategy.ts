@@ -1,7 +1,7 @@
 import {
     Attribute,
-    Character,
     ChestData,
+    ChestLootData,
     ChestOpenedData,
     Constants,
     GItem,
@@ -14,7 +14,6 @@ import {
     Player,
     Tools
 } from "alclient";
-import { LRUCache } from "lru-cache";
 import {
     KEEP_GOLD,
     KEEP_ITEMS,
@@ -45,7 +44,7 @@ export type BaseStrategyConfig = {
 export class BaseStrategy<T extends PingCompensatedCharacter> implements Strategy<T> {
     public loops: Loops<T> = new Map<LoopName, Loop<T>>();
 
-    protected static recentlyLooted = new LRUCache<string, boolean>({ max: 10 });
+    // protected static recentlyLooted = new LRUCache<string, boolean>({ max: 10 });
 
     private _name: StrategyName = "base";
     private partyController: PartyController;
@@ -72,11 +71,14 @@ export class BaseStrategy<T extends PingCompensatedCharacter> implements Strateg
         });
         this.loops.set("loot", {
             fn: async (bot: T) => {
-                if (this.partyController.config.disableLooting) {
-                    return;
-                }
-                for (let [, chest] of bot.chests) {
-                    await this.lootChest(bot, chest).catch(ignoreExceptions);
+                for (const [, chest] of bot.chests) {
+                    await this.lootChest(bot, chest)
+                        .then((data) => {
+                            console.log(`[${bot.ctype}]: Successfully looted simple ${data.id}`);
+                            let lootData: ChestLootData = data as unknown as ChestLootData;
+                            console.log(`[${bot.ctype}]: Gold: ${lootData.gold}\nItems: ${lootData.items.map((item) => item.name)}`);
+                        })
+                        .catch(ignoreExceptions);
                 }
             },
             interval: 250
@@ -105,9 +107,15 @@ export class BaseStrategy<T extends PingCompensatedCharacter> implements Strateg
         }
 
         this.lootOnDrop = (data: ChestData) => {
-            this.lootChest(bot, data).catch(console.error);
+            this.lootChest(bot, data)
+                .then((data) => () => {
+                    console.log(`[${bot.ctype}]: Successfully looted onDrop ${data.id}`);
+                    let lootData: ChestLootData = data as unknown as ChestLootData;
+                    console.log(`[${bot.ctype}]: Gold: ${lootData.gold}\nItems: ${lootData.items.map((item) => item.name)}`);
+                })
+                .catch(console.error);
         };
-        bot.socket.on("drop", this.lootOnDrop);
+        bot.socket.on("drop", this.lootOnDrop.bind(this));
     }
 
     public onRemove(bot: T): void {
@@ -204,26 +212,15 @@ export class BaseStrategy<T extends PingCompensatedCharacter> implements Strateg
 
     private async lootChest(bot: T, chest: ChestData): Promise<ChestOpenedData> {
         if (bot.rip) return;
-        if (Tools.squaredDistance(chest, bot) > Constants.NPC_INTERACTION_DISTANCE_SQUARED) return;
-        if (BaseStrategy.recentlyLooted.has(chest.id)) return;
 
-        let mf: number = 0;
-        let mfer: Character;
-        for (const myBot of this.partyController.getRunners()) {
-            const friend = myBot.bot;
-            if (friend.serverData.region !== bot.serverData.region || friend.serverData.name !== bot.serverData.name) continue;
-            if (!friend.chests.has(chest.id)) continue; // Friend dont have this chest
-            if (Tools.squaredDistance(chest, friend) > Constants.NPC_INTERACTION_DISTANCE_SQUARED) continue; // Chest is too far away from him
-            if (friend.goldm > mf) {
-                mf = friend.goldm;
-                mfer = friend;
-            }
+        let looter: PingCompensatedCharacter | Player = bot.players.get(this.partyController.config.looter);
+        if (!looter || Tools.squaredDistance(chest, looter) > Constants.NPC_INTERACTION_DISTANCE_SQUARED || looter.rip) {
+            looter = bot;
         }
+        if (looter.id != bot.id) return;
 
-        if (mfer && mfer !== bot) return; // Someone with better mf is around, let them loot
+        if (Tools.squaredDistance(chest, looter) > Constants.NPC_INTERACTION_DISTANCE_SQUARED) return;
 
-        // Loot it
-        BaseStrategy.recentlyLooted.set(chest.id, true);
         return bot.openChest(chest.id);
     }
 
@@ -439,10 +436,10 @@ export class BaseInventoryStrategy<T extends PingCompensatedCharacter> implement
             if (item.l) continue;
             if (item.level && item.level > 0) continue;
             if (keepItems.has(item.name)) continue;
+            if (!SELL_ITMES.has(item.name)) continue;
+            if (!bot.canSell()) continue;
 
-            if (bot.canSell()) {
-                await bot.sell(ix, item.q ?? 1).catch(ignoreExceptions);
-            }
+            await bot.sell(ix, item.q ?? 1).catch(ignoreExceptions);
         }
     }
 

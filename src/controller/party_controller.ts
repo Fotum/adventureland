@@ -32,12 +32,13 @@ export type PartyControllerConfig = {
     partyAllow: string[];
     mainTank?: string;
     sendToName?: string;
-    disableLooting?: boolean;
 
-    doQuests: Set<CharacterType>;
-    doBosses?: boolean;
-    doCyberland?: boolean;
-    doBanking?: boolean;
+    looter?: string;
+    doQuests?: Set<CharacterType>;
+
+    enableBosses?: boolean;
+    enableCyberland?: boolean;
+    enableBanking?: boolean;
 };
 export type RunnerState = {
     currTask: RunnerTask;
@@ -101,7 +102,7 @@ export class PartyController {
                 }
 
                 // Push get/complete quest task
-                if (this.config.doQuests.has(runner.bot.ctype) && !currState.taskQueue.some((task) => task.name == "quest")) {
+                if (this.config.doQuests?.has(runner.bot.ctype) && !currState.taskQueue.some((task) => task.name == "quest")) {
                     if (!runner.bot.s.monsterhunt) {
                         let questTask: RunnerTask | undefined = getInteractWithQuestNpcTask(runner, "get");
                         if (questTask) {
@@ -120,7 +121,7 @@ export class PartyController {
                     let taskTimers = currState.taskTimers;
                     // Go default merchant route checking bosses
                     if (
-                        this.config.doBosses &&
+                        this.config.enableBosses &&
                         currState.currTask.name != "bcheck" &&
                         (!taskTimers.get("bcheck") || msince(taskTimers.get("bcheck")) >= 3) &&
                         !currState.taskQueue.some((task) => task.name == "bcheck")
@@ -133,7 +134,7 @@ export class PartyController {
 
                     // Check cyberland
                     if (
-                        this.config.doCyberland &&
+                        this.config.enableCyberland &&
                         currState.currTask.name != "cyberland" &&
                         (!taskTimers.get("cyberland") || msince(taskTimers.get("cyberland")) >= 5) &&
                         !currState.taskQueue.some((task) => task.name == "cyberland")
@@ -143,7 +144,7 @@ export class PartyController {
 
                     // Do banking
                     if (
-                        this.config.doBanking &&
+                        this.config.enableBanking &&
                         currState.currTask.name != "bank" &&
                         (!taskTimers.get("bank") || msince(taskTimers.get("bank")) >= 5) &&
                         !currState.taskQueue.some((task) => task.name == "bank")
@@ -157,7 +158,7 @@ export class PartyController {
                 // Return to farm or quest if there is nothing else to do
                 if (currState.currTask.isComplete && currState.taskQueue.length == 0) {
                     // If we have some active quest -> do it
-                    if (this.config.doQuests.has(runner.bot.ctype) && runner.bot.s.monsterhunt && currState.currTask.name != "quest") {
+                    if (this.config.doQuests?.has(runner.bot.ctype) && runner.bot.s.monsterhunt && currState.currTask.name != "quest") {
                         // Check if we can complete it
                         let questTarget: MonsterName = runner.bot.s.monsterhunt.id;
                         if (QUESTS.get(questTarget)) {
@@ -177,7 +178,7 @@ export class PartyController {
             }
 
             // Check bosses and push boss task
-            if (this.config.doBosses) {
+            if (this.config.enableBosses) {
                 // Check bosses around characters
                 let preparedSpecials: PreparedSpecialMonster[] = getBossesAroundCharacters(this);
                 // Check global events

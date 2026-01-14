@@ -57,7 +57,7 @@ export class RequestParty<T extends PingCompensatedCharacter> implements Strateg
     }
 
     private async requestParty(bot: T): Promise<void> {
-        if (!bot.partyData?.list?.includes(this.partyLeader)) {
+        if (!bot.partyData?.list.includes(this.partyLeader)) {
             return bot.sendPartyRequest(this.partyLeader).catch(console.error);
         }
     }

@@ -106,7 +106,7 @@ export class MerchantStrategy implements Strategy<Merchant> {
             return;
         let pontyItems: ItemDataTrade[] = await bot.getPontyItems();
 
-        for (let item of pontyItems) {
+        for (const item of pontyItems) {
             if (!BUY_FROM_PONTY.has(item.name)) continue;
             let buyPrice: number = BUY_FROM_PONTY.get(item.name);
 

@@ -56,13 +56,13 @@ export class PriestAttackStrategy extends BaseAttackStrategy<Priest> {
             return;
         }
 
-        await this.equipItems(bot);
+        await this.equipItems(bot).catch(console.error);
 
         if (!this.config.disableBasicAttack) await this.basicAttack(bot, this.botSort).catch(ignoreExceptions);
         if (!this.config.disableIdleAttack) await this.idleAttack(bot, this.botSort).catch(ignoreExceptions);
         if (!this.config.disableAbsorb) await this.absorbTargets(bot).catch(ignoreExceptions);
 
-        await this.equipItems(bot);
+        await this.equipItems(bot).catch(console.error);
     }
 
     protected async basicAttack(bot: Priest, priority: (a: Entity, b: Entity) => boolean): Promise<unknown> {
@@ -146,7 +146,7 @@ export class PriestAttackStrategy extends BaseAttackStrategy<Priest> {
             });
         }
 
-        // Noone to absort
+        // Noone to absorb
         if (!entity) return;
 
         let player: Player = bot.players.get(entity.target);

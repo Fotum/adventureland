@@ -148,7 +148,7 @@ export function getBankStoreTask(runner: CharacterRunner<PingCompensatedCharacte
         let toDepostGold: number = 0;
         if (runner.bot.ctype == "merchant" && runner.bot.gold >= MERCHANT_KEEP_GOLD * SEND_GOLD_AT) {
             toDepostGold = runner.bot.gold - MERCHANT_KEEP_GOLD;
-        } else if (runner.bot.gold >= KEEP_GOLD * SEND_GOLD_AT) {
+        } else if (runner.bot.ctype != "merchant" && runner.bot.gold >= KEEP_GOLD * SEND_GOLD_AT) {
             toDepostGold = runner.bot.gold - KEEP_GOLD;
         }
 
@@ -273,12 +273,10 @@ export function getCheckCyberlandTask(runner: CharacterRunner<PingCompensatedCha
             });
         signal.throwIfAborted();
 
+        await sleep(1000);
         runner.bot.socket.emit("eval", { command: "give spares" });
         await sleep(2000);
 
-        for (let [chestId] of runner.bot.chests) {
-            await runner.bot.openChest(chestId);
-        }
         await runner.bot.smartMove("main");
     };
 

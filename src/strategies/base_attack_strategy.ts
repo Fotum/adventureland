@@ -460,6 +460,9 @@ export class BaseAttackStrategy<T extends PingCompensatedCharacter> implements S
                         toEquip = await bot.unequip("earring2");
                     } else if (slotType == "earring2" && bot.slots["earring1"]?.name == equipInSlot.name && bot.esize > 0) {
                         toEquip = await bot.unequip("earring1");
+                    } else if (slotType == "elixir") {
+                        // #TODO: this should not try to find elixir if there is no such in toEquip
+                        continue;
                     } else {
                         throw new Error(`[${bot.id}]: Could not find ${equipInSlot.name} to equip in slot ${slotType}`);
                     }

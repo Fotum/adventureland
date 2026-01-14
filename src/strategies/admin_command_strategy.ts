@@ -1,6 +1,5 @@
 import { CharacterType, PingCompensatedCharacter, ServerIdentifier, ServerRegion } from "alclient";
 import { startCharacter } from "../base/functions/general";
-import { SpotConfig, getSpotConfig } from "../configs/spot_configs";
 import { PartyController } from "../controller/party_controller";
 import { CharacterRunner, Strategy, StrategyName } from "./character_runner";
 
@@ -44,17 +43,13 @@ export class AdminCommandStrategy<T extends PingCompensatedCharacter> implements
                         break;
                     }
 
-                    let spotConfig: SpotConfig = getSpotConfig(this.partyController);
-                    let config = spotConfig[ctype];
-
-                    if (config.attack) newRunner.applyStrategy(config.attack);
-                    if (config.move) newRunner.applyStrategy(config.move);
-
                     this.partyController.addRunner(newRunner);
                     break;
                 }
                 case "remove": {
-                    if (args.length == 0) break;
+                    if (args.length == 0) {
+                        args[0] = bot.id;
+                    }
 
                     this.partyController.removeRunner(args[0]);
                     break;

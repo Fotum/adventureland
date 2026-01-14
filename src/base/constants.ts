@@ -27,7 +27,7 @@ export const MY_CHARACTERS: Map<string, CharacterType> = new Map<string, Charact
 //     ["Fotum", "merchant"]
 // ]);
 
-export const KEEP_GOLD: number = 1_000_000;
+export const KEEP_GOLD: number = 5_000_000;
 export const SEND_GOLD_AT: number = 1.5;
 export const KEEP_ITEMS: Set<ItemName> = new Set<ItemName>([
     "hpot0",

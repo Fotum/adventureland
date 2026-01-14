@@ -248,8 +248,9 @@ export class KiteInCircleStrategy<T extends PingCompensatedCharacter> implements
                 let entityToPlayerVector: Vector = botPositionVector.clone().subtract(new Vector(monster.x, monster.y)).normalize();
                 kitingVector.add(entityToPlayerVector);
             }
+            kitingVector.normalize().multiply(bot.range);
 
-            let pathVector: Vector = botPositionVector.add(kitingVector).multiply(bot.range);
+            let pathVector: Vector = botPositionVector.add(kitingVector);
             let moveToPoint: IPosition = { map: bot.map, x: pathVector.x, y: pathVector.y };
             if (Pathfinder.canWalkPath(bot, moveToPoint)) {
                 return bot.move(moveToPoint.x, moveToPoint.y, { resolveOnStart: true }).catch(ignoreExceptions);
@@ -263,47 +264,14 @@ export class KiteInCircleStrategy<T extends PingCompensatedCharacter> implements
 
             if (Tools.distance(bot, monster) > bot.range) {
                 return bot
-                    .smartMove(monster, { getWithin: bot.range, avoidTownWarps: true, resolveOnFinalMoveStart: true })
+                    .smartMove(monster, {
+                        getWithin: bot.range,
+                        avoidTownWarps: true,
+                        resolveOnFinalMoveStart: true
+                    })
                     .catch(ignoreExceptions);
             }
         }
-
-        // let monster: Entity = bot.getEntity({ typeList: typeList, returnNearest: true });
-        // if (!monster) return;
-
-        // let angleFromCentreToBot: number = Math.atan2(bot.y - centre.y, bot.x - centre.x);
-
-        // let cw: number = angleFromCentreToBot + Math.PI / 6;
-        // let ccw: number = angleFromCentreToBot - Math.PI / 6;
-
-        // let cwPoint: IPosition = {
-        //     x: centre.x + radius * Math.cos(cw),
-        //     y: centre.y + radius * Math.sin(cw)
-        // };
-        // let ccwPoint: IPosition = {
-        //     x: centre.x + radius * Math.cos(ccw),
-        //     y: centre.y + radius * Math.sin(ccw)
-        // };
-
-        // let distanceFromCwToMonster: number = Tools.distance({ x: monster.x, y: monster.y }, cwPoint);
-        // let distanceFromCcwToMonster: number = Tools.distance({ x: monster.x, y: monster.y }, ccwPoint);
-
-        // let moveToPoint: IPosition = undefined;
-        // if (distanceFromCwToMonster > bot.range && distanceFromCcwToMonster > bot.range) {
-        //     if (distanceFromCwToMonster > distanceFromCcwToMonster) {
-        //         moveToPoint = ccwPoint;
-        //     } else {
-        //         moveToPoint = cwPoint;
-        //     }
-        // } else {
-        //     if (distanceFromCwToMonster <= distanceFromCcwToMonster) {
-        //         moveToPoint = ccwPoint;
-        //     } else {
-        //         moveToPoint = cwPoint;
-        //     }
-        // }
-
-        // return bot.smartMove(moveToPoint, { resolveOnFinalMoveStart: true }).catch(ignoreExceptions);
     }
 }
 

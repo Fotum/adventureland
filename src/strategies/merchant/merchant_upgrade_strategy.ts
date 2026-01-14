@@ -1,6 +1,7 @@
 import { GItem, Game, Item, ItemName, Merchant } from "alclient";
 import { Loop, LoopName, Strategy, StrategyName } from "../character_runner";
 import { MERCHANT_UPGRADE, UpgradeConfig } from "../../base/settings";
+import { ignoreExceptions } from "../../base/functions/general";
 
 export class MerchantUpgradeStrategy implements Strategy<Merchant> {
     public loops? = new Map<LoopName, Loop<Merchant>>();
@@ -12,8 +13,8 @@ export class MerchantUpgradeStrategy implements Strategy<Merchant> {
             fn: async (bot: Merchant) => {
                 if (bot.rip) return;
 
-                this.upgradeItems(bot).catch(console.error);
-                this.compoundItems(bot).catch(console.error);
+                this.upgradeItems(bot).catch(ignoreExceptions);
+                this.compoundItems(bot).catch(ignoreExceptions);
             },
             interval: 500
         });

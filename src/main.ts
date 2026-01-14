@@ -28,10 +28,12 @@ const PARTY_CONTROLLER: PartyController = new PartyController({
     mainTank: MAIN_TANK,
     sendToName: SEND_TO_NAME,
 
+    looter: "Archealer",
     doQuests: new Set<CharacterType>(),
-    doBosses: true,
-    doCyberland: true,
-    doBanking: true
+
+    enableBosses: true,
+    enableCyberland: true,
+    enableBanking: true
 });
 async function run(): Promise<void> {
     // Start characters

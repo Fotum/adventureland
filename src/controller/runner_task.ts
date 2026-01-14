@@ -30,7 +30,6 @@ export class RunnerTask {
     private _runner: CharacterRunner<PingCompensatedCharacter>;
 
     private _step: number = 0;
-    private _length: number = 0;
 
     private _canOverride: boolean = true;
     private _status: RunnerTaskStatus = "CREATED";
@@ -56,7 +55,7 @@ export class RunnerTask {
         let step: ExecutableRunnerTaskStep = undefined;
         this._status = "RUNNING";
 
-        while (this._status == "RUNNING" && this._step != this._length) {
+        while (this._status == "RUNNING" && this._step != this.taskSteps.length) {
             try {
                 while (!this._runner.isReady() || this._runner.bot.rip) {
                     // Wait for bot to reconnect
@@ -106,9 +105,7 @@ export class RunnerTask {
 
     public pushStep(step: RunnerTaskStep): RunnerTask {
         let executableStep: ExecutableRunnerTaskStep = { ...step, isComplete: false };
-
         this.taskSteps.push(executableStep);
-        this._length++;
 
         return this;
     }
@@ -119,7 +116,7 @@ export class RunnerTask {
     }
 
     public setStepComplete(stepNum: number): void {
-        if (stepNum < this._length) {
+        if (stepNum < this.taskSteps.length) {
             this.taskSteps[stepNum].isComplete = true;
             this._step++;
 
@@ -160,7 +157,7 @@ export class RunnerTask {
     }
 
     public get length(): number {
-        return this._length;
+        return this.taskSteps.length;
     }
 
     public setComplete(status: RunnerTaskStatus): RunnerTask {

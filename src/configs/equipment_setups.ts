@@ -59,8 +59,7 @@ export const PRIEST_MF: EquipmentSet = {
     chest: { name: "wattire", filters: FILTER_HIGHEST },
     pants: { name: "wbreeches", filters: FILTER_HIGHEST },
     gloves: { name: "wgloves", filters: FILTER_HIGHEST },
-    shoes: { name: "wshoes", filters: FILTER_HIGHEST },
-    elixir: { name: "elixirluck", filters: { returnLowestQuantity: true } }
+    shoes: { name: "wshoes", filters: FILTER_HIGHEST }
 };
 
 export const PRIEST_GF: EquipmentSet = {
@@ -69,8 +68,7 @@ export const PRIEST_GF: EquipmentSet = {
     chest: { name: "wattire", filters: FILTER_HIGHEST },
     pants: { name: "wbreeches", filters: FILTER_HIGHEST },
     gloves: { name: "handofmidas", filters: FILTER_HIGHEST },
-    shoes: { name: "wshoes", filters: FILTER_HIGHEST },
-    elixir: { name: "elixirluck", filters: { returnLowestQuantity: true } }
+    shoes: { name: "wshoes", filters: FILTER_HIGHEST }
 };
 
 export function generateEquipmentSet(bot: PingCompensatedCharacter, override?: EquipmentSet): EquipmentSet {

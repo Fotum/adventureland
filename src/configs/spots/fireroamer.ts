@@ -5,7 +5,7 @@ import { DEFAULT_ENERGIZE, MageAttackStrategy } from "../../strategies/mage/mage
 import { HoldPositionStrategy, KiteInCircleStrategy } from "../../strategies/move_strategies";
 import { PriestAttackStrategy } from "../../strategies/priest/priest_attack_strategy";
 import { WarriorAttackStrategy } from "../../strategies/warrior/warrior_attack_strategy";
-import { MAGE_AOE, PRIEST_TANKY_MAGIC, PRIEST_TANKY_PHYSICAL, WARRIOR_AOE } from "../equipment_setups";
+import { MAGE_AOE, PRIEST_TANKY_MAGIC, WARRIOR_AOE } from "../equipment_setups";
 import { SpotConfig } from "../spot_configs";
 
 const MAIN_TANK: string = "Archealer";
@@ -70,7 +70,7 @@ export function getFireroamerSpotConfig(partyController: PartyController): SpotC
                 type: "fireroamer",
                 notType: "ent",
                 maximumTargets: 2,
-                equipmentSet: PRIEST_TANKY_PHYSICAL,
+                equipmentSet: PRIEST_TANKY_MAGIC,
                 startHealingAtRatio: 0.8,
                 disableZapper: true,
                 disableAbsorb: true

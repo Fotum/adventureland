@@ -51,9 +51,9 @@ export class PartyHealStrategy implements Strategy<Priest> {
         if (!bot.canUse("partyheal")) return;
         if (!bot.party) return;
 
-        let nearbyExecutors = filterRunners(this.partyController.getRunners(), { serverData: bot.serverData });
-        for (let executor of nearbyExecutors) {
-            let myBot = executor.bot;
+        let nearbyRunners = filterRunners(this.partyController.getRunners(), { serverData: bot.serverData });
+        for (let runner of nearbyRunners) {
+            let myBot = runner.bot;
 
             if (myBot.rip) continue;
             if (myBot.party !== bot.party) continue;
