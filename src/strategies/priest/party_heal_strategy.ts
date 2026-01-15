@@ -4,19 +4,13 @@ import { PartyController } from "../../controller/party_controller";
 import { Loop, LoopName, Loops, Strategy, StrategyName } from "../character_runner";
 
 export type PartyHealConfig = {
-    stopWhenMp: number;
-    when: {
-        hp?: number;
-        hpMissing?: number;
-        hpRatio?: number;
-    };
+    hp?: number;
+    hpMissing?: number;
+    hpRatio?: number;
 };
 
 export const DEFUALT_PARTY_HEAL_CONFIG: PartyHealConfig = {
-    stopWhenMp: 0.15,
-    when: {
-        hpRatio: 0.4
-    }
+    hpRatio: 0.45
 };
 
 export class PartyHealStrategy implements Strategy<Priest> {
@@ -29,7 +23,7 @@ export class PartyHealStrategy implements Strategy<Priest> {
     constructor(partyController: PartyController, options: PartyHealConfig = DEFUALT_PARTY_HEAL_CONFIG) {
         this.partyController = partyController;
 
-        if (options.when.hp === undefined && options.when.hpMissing === undefined && options.when.hpRatio === undefined)
+        if (options.hp === undefined && options.hpMissing === undefined && options.hpRatio === undefined)
             this.options = DEFUALT_PARTY_HEAL_CONFIG;
         else this.options = options;
 
@@ -47,7 +41,6 @@ export class PartyHealStrategy implements Strategy<Priest> {
 
     private async partyHeal(bot: Priest): Promise<unknown> {
         if (bot.rip) return;
-        if (this.options.stopWhenMp < bot.mp / bot.max_mp) return;
         if (!bot.canUse("partyheal")) return;
         if (!bot.party) return;
 
@@ -59,9 +52,9 @@ export class PartyHealStrategy implements Strategy<Priest> {
             if (myBot.party !== bot.party) continue;
 
             if (
-                (this.options.when.hp !== undefined && myBot.hp < this.options.when.hp) ||
-                (this.options.when.hpRatio !== undefined && myBot.hp / myBot.max_hp < this.options.when.hpRatio) ||
-                (this.options.when.hpMissing !== undefined && myBot.max_hp - myBot.hp > this.options.when.hpMissing)
+                (this.options.hp !== undefined && myBot.hp < this.options.hp) ||
+                (this.options.hpRatio !== undefined && myBot.hp / myBot.max_hp < this.options.hpRatio) ||
+                (this.options.hpMissing !== undefined && myBot.max_hp - myBot.hp > this.options.hpMissing)
             ) {
                 return bot.partyHeal().catch(ignoreExceptions);
             }

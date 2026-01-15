@@ -410,7 +410,6 @@ export class BaseInventoryStrategy<T extends PingCompensatedCharacter> implement
             if (keepItems.has(item.name)) continue;
 
             if (SELL_ITMES.has(item.name) && bot.canSell()) continue;
-            if (DISMANTLE_ITEMS.has(item.name) && bot.canDismantle(item.name)) continue;
 
             if (sendTo instanceof PingCompensatedCharacter && sendTo.esize == 0) {
                 if (!item.q) continue;
