@@ -1,6 +1,15 @@
-import { EntityModel, Game, ItemDataTrade, MonsterName, Observer, PingCompensatedCharacter, RespawnModel, ServerIdentifier, ServerRegion } from "alclient";
+import {
+    EntityModel,
+    Game,
+    ItemDataTrade,
+    MonsterName,
+    Observer,
+    PingCompensatedCharacter,
+    RespawnModel,
+    ServerIdentifier,
+    ServerRegion
+} from "alclient";
 import fs from "fs";
-
 
 const SERVER_OBSERVERS: Observer[] = [];
 const CREDENTIALS_PATH: string = "credentials.json";
@@ -43,7 +52,7 @@ async function getSpecialMonsters() {
         }
     };
 
-    const forSocket = async function(data: any) {
+    const forSocket = async function (data: any) {
         try {
             return await secondHandsFunc(data);
         } catch (message) {

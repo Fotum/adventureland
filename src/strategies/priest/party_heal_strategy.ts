@@ -1,35 +1,30 @@
-import { PingCompensatedCharacter, Priest } from "alclient";
-import { Loop, LoopName, Loops, Strategy, CharacterRunner, StrategyName } from "../character_runner";
-import { filterExecutors, ignoreExceptions } from "../../base/functions";
-
+import { Priest } from "alclient";
+import { filterRunners, ignoreExceptions } from "../../base/functions/general";
+import { PartyController } from "../../controller/party_controller";
+import { Loop, LoopName, Loops, Strategy, StrategyName } from "../character_runner";
 
 export type PartyHealConfig = {
-    stopWhenMp: number
-    when: {
-        hp?: number
-        hpMissing?: number
-        hpRatio?: number
-    }
-}
+    hp?: number;
+    hpMissing?: number;
+    hpRatio?: number;
+};
 
 export const DEFUALT_PARTY_HEAL_CONFIG: PartyHealConfig = {
-    stopWhenMp: 0.15,
-    when: {
-        hpRatio: 0.4
-    }
+    hpRatio: 0.45
 };
 
 export class PartyHealStrategy implements Strategy<Priest> {
-    public loops: Loops<Priest> = new Map<LoopName, Loop<Priest>>;
+    public loops: Loops<Priest> = new Map<LoopName, Loop<Priest>>();
 
     private _name: StrategyName = "party_heal";
-    private executors: CharacterRunner<PingCompensatedCharacter>[];
+    private partyController: PartyController;
     private options: PartyHealConfig;
 
-    constructor(executors: CharacterRunner<PingCompensatedCharacter>[], options: PartyHealConfig = DEFUALT_PARTY_HEAL_CONFIG) {
-        this.executors = executors;
+    constructor(partyController: PartyController, options: PartyHealConfig = DEFUALT_PARTY_HEAL_CONFIG) {
+        this.partyController = partyController;
 
-        if (options.when.hp === undefined && options.when.hpMissing === undefined && options.when.hpRatio === undefined) this.options = DEFUALT_PARTY_HEAL_CONFIG;
+        if (options.hp === undefined && options.hpMissing === undefined && options.hpRatio === undefined)
+            this.options = DEFUALT_PARTY_HEAL_CONFIG;
         else this.options = options;
 
         this.loops.set("party_heal", {
@@ -46,21 +41,20 @@ export class PartyHealStrategy implements Strategy<Priest> {
 
     private async partyHeal(bot: Priest): Promise<unknown> {
         if (bot.rip) return;
-        if (this.options.stopWhenMp < (bot.mp / bot.max_mp)) return;
         if (!bot.canUse("partyheal")) return;
         if (!bot.party) return;
 
-        let nearbyExecutors = filterExecutors(this.executors, { serverData: bot.serverData });
-        for (let executor of nearbyExecutors) {
-            let myBot = executor.bot;
+        let nearbyRunners = filterRunners(this.partyController.getRunners(), { serverData: bot.serverData });
+        for (let runner of nearbyRunners) {
+            let myBot = runner.bot;
 
             if (myBot.rip) continue;
             if (myBot.party !== bot.party) continue;
 
             if (
-                (this.options.when.hpRatio !== undefined && (myBot.max_hp / myBot.hp) < this.options.when.hpRatio) ||
-                (this.options.when.hp !== undefined && myBot.hp < this.options.when.hp) ||
-                (this.options.when.hpMissing !== undefined && (myBot.max_hp - myBot.hp) > this.options.when.hpMissing)
+                (this.options.hp !== undefined && myBot.hp < this.options.hp) ||
+                (this.options.hpRatio !== undefined && myBot.hp / myBot.max_hp < this.options.hpRatio) ||
+                (this.options.hpMissing !== undefined && myBot.max_hp - myBot.hp > this.options.hpMissing)
             ) {
                 return bot.partyHeal().catch(ignoreExceptions);
             }

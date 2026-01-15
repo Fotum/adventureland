@@ -6,14 +6,14 @@
     "main": "src/main.ts",
     "scripts": {
         "dev": "npx tsx src/main.ts",
-        "build": "tsc",
+        "build": "npx tsc",
         "start": "node dist/main.js",
         "obs": "npx tsx src/GlobalObserver.ts"
     },
     "author": "Fotum",
     "license": "MIT",
     "dependencies": {
-        "alclient": "^0.22.7",
+        "alclient": "^0.23.1",
         "bot-web-interface": "^2.0.14",
         "fastpriorityqueue": "^0.7.5",
         "pretty-ms": "^9.3.0",

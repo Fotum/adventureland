@@ -1,27 +1,67 @@
-import { Constants, Game, Mage, Merchant, Paladin, PingCompensatedCharacter, Priest, Ranger, Rogue, ServerIdentifier, ServerRegion, SkillName, Warrior } from "alclient"
-
+import {
+    Constants,
+    Game,
+    Mage,
+    Merchant,
+    Paladin,
+    PingCompensatedCharacter,
+    Priest,
+    Ranger,
+    Rogue,
+    ServerIdentifier,
+    ServerRegion,
+    SkillName,
+    Warrior
+} from "alclient";
 
 export type Loop<T> = {
-    fn: (bot: T) => Promise<unknown>
-    interval: SkillName[] | Number
-}
+    fn: (bot: T) => Promise<unknown>;
+    interval: SkillName[] | Number;
+};
 export type Loops<T> = Map<LoopName, Loop<T>>;
 
-export type StrategyName = "base" | "attack" | "move" | "party" | "party_heal" | "magiport" | "upgrade" | "utility";
-export type LoopName = "attack" | "move" | "use_pots" | "buy_pots" | "loot" | "respawn" | "party" | "party_heal" | "magiport" | "mluck" | "upgrade" | "ponty" | "inventory" | "resuppply";
+export type StrategyName =
+    | "admin"
+    | "base"
+    | "attack"
+    | "move"
+    | "unstack"
+    | "party"
+    | "party_heal"
+    | "magiport"
+    | "upgrade"
+    | "inventory"
+    | "utility";
+export type LoopName =
+    | "attack"
+    | "move"
+    | "unstack"
+    | "use_pots"
+    | "buy_pots"
+    | "loot"
+    | "respawn"
+    | "party"
+    | "party_heal"
+    | "magiport"
+    | "mluck"
+    | "upgrade"
+    | "ponty"
+    | "inventory"
+    | "resuppply"
+    | "exchange";
 
 export interface Strategy<T> {
-    name: StrategyName
-    loops?: Loops<T>
-    onApply?: (bot: T) => void
-    onRemove?: (bot: T) => void
+    name: StrategyName;
+    loops?: Loops<T>;
+    onApply?: (bot: T) => void;
+    onRemove?: (bot: T) => void;
 }
 
 type ExecLoop<T> = Loop<T> & {
-    fn: (bot: T) => Promise<unknown>
-    interval: SkillName[] | Number
-    started: Date
-}
+    fn: (bot: T) => Promise<unknown>;
+    interval: SkillName[] | Number;
+    started: Date;
+};
 type ExecLoops<T> = Map<string, ExecLoop<T>>;
 
 export class CharacterRunner<T extends PingCompensatedCharacter> {
@@ -31,7 +71,7 @@ export class CharacterRunner<T extends PingCompensatedCharacter> {
     private stopped: boolean = false;
 
     private strategies: Map<StrategyName, Strategy<T>> = new Map<StrategyName, Strategy<T>>();
-    private loops: ExecLoops<T> = new Map<LoopName, ExecLoop<T>>;
+    private loops: ExecLoops<T> = new Map<LoopName, ExecLoop<T>>();
     private timeouts: Map<string, NodeJS.Timeout> = new Map<string, NodeJS.Timeout>();
 
     public constructor(bot: T, strategy: Strategy<T>) {
@@ -42,11 +82,9 @@ export class CharacterRunner<T extends PingCompensatedCharacter> {
     public applyStrategy(strategy: Strategy<T>): void {
         if (!strategy) return;
 
-        if (this.strategies.has(strategy.name))
-            this.removeStrategy(strategy.name);
+        if (this.strategies.has(strategy.name)) this.removeStrategy(strategy.name);
 
-        if (strategy.onApply)
-            strategy.onApply(this.bot);
+        if (strategy.onApply) strategy.onApply(this.bot);
 
         if (!strategy.loops) return;
 
@@ -64,11 +102,10 @@ export class CharacterRunner<T extends PingCompensatedCharacter> {
                 });
             } else {
                 // Start loop
-                let now: Date = new Date();
                 this.loops.set(name, {
                     fn: loop.fn,
                     interval: loop.interval,
-                    started: now
+                    started: new Date()
                 });
 
                 const newLoop = async () => {
@@ -91,25 +128,21 @@ export class CharacterRunner<T extends PingCompensatedCharacter> {
                     if (typeof loop.interval == "number") {
                         this.timeouts.set(
                             name,
-                            setTimeout(
-                                async () => {
-                                    newLoop();
-                                }, loop.interval
-                            )
+                            setTimeout(async () => {
+                                newLoop();
+                            }, loop.interval)
                         );
                     } else if (Array.isArray(loop.interval)) {
                         let cooldowns: number[] = loop.interval.map((skill) => this.bot.getCooldown(skill));
                         let loopCooldown: number = Math.max(50, Math.min(...cooldowns));
                         this.timeouts.set(
                             name,
-                            setTimeout(
-                                async () => {
-                                    newLoop();
-                                }, loopCooldown
-                            )
+                            setTimeout(async () => {
+                                newLoop();
+                            }, loopCooldown)
                         );
                     }
-                }
+                };
                 newLoop().catch(console.error);
             }
         }
@@ -118,14 +151,16 @@ export class CharacterRunner<T extends PingCompensatedCharacter> {
     }
 
     public applyStrategies(strategies: Strategy<T>[]): void {
-        for (let strategy of strategies)
-            this.applyStrategy(strategy);
+        for (let strategy of strategies) this.applyStrategy(strategy);
+    }
+
+    public getStrategy(name: StrategyName): Strategy<T> {
+        return this.strategies.get(name);
     }
 
     public removeStrategy(stratName: StrategyName): void {
         let strategy = this.strategies.get(stratName);
-        if (!strategy)
-            return;
+        if (!strategy) return;
 
         if (strategy.loops) {
             for (let [loopName] of strategy.loops) {
@@ -237,12 +272,16 @@ export class CharacterRunner<T extends PingCompensatedCharacter> {
                 if (wait && wait[1]) {
                     this.timeouts.set(
                         "connect",
-                        setTimeout(() => this.reconnect(), 2000 + Number.parseInt(wait[1])  * 1000)
-                        );
+                        setTimeout(() => {
+                            this.reconnect();
+                        }, 2000 + Number.parseInt(wait[1]) * 1000)
+                    );
                 } else if (/limits/.test(ex)) {
                     this.timeouts.set(
                         "connect",
-                        setTimeout(() => this.reconnect(), Constants.RECONNECT_TIMEOUT_MS)
+                        setTimeout(() => {
+                            this.reconnect();
+                        }, Constants.RECONNECT_TIMEOUT_MS)
                     );
                 } else if (/nouser/.test(ex)) {
                     this.stop();
@@ -250,7 +289,9 @@ export class CharacterRunner<T extends PingCompensatedCharacter> {
                 } else {
                     this.timeouts.set(
                         "connect",
-                        setTimeout(() => this.reconnect, 10000)
+                        setTimeout(() => {
+                            this.reconnect();
+                        }, 10000)
                     );
                 }
             }
@@ -342,7 +383,7 @@ export class CharacterRunner<T extends PingCompensatedCharacter> {
                             throw new Error(`No handler for ${this.bot.ctype}`);
                         }
                     }
-        
+
                     await newBot.connect();
                     this.changeBot(newBot as T);
                 } catch (ex) {
@@ -374,7 +415,7 @@ export class CharacterRunner<T extends PingCompensatedCharacter> {
                 }
 
                 resolve();
-            }
+            };
 
             switchBots().catch(console.error);
         });
@@ -413,8 +454,7 @@ export class CharacterRunner<T extends PingCompensatedCharacter> {
 
     public stop(): void {
         this.stopped = true;
-        for (let [, timeout] of this.timeouts)
-            clearTimeout(timeout);
+        for (let [, timeout] of this.timeouts) clearTimeout(timeout);
 
         if (!this.bot) return;
         this.bot.socket.removeAllListeners("disconnect");

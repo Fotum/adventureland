@@ -1,32 +1,37 @@
-import { HitData, PingCompensatedCharacter } from "alclient";
-import { Strategy, StrategyName } from "./character_runner";
-import { ignoreExceptions } from "../base/functions";
+import { PingCompensatedCharacter, Player } from "alclient";
+import { PLAYER_MIN_DISTANCE } from "../base/constants";
+import { ignoreExceptions } from "../base/functions/general";
+import { Loop, LoopName, Strategy, StrategyName } from "./character_runner";
 
+export class UnstackStrategy<T extends PingCompensatedCharacter> implements Strategy<T> {
+    public loops = new Map<LoopName, Loop<PingCompensatedCharacter>>();
 
-export class UnstuckStrategy<T extends PingCompensatedCharacter> implements Strategy<T> {
-    private _name: StrategyName = "utility";
-    private onHit: (data: HitData) => Promise<void>;
-    
-    public constructor() {}
+    private _name: StrategyName = "unstack";
 
-    public onApply(bot: T): void {
-        this.onHit = async (data: HitData): Promise<void> => {
-            if (data.id !== bot.id) return;
-            if (data.stacked && !data.stacked.includes(bot.id)) return;
-            
-            let x: number = -15 + Math.round(30 * Math.random());
-            let y: number = -15 + Math.round(30 * Math.random());
-            await bot.move(bot.x + x, bot.y + y).catch(ignoreExceptions);
+    public constructor() {
+        this.loops.set("unstack", {
+            fn: async (bot: PingCompensatedCharacter) => {
+                if (bot.rip || bot.smartMoving || bot.moving) return;
+                await this.unstack(bot);
+            },
+            interval: 1000
+        });
+    }
+
+    private async unstack(bot: PingCompensatedCharacter): Promise<void> {
+        let player: Player = bot.getPlayer({ withinRange: PLAYER_MIN_DISTANCE, returnNearest: true });
+        if (!player) {
+            return;
         }
 
-        bot.socket.on("hit", this.onHit);
+        let angleFromPlayerToBot: number = Math.atan2(bot.y - player.y, bot.x - player.x);
+        let x: number = PLAYER_MIN_DISTANCE * Math.cos(angleFromPlayerToBot);
+        let y: number = PLAYER_MIN_DISTANCE * Math.sin(angleFromPlayerToBot);
+
+        await bot.move(bot.x + x, bot.y + y).catch(ignoreExceptions);
     }
 
-    public onRemove(bot: T): void {
-        if (this.onHit) bot.socket.off("hit", this.onHit);
-    }
-
-    public get name() {
+    public get name(): StrategyName {
         return this._name;
     }
 }

@@ -1,31 +1,51 @@
-import { ActionData, ActionDataRay, EntitiesData, Entity, GItem, Game, Mage, MonsterName, PingCompensatedCharacter, Player, SlotType, Tools, TradeItemInfo, TradeSlotType } from "alclient";
-import { BaseAttackConfig, BaseAttackStrategy } from "../base_attack_strategy";
-import { filterExecutors, ignoreExceptions } from "../../base/functions";
+import {
+    ActionData,
+    ActionDataRay,
+    EntitiesData,
+    Entity,
+    GItem,
+    Game,
+    Mage,
+    MonsterName,
+    PingCompensatedCharacter,
+    Player,
+    SlotType,
+    Tools,
+    TradeItemInfo,
+    TradeSlotType
+} from "alclient";
 import FastPriorityQueue from "fastpriorityqueue";
-import { CharacterRunner } from "../character_runner";
-
+import { filterRunners, ignoreExceptions } from "../../base/functions/general";
+import { PartyController } from "../../controller/party_controller";
+import { BaseAttackConfig, BaseAttackStrategy } from "../base_attack_strategy";
 
 export type MageAttackConfig = BaseAttackConfig & {
-    disableCburst?: boolean,
-    disableKillSteal?: boolean
+    disableCburst?: boolean;
+    disableKillSteal?: boolean;
     energize?: {
-        onMpRatio: number,
+        onMpRatio: number;
         when: {
-            mpRatio?: number
-            mp?: number
-            mpMissing?: number
-        }
-    }
-}
+            mpRatio?: number;
+            mp?: number;
+            mpMissing?: number;
+        };
+    };
+};
 
 export const DO_NOT_KILL_STEAL: MonsterName[] = ["kitty1", "kitty2", "kitty3", "kitty4", "puppy1", "puppy2", "puppy3", "puppy4"];
+export const DEFAULT_ENERGIZE = {
+    onMpRatio: 0.8,
+    when: {
+        mpRatio: 0.1
+    }
+};
 
 export class MageAttackStrategy extends BaseAttackStrategy<Mage> {
     protected config: MageAttackConfig;
-    protected stealOnActionCburst: (data: ActionData) => void
+    protected stealOnActionCburst: (data: ActionData) => void;
 
-    public constructor(executors: CharacterRunner<PingCompensatedCharacter>[], options?: MageAttackConfig) {
-        super(executors, options);
+    public constructor(partyController: PartyController, options?: MageAttackConfig) {
+        super(partyController, options);
 
         if (this.config.disableCburst) this.interval.push("cburst");
         if (this.config.energize) this.interval.push("energize");
@@ -96,9 +116,9 @@ export class MageAttackStrategy extends BaseAttackStrategy<Mage> {
                         return bot.basicAttack(monster.id).catch(console.error);
                     }
                 }
-            }
+            };
 
-            bot.socket.on("entities", this.greedyOnEntities)
+            bot.socket.on("entities", this.greedyOnEntities);
         }
 
         if (!this.config.disableCburst && !this.config.disableKillSteal) {
@@ -120,7 +140,7 @@ export class MageAttackStrategy extends BaseAttackStrategy<Mage> {
 
                 this.preventOverkill(bot, target);
                 bot.cburst([[data.target, 5]]).catch(ignoreExceptions);
-            }
+            };
             bot.socket.on("action", this.stealOnActionCburst);
         }
     }
@@ -137,7 +157,7 @@ export class MageAttackStrategy extends BaseAttackStrategy<Mage> {
         }
 
         let priority = this.botSort;
-        
+
         await this.equipItems(bot);
 
         if (!this.config.disableCburst) {
@@ -197,15 +217,13 @@ export class MageAttackStrategy extends BaseAttackStrategy<Mage> {
             let entities: Entity[] = bot.getEntities({
                 canDamage: "cburst",
                 hasTarget: false,
-                typeList: Array.isArray(this.config.enableGreedyAggro)
-                    ? this.config.enableGreedyAggro
-                    : this.config.typeList,
+                typeList: Array.isArray(this.config.enableGreedyAggro) ? this.config.enableGreedyAggro : this.config.typeList,
                 withinRange: "cburst"
             });
 
             if (entities.length && !(this.config.maximumTargets && bot.targets >= this.config.maximumTargets)) {
                 for (let entity of entities) {
-                    if ((mpPool - 5) < 0) break;
+                    if (mpPool - 5 < 0) break;
                     mpPool -= 5;
                     toCburst.set(entity.id, 5);
                 }
@@ -225,7 +243,8 @@ export class MageAttackStrategy extends BaseAttackStrategy<Mage> {
         }
 
         targets.forEach((entity) => {
-            let mpToKill: number = ((entity.hp * 1.1) / Game.G.skills.cburst.ratio) * Tools.damage_multiplier(bot.rpiercing - entity.resistance);
+            let mpToKill: number =
+                ((entity.hp * 1.1) / Game.G.skills.cburst.ratio) * Tools.damage_multiplier(bot.rpiercing - entity.resistance);
             if (mpToKill > mpPool) return;
 
             if (toCburst.has(entity.id)) mpPool += toCburst.get(entity.id);
@@ -235,7 +254,7 @@ export class MageAttackStrategy extends BaseAttackStrategy<Mage> {
             mpPool == mpToKill;
         });
 
-        if (bot.mp > (bot.max_mp - 500) && mpPool >= 0) {
+        if (bot.mp > bot.max_mp - 500 && mpPool >= 0) {
             while (targets.size) {
                 let target = targets.poll();
                 if (target.willDieToProjectiles(bot, bot.projectiles, bot.players, bot.entities)) continue;
@@ -252,9 +271,9 @@ export class MageAttackStrategy extends BaseAttackStrategy<Mage> {
 
     protected async energizePartyMember(bot: Mage): Promise<unknown> {
         if (bot.rip) return;
-        if ((bot.mp / bot.max_mp) < this.config.energize.onMpRatio) return;
+        if (bot.mp / bot.max_mp < this.config.energize.onMpRatio) return;
 
-        let executors = filterExecutors(this.runners, { serverData: bot.serverData });
+        let executors = filterRunners(this.partyController.getRunners(), { serverData: bot.serverData });
 
         if (bot.s.energized) return;
         for (let executor of executors) {
@@ -265,12 +284,13 @@ export class MageAttackStrategy extends BaseAttackStrategy<Mage> {
             if (Tools.squaredDistance(bot, friend) > bot.G.skills.energize.range) continue;
             if (bot.isOnCooldown("energize")) continue;
 
-            if ((this.config.energize.when.mp && friend.mp < this.config.energize.when.mp) ||
-                (this.config.energize.when.mpMissing && (friend.max_mp - friend.mp) > this.config.energize.when.mpMissing) ||
-                (this.config.energize.when.mpRatio && (friend.mp / friend.max_mp) < this.config.energize.when.mpRatio)
+            if (
+                (this.config.energize.when.mp && friend.mp < this.config.energize.when.mp) ||
+                (this.config.energize.when.mpMissing && friend.max_mp - friend.mp > this.config.energize.when.mpMissing) ||
+                (this.config.energize.when.mpRatio && friend.mp / friend.max_mp < this.config.energize.when.mpRatio)
             ) {
                 let rechargeAmount: number = friend.max_mp - friend.mp;
-                let canRechargeAmount: number = bot.mp - (bot.max_mp * this.config.energize.onMpRatio);
+                let canRechargeAmount: number = bot.mp - bot.max_mp * this.config.energize.onMpRatio;
                 return bot.energize(friend.id, Math.min(canRechargeAmount, rechargeAmount));
             }
         }

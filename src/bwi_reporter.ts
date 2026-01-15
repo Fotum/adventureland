@@ -1,50 +1,49 @@
-import { Entity, PingCompensatedCharacter } from "alclient";
-import { CharacterRunner } from "./strategies/character_runner";
+import { PingCompensatedCharacter } from "alclient";
 import BotWebInterface from "bot-web-interface";
 import prettyMilliseconds from "pretty-ms";
-
+import { PartyController } from "./controller/party_controller";
 
 type BWIMetricSchema = {
-    name: string
-    type: string
-    label: string
-    options?: {}
-    getter: () => any
-}
+    name: string;
+    type: string;
+    label: string;
+    options?: {};
+    getter: () => any;
+};
 type BWIDataSource = {
-    name: string
-    realm: string
-    rip: boolean
-    level: number
-    health: number
-    maxHealth: number
-    mana: number
-    maxMana: number
-    xp: number
-    maxXp: number
-    isize: number
-    esize: number
-    gold: number
-    party: string
-    status: string
-    target: string
-    cc: number
-    xpPh: number
-    xpHisto: number[]
-    goldHisto: number[]
-}
+    name: string;
+    realm: string;
+    rip: boolean;
+    level: number;
+    health: number;
+    maxHealth: number;
+    mana: number;
+    maxMana: number;
+    xp: number;
+    maxXp: number;
+    isize: number;
+    esize: number;
+    gold: number;
+    party: string;
+    status: string;
+    target: string;
+    cc: number;
+    xpPh: number;
+    xpHisto: number[];
+    goldHisto: number[];
+};
 
 export class BWIReporter {
     private statBeatIntrval: number;
     private bwiInstance: BotWebInterface;
     private statisticsInterval: NodeJS.Timeout;
-    private executors: CharacterRunner<PingCompensatedCharacter>[];
+    private controller: PartyController;
 
     private botDataSources = new Map<string, BWIDataSource>();
 
-    public constructor(executors: CharacterRunner<PingCompensatedCharacter>[], port: number = 924, statBeatInterval: number = 500) {
+    public constructor(controller: PartyController, port: number = 924, statBeatInterval: number = 500) {
         this.statBeatIntrval = statBeatInterval;
-        this.executors = executors;
+        this.controller = controller;
 
         this.bwiInstance = new BotWebInterface({
             port: port,
@@ -52,7 +51,7 @@ export class BWIReporter {
             updateRate: statBeatInterval
         });
 
-        for (let executor of executors) {
+        for (let executor of controller.getRunners()) {
             let bot: PingCompensatedCharacter = executor.bot;
 
             let dataSourceObj: BWIDataSource = {
@@ -86,7 +85,7 @@ export class BWIReporter {
     }
 
     private updateStatistics(): void {
-        for (let executor of this.executors) {
+        for (let executor of this.controller.getRunners()) {
             let bot: PingCompensatedCharacter = executor.bot;
             let dataSource: BWIDataSource = this.botDataSources.get(bot.id);
 
@@ -106,6 +105,7 @@ export class BWIReporter {
             dataSource.esize = bot.esize;
             dataSource.gold = bot.gold;
             dataSource.party = bot.party;
+            dataSource.status = this.controller.getRunnerState(bot.id);
             dataSource.target = bot.getTargetEntity()?.name ?? "None";
             dataSource.cc = bot.cc;
 
@@ -122,19 +122,48 @@ export class BWIReporter {
         const schema: BWIMetricSchema[] = [
             { name: "name", type: "text", label: "Name", getter: () => ds.name },
             { name: "realm", type: "text", label: "Realm", getter: () => ds.realm },
-            { name: "not_rip", type: "text", label: "Alive", getter: () => ds.rip ? "No" : "Yes" },
+            { name: "not_rip", type: "text", label: "Alive", getter: () => (ds.rip ? "No" : "Yes") },
             { name: "level", type: "text", label: "Level", getter: () => ds.level },
-            { name: "health", type: "labelProgressBar", label: "Health", options: { color: "red" }, getter: () => this.quickBarVal(ds.health, ds.maxHealth) },
-            { name: "mana", type: "labelProgressBar", label: "Mana", options: { color: "blue" }, getter: () => this.quickBarVal(ds.mana, ds.maxMana) },
-            { name: "xp", type: "labelProgressBar", label: "XP", options: { color: "green" }, getter: () => this.quickBarVal(ds.xp, ds.maxXp, true) },
-            { name: "inv", type: "labelProgressBar", label: "Inventory", options: { color: "brown" }, getter: () => this.quickBarVal(ds.isize - ds.esize, ds.isize) },
+            {
+                name: "health",
+                type: "labelProgressBar",
+                label: "Health",
+                options: { color: "red" },
+                getter: () => this.quickBarVal(ds.health, ds.maxHealth)
+            },
+            {
+                name: "mana",
+                type: "labelProgressBar",
+                label: "Mana",
+                options: { color: "blue" },
+                getter: () => this.quickBarVal(ds.mana, ds.maxMana)
+            },
+            {
+                name: "xp",
+                type: "labelProgressBar",
+                label: "XP",
+                options: { color: "green" },
+                getter: () => this.quickBarVal(ds.xp, ds.maxXp, true)
+            },
+            {
+                name: "inv",
+                type: "labelProgressBar",
+                label: "Inventory",
+                options: { color: "brown" },
+                getter: () => this.quickBarVal(ds.isize - ds.esize, ds.isize)
+            },
             { name: "gold", type: "text", label: "Gold", getter: () => this.humanizeInt(ds.gold, 1) },
             { name: "party_leader", type: "text", label: "Chief", getter: () => ds.party || "N/A" },
             { name: "current_status", type: "text", label: "Status", getter: () => ds.status },
             { name: "target", type: "text", label: "Target", getter: () => ds.target || "None" },
             { name: "gph", type: "text", label: "Gold/h", getter: () => this.humanizeInt(this.valPh(ds.goldHisto), 1) },
             { name: "xpph", type: "text", label: "XP/h", getter: () => this.humanizeInt(ds.xpPh, 1) },
-            { name: "ttlu", type: "text", label: "TTLU", getter: () => (ds.xpPh <= 0 && "N/A") || prettyMilliseconds(((ds.maxXp - ds.xp) * 3_600_000) / ds.xpPh, { unitCount: 2 }) },
+            {
+                name: "ttlu",
+                type: "text",
+                label: "TTLU",
+                getter: () => (ds.xpPh <= 0 && "N/A") || prettyMilliseconds(((ds.maxXp - ds.xp) * 3_600_000) / ds.xpPh, { unitCount: 2 })
+            },
             { name: "cc", type: "text", label: "CC", getter: () => Math.round(ds.cc) }
         ];
 
@@ -169,15 +198,13 @@ export class BWIReporter {
             return Math.abs(num) < item.value;
         });
 
-        return item
-                ? ((num * 1e3) / item.value).toFixed(digits).replace(regexp, "$1") + item.symbol
-                : num.toExponential(digits);
+        return item ? ((num * 1e3) / item.value).toFixed(digits).replace(regexp, "$1") + item.symbol : num.toExponential(digits);
     }
 
     private quickBarVal(num: number, denom: number, humanize: boolean = false): [number, string] {
         let modif = (x: number): string => x.toString();
         if (humanize) {
-            modif = (x: number): string => this.humanizeInt(x, 1)
+            modif = (x: number): string => this.humanizeInt(x, 1);
         }
 
         return [(100 * num) / denom, `${modif(num)}/${modif(denom)}`];
@@ -188,10 +215,6 @@ export class BWIReporter {
             return 0;
         }
 
-        return (
-            ((arr[arr.length - 1] - arr[0]) * 3600000) /
-            (arr.length - 1) / 
-            this.statBeatIntrval
-        );
+        return ((arr[arr.length - 1] - arr[0]) * 3600000) / (arr.length - 1) / this.statBeatIntrval;
     }
 }

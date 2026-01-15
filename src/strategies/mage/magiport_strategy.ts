@@ -1,16 +1,16 @@
 import { CMData, Mage, Pathfinder, PingCompensatedCharacter, Tools } from "alclient";
-import { Loop, LoopName, Strategy, CharacterRunner, StrategyName } from "../character_runner";
-import { filterExecutors } from "../../base/functions";
-
+import { filterRunners } from "../../base/functions/general";
+import { PartyController } from "../../controller/party_controller";
+import { Loop, LoopName, Strategy, StrategyName } from "../character_runner";
 
 export type MagiportConfig = {
-    delay: number
-    range: number
-}
+    delay: number;
+    range: number;
+};
 
 export const DEFAULT_MAGIPORT_CONFIG: MagiportConfig = {
-    delay: 5000,
-    range: 250
+    delay: 1000,
+    range: 150
 };
 
 export class MagiportSmartMovingStrategy implements Strategy<Mage> {
@@ -19,12 +19,12 @@ export class MagiportSmartMovingStrategy implements Strategy<Mage> {
     private static recentlyMagiported = new Map<string, number>();
 
     private _name: StrategyName = "magiport";
-    private executors: CharacterRunner<PingCompensatedCharacter>[];
-    private options: MagiportConfig;
+    private partyController: PartyController;
+    private config: MagiportConfig;
 
-    public constructor(executors: CharacterRunner<PingCompensatedCharacter>[], options: MagiportConfig = DEFAULT_MAGIPORT_CONFIG) {
-        this.executors = executors;
-        this.options = options;
+    public constructor(partyController: PartyController, config: MagiportConfig = DEFAULT_MAGIPORT_CONFIG) {
+        this.partyController = partyController;
+        this.config = config;
 
         this.loops.set("magiport", {
             fn: async (bot: Mage) => {
@@ -44,18 +44,18 @@ export class MagiportSmartMovingStrategy implements Strategy<Mage> {
         if (bot.smartMoving) return;
         if (bot.getEntity({ type: "fieldgen0", withinRange: 400 })) return;
 
-        for (let context of filterExecutors(this.executors, { serverData: bot.serverData })) {
-            let friend = context.bot;
+        for (let runner of filterRunners(this.partyController.getRunners(), { serverData: bot.serverData })) {
+            let friend = runner.bot;
             if (friend.id == bot.id) continue;
             if (!friend.smartMoving) continue;
             if (friend.map.startsWith("bank")) continue;
             if (Pathfinder.canWalkPath(bot, friend)) continue;
             if (!Pathfinder.canWalkPath(bot, friend.smartMoving)) continue;
-            if (Tools.squaredDistance(friend, friend.smartMoving) < (2 * this.options.range)) continue;
-            if (Tools.squaredDistance(bot, friend.smartMoving) > this.options.range) continue;
+            if (Tools.distance(friend, friend.smartMoving) < 2 * this.config.range) continue;
+            if (Tools.distance(bot, friend.smartMoving) > this.config.range) continue;
 
             let lastMagiport = MagiportSmartMovingStrategy.recentlyMagiported.get(friend.id);
-            if (lastMagiport && (lastMagiport + this.options.delay) > Date.now()) continue;
+            if (lastMagiport && lastMagiport + this.config.delay > Date.now()) continue;
 
             try {
                 await bot.magiport(friend.id);
@@ -72,9 +72,8 @@ export class MagiportSmartMovingStrategy implements Strategy<Mage> {
 }
 
 export type MagiportServiceConfig = {
-    allowList?: string[]
-}
-
+    allowList?: string[];
+};
 export class MagiportServiceStrategy implements Strategy<Mage> {
     public loops = new Map<LoopName, Loop<PingCompensatedCharacter>>();
 
@@ -94,7 +93,7 @@ export class MagiportServiceStrategy implements Strategy<Mage> {
             if (!bot.canUse("magiport")) return;
 
             return bot.magiport(data.name);
-        }
+        };
         bot.socket.on("cm", this.inviteListener);
     }
 

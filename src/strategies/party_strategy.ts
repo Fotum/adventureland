@@ -1,11 +1,10 @@
-import { InviteData, PingCompensatedCharacter } from "alclient"
-import { Loop, LoopName, Strategy, StrategyName } from "./character_runner"
-
+import { InviteData, PingCompensatedCharacter } from "alclient";
+import { Loop, LoopName, Strategy, StrategyName } from "./character_runner";
 
 export type PartyConfig = {
-    accept?: string[]
-    deny?: string[]
-}
+    accept?: string[];
+    deny?: string[];
+};
 
 export class AcceptPartyRequest<T extends PingCompensatedCharacter> implements Strategy<T> {
     private _name: StrategyName = "party";
@@ -37,7 +36,7 @@ export class AcceptPartyRequest<T extends PingCompensatedCharacter> implements S
 }
 
 export class RequestParty<T extends PingCompensatedCharacter> implements Strategy<T> {
-    public loops = new Map<LoopName, Loop<T>>;
+    public loops = new Map<LoopName, Loop<T>>();
 
     private partyLeader: string;
     private _name: StrategyName = "party";
@@ -58,7 +57,7 @@ export class RequestParty<T extends PingCompensatedCharacter> implements Strateg
     }
 
     private async requestParty(bot: T): Promise<void> {
-        if (!bot.partyData?.list?.includes(this.partyLeader)) {
+        if (!bot.partyData?.list.includes(this.partyLeader)) {
             return bot.sendPartyRequest(this.partyLeader).catch(console.error);
         }
     }

@@ -18,12 +18,12 @@ export class Vector {
 
     public static multiply(a: Vector, b: Vector | number): Vector {
         if (b instanceof Vector) return new Vector(a.x * b.x, a.y * b.y);
-	    else return new Vector(a.x * b, a.y * b);
+        else return new Vector(a.x * b, a.y * b);
     }
 
     public static divide(a: Vector, b: Vector | number): Vector {
         if (b instanceof Vector) return new Vector(a.x / b.x, a.y / b.y);
-	    else return new Vector(a.x / b, a.y / b);
+        else return new Vector(a.x / b, a.y / b);
     }
 
     static equals(a: Vector, b: Vector): boolean {
@@ -159,8 +159,7 @@ export class Vector {
     }
 
     public limit(l: number): Vector {
-        if (this.length() > l)
-            this.normalize().multiply(l);
+        if (this.length() > l) this.normalize().multiply(l);
 
         return this;
     }

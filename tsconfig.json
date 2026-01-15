@@ -2,10 +2,7 @@
     "compileOnSave": true,
     "compilerOptions": {
         "module": "ESNext",
-        "lib": [
-            "ES2020",
-            "DOM"
-        ],
+        "lib": ["ES2020", "DOM"],
         "alwaysStrict": true,
         "esModuleInterop": true,
         "incremental": false,

@@ -1,25 +1,24 @@
 import { Entity, Game, PingCompensatedCharacter, Player, Priest, Tools } from "alclient";
-import { BaseAttackConfig, BaseAttackStrategy } from "../base_attack_strategy";
 import FastPriorityQueue from "fastpriorityqueue";
-import { ignoreExceptions } from "../../base/functions";
-import { CharacterRunner } from "../character_runner";
-
+import { ignoreExceptions } from "../../base/functions/general";
+import { PartyController } from "../../controller/party_controller";
+import { BaseAttackConfig, BaseAttackStrategy } from "../base_attack_strategy";
 
 export type PriestAttackConfig = BaseAttackConfig & {
-    startHealingAtRatio: number
-    disableAbsorb?: true
-    disableCurse?: true
-    disableDarkBlessing?: true
-    enableAbsorbToTank?: true
-    enableHealStrangers?: true
-}
+    startHealingAtRatio: number;
+    disableAbsorb?: true;
+    disableCurse?: true;
+    disableDarkBlessing?: true;
+    enableAbsorbToTank?: true;
+    enableHealStrangers?: true;
+};
 
 export class PriestAttackStrategy extends BaseAttackStrategy<Priest> {
     protected config: PriestAttackConfig;
     protected healPriority: (a: PingCompensatedCharacter, b: PingCompensatedCharacter) => boolean;
-    
-    public constructor(executors: CharacterRunner<PingCompensatedCharacter>[], options: PriestAttackConfig) {
-        super(executors, options);
+
+    public constructor(partyController: PartyController, options: PriestAttackConfig) {
+        super(partyController, options);
 
         if (!this.config.disableCurse) this.interval.push("curse");
         if (!this.config.disableDarkBlessing) this.interval.push("darkblessing");
@@ -57,13 +56,13 @@ export class PriestAttackStrategy extends BaseAttackStrategy<Priest> {
             return;
         }
 
-        await this.equipItems(bot);
+        await this.equipItems(bot).catch(console.error);
 
         if (!this.config.disableBasicAttack) await this.basicAttack(bot, this.botSort).catch(ignoreExceptions);
         if (!this.config.disableIdleAttack) await this.idleAttack(bot, this.botSort).catch(ignoreExceptions);
         if (!this.config.disableAbsorb) await this.absorbTargets(bot).catch(ignoreExceptions);
 
-        await this.equipItems(bot);
+        await this.equipItems(bot).catch(console.error);
     }
 
     protected async basicAttack(bot: Priest, priority: (a: Entity, b: Entity) => boolean): Promise<unknown> {
@@ -147,7 +146,7 @@ export class PriestAttackStrategy extends BaseAttackStrategy<Priest> {
             });
         }
 
-        // Noone to absort
+        // Noone to absorb
         if (!entity) return;
 
         let player: Player = bot.players.get(entity.target);
@@ -161,7 +160,12 @@ export class PriestAttackStrategy extends BaseAttackStrategy<Priest> {
         if (target.s.curse) return;
         if (target.immune && !Game.G.skills["curse"].pierces_immunity) return;
         if (!bot.canUse("curse")) return;
-        if (bot.canKillInOneShot(target) || target.willBurnToDeath() || target.willDieToProjectiles(bot, bot.projectiles, bot.players, bot.entities)) return;
+        if (
+            bot.canKillInOneShot(target) ||
+            target.willBurnToDeath() ||
+            target.willDieToProjectiles(bot, bot.projectiles, bot.players, bot.entities)
+        )
+            return;
 
         return bot.curse(target.id);
     }
