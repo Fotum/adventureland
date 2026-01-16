@@ -1,4 +1,5 @@
-import { CharacterType, PingCompensatedCharacter, ServerIdentifier, ServerRegion } from "alclient";
+import { PingCompensatedCharacter, ServerIdentifier, ServerRegion } from "alclient";
+import { MY_CHARACTERS } from "../base/constants";
 import { startCharacter } from "../base/functions/general";
 import { PartyController } from "../controller/party_controller";
 import { CharacterRunner, Strategy, StrategyName } from "./character_runner";
@@ -27,22 +28,23 @@ export class AdminCommandStrategy<T extends PingCompensatedCharacter> implements
                     break;
                 }
                 case "deploy": {
-                    if (args.length < 4) break;
+                    if (args.length == 0) break;
                     if (this.partyController.getRunner(args[0])) break;
 
-                    let ctype: CharacterType = args[1] as CharacterType;
+                    let serverRegion: ServerRegion = this.partyController.config.homeServerName;
+                    let serverIdentifier: ServerIdentifier = this.partyController.config.homeServerId;
+                    if (args.length == 3) {
+                        serverRegion = args[1] as unknown as ServerRegion;
+                        serverIdentifier = args[2] as unknown as ServerIdentifier;
+                    }
+
                     let newRunner: CharacterRunner<PingCompensatedCharacter> = await startCharacter(
                         this.partyController,
                         args[0],
-                        ctype,
-                        args[2] as ServerRegion,
-                        args[3] as ServerIdentifier
+                        MY_CHARACTERS.get(args[0]),
+                        serverRegion,
+                        serverIdentifier
                     );
-                    if (!newRunner) {
-                        console.error(`Error deploying character ${args[0]}`);
-                        break;
-                    }
-
                     this.partyController.addRunner(newRunner);
                     break;
                 }

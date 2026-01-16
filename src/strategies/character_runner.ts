@@ -83,6 +83,7 @@ export class CharacterRunner<T extends PingCompensatedCharacter> {
         if (!strategy) return;
 
         if (this.strategies.has(strategy.name)) this.removeStrategy(strategy.name);
+        this.strategies.set(strategy.name, strategy);
 
         if (strategy.onApply) strategy.onApply(this.bot);
 
@@ -146,8 +147,6 @@ export class CharacterRunner<T extends PingCompensatedCharacter> {
                 newLoop().catch(console.error);
             }
         }
-
-        this.strategies.set(strategy.name, strategy);
     }
 
     public applyStrategies(strategies: Strategy<T>[]): void {

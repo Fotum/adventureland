@@ -75,7 +75,7 @@ export class MageAttackStrategy extends BaseAttackStrategy<Mage> {
                         if (Tools.distance(bot, monster) > Game.G.skills.zapperzap.range) continue;
 
                         bot.nextSkill.set("zapperzap", new Date(Date.now() - bot.ping * 2));
-                        return bot.zapperZap(monster.id).catch(console.error);
+                        return bot.zapperZap(monster.id).catch(ignoreExceptions);
                     }
                 }
 
@@ -101,7 +101,7 @@ export class MageAttackStrategy extends BaseAttackStrategy<Mage> {
 
                     if (cbursts.length) {
                         bot.nextSkill.set("cburst", new Date(Date.now() + bot.ping * 2));
-                        return bot.cburst(cbursts).catch(console.error);
+                        return bot.cburst(cbursts).catch(ignoreExceptions);
                     }
                 }
 
@@ -203,7 +203,7 @@ export class MageAttackStrategy extends BaseAttackStrategy<Mage> {
             mpNeeded += extraMp;
         }
 
-        return bot.cburst([...targets.entries()]);
+        return bot.cburst([...targets.entries()]).catch(ignoreExceptions);
     }
 
     protected async cburstAttack(bot: Mage, priority: (a: Entity, b: Entity) => boolean) {
@@ -266,7 +266,7 @@ export class MageAttackStrategy extends BaseAttackStrategy<Mage> {
         }
 
         if (toCburst.size == 0) return;
-        return bot.cburst([...toCburst.entries()]);
+        return bot.cburst([...toCburst.entries()]).catch(ignoreExceptions);
     }
 
     protected async energizePartyMember(bot: Mage): Promise<unknown> {

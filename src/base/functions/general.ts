@@ -1,4 +1,5 @@
 import {
+    Character,
     CharacterType,
     Game,
     IPosition,
@@ -20,7 +21,7 @@ import * as fs from "fs";
 import { EventConfig, getEventConfig } from "../../configs/event_configs";
 import { PartyController, RunnerState } from "../../controller/party_controller";
 import { RunnerTask, RunnerTaskName } from "../../controller/runner_task";
-import { getCheckBossesTask, getEventTask } from "../../controller/runner_task_collection";
+import { getCheckBossesTask, getEmptyTask, getEventTask } from "../../controller/runner_task_collection";
 import { RunnerException } from "../../exceptions/exceptions";
 import { AdminCommandStrategy } from "../../strategies/admin_command_strategy";
 import { NoAttackScareStrategy } from "../../strategies/base_attack_strategy";
@@ -65,6 +66,18 @@ export async function sleep(ms: number): Promise<void> {
 
 export function ignoreExceptions(): void {
     return;
+}
+
+type ConsoleLogType = "info" | "warn" | "error";
+export function consoleLog(bot: Character, message: string, type?: ConsoleLogType): void {
+    if (!message) return;
+
+    if (!type) type = "info";
+    let toSend: string = `[${bot.ctype}]: ${message}`;
+
+    if (type == "info") console.log(toSend);
+    else if (type == "error") console.error(toSend);
+    else if (type == "warn") console.warn(toSend);
 }
 
 export function generateRandomId(idLength?: number): string {
@@ -300,7 +313,7 @@ export function saveStateToFile(botName: string, state: RunnerState): void {
 }
 
 export function loadStateFromFile(partyController: PartyController, runner: CharacterRunner<PingCompensatedCharacter>): RunnerState {
-    let placeHolder: RunnerTask = new RunnerTask("-9999", "unknown", runner).setComplete("COMPLETE");
+    let placeHolder: RunnerTask = getEmptyTask(runner).setComplete("COMPLETE");
     try {
         let filePath: string = `${SAVE_FILES_LOCATION}/${runner.bot.id}.json`;
 

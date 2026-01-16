@@ -18,6 +18,7 @@ import {
     getChangeSpotTask,
     getCheckBossesTask,
     getCheckCyberlandTask,
+    getEmptyTask,
     getEventTask,
     getHolidayBuffTask,
     getInteractWithQuestNpcTask,
@@ -102,7 +103,7 @@ export class PartyController {
                 }
 
                 // Push get/complete quest task
-                if (this.config.doQuests?.has(runner.bot.ctype) && !currState.taskQueue.some((task) => task.name == "quest")) {
+                if (this.config.doQuests?.has(runner.bot.ctype) && !currState.taskQueue.some((task) => task.name == "quest_npc")) {
                     if (!runner.bot.s.monsterhunt) {
                         let questTask: RunnerTask | undefined = getInteractWithQuestNpcTask(runner, "get");
                         if (questTask) {
@@ -168,7 +169,11 @@ export class PartyController {
                         }
                     }
 
-                    if (currState.currTask.name != "farming" && currState.currTask.name != "quest") {
+                    if (
+                        currState.currTask.name != "farming" &&
+                        currState.currTask.name != "quest" &&
+                        !currState.taskQueue.some((task) => task.name == "quest")
+                    ) {
                         // Go back to farm
                         let strategies: { attack?: Strategy<PingCompensatedCharacter>; move?: Strategy<PingCompensatedCharacter> } =
                             getSpotConfig(this)[runner.bot.ctype];
@@ -215,14 +220,12 @@ export class PartyController {
                         if (currState.taskQueue.some((task) => task.id == preparedEvent.id)) continue;
 
                         // Override current
+                        let redoTask: RunnerTask = undefined;
                         if (preparedEvent.override && currState.currTask.canOverride) {
                             currState.currTask.abortTask(`Overriden by ${preparedEvent.name}`);
-
-                            // Push overriden task back to queue
-                            // #TODO: If multiple events came (dunno if possible) queue will be incorrect
-                            let redoTask: RunnerTask = Object.assign({}, currState.currTask);
-                            redoTask.reset();
-                            currState.taskQueue.splice(1, 0, redoTask);
+                            redoTask = currState.currTask;
+                            // Placeholder to clean current task
+                            currState.currTask = getEmptyTask(runner).setComplete("COMPLETE");
                         }
 
                         let eventTask: RunnerTask = getEventTask(runner, {
@@ -237,7 +240,11 @@ export class PartyController {
                             eventTask.canOverride = false;
                         }
 
-                        currState.taskQueue.splice(1, 0, eventTask);
+                        currState.taskQueue.splice(0, 0, eventTask);
+                        if (redoTask) {
+                            redoTask.reset();
+                            currState.taskQueue.splice(1, 0, redoTask);
+                        }
                     }
                 }
             }

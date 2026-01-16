@@ -9,8 +9,9 @@ export function getSquigQuestConfig(partyController: PartyController): SpotConfi
         mage: {
             attack: new MageAttackStrategy(partyController, {
                 typeList: ["squig", "squigtoad", "frog", "phoenix"],
-                enableGreedyAggro: ["frog", "phoenix"],
-                equipmentSet: MAGE_AOE
+                maximumTargets: 5,
+                equipmentSet: MAGE_AOE,
+                disableCburst: true
             }),
             move: new BaseMoveStrategy(["squig", "squigtoad", "frog"])
         }

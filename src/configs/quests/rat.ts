@@ -9,8 +9,8 @@ export function getRatQuestConfig(partyController: PartyController): SpotConfig 
         mage: {
             attack: new MageAttackStrategy(partyController, {
                 type: "rat",
-                enableGreedyAggro: true,
-                equipmentSet: MAGE_FAST
+                equipmentSet: MAGE_FAST,
+                disableCburst: true
             }),
             move: new BaseMoveStrategy("rat")
         }

@@ -110,7 +110,7 @@ export class BaseAttackStrategy<T extends PingCompensatedCharacter> implements S
                 if (!target.willDieToProjectiles(bot, bot.projectiles, bot.players, bot.entities)) return;
 
                 this.preventOverkill(bot, target);
-                return bot.zapperZap(data.target).catch(console.error);
+                return bot.zapperZap(data.target).catch(ignoreExceptions);
             };
 
             bot.socket.on("action", this.stealOnAction);
@@ -134,7 +134,7 @@ export class BaseAttackStrategy<T extends PingCompensatedCharacter> implements S
                         if (Tools.distance(bot, monster) > Game.G.skills.zapperzap.range) continue;
 
                         bot.nextSkill.set("zapperzap", new Date(Date.now() - bot.ping * 2));
-                        return bot.zapperZap(monster.id).catch(console.error);
+                        return bot.zapperZap(monster.id).catch(ignoreExceptions);
                     }
                 }
 
@@ -318,7 +318,7 @@ export class BaseAttackStrategy<T extends PingCompensatedCharacter> implements S
                     targets.add(entity);
                 }
 
-                return bot.zapperZap(targets.peek().id);
+                return bot.zapperZap(targets.peek().id).catch(ignoreExceptions);
             }
         }
 
@@ -368,7 +368,7 @@ export class BaseAttackStrategy<T extends PingCompensatedCharacter> implements S
             let canKill: boolean = bot.canKillInOneShot(target);
             if (canKill) this.preventOverkill(bot, target);
 
-            return bot.zapperZap(target.id);
+            return bot.zapperZap(target.id).catch(ignoreExceptions);
         }
     }
 

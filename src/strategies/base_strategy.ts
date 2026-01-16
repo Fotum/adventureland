@@ -115,7 +115,7 @@ export class BaseStrategy<T extends PingCompensatedCharacter> implements Strateg
                 })
                 .catch(console.error);
         };
-        bot.socket.on("drop", this.lootOnDrop.bind(this));
+        bot.socket.on("drop", this.lootOnDrop);
     }
 
     public onRemove(bot: T): void {
@@ -125,7 +125,7 @@ export class BaseStrategy<T extends PingCompensatedCharacter> implements Strateg
             myChestCache.set(server, bot.chests);
         }
 
-        if (this.lootOnDrop) bot.socket.off("drop", this.lootOnDrop);
+        if (this.lootOnDrop) bot.socket.off("drop", this.lootOnDrop.bind(this));
     }
 
     public get name(): StrategyName {

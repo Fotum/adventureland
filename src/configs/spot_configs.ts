@@ -25,6 +25,7 @@ import { getSpiderSpotConfig } from "./spots/spider";
 import { getSquigSpotConfig } from "./spots/squig";
 import { getStonewormSpotConfig } from "./spots/stoneworm";
 import { getTortoiseSpotConfig } from "./spots/tortoise";
+import { getXscorpionConfig } from "./spots/xscorpion";
 
 export type SpotConfig = {
     [T in CharacterType]?: {
@@ -84,6 +85,8 @@ export function getSpotConfig(partyController: PartyController, spotName?: SpotN
             return getSpiderSpotConfig(partyController);
         case "fireroamer":
             return getFireroamerSpotConfig(partyController);
+        case "xscorpion":
+            return getXscorpionConfig(partyController);
         default: {
             console.warn(`Could not find spot named ${spotName}`);
             return undefined;

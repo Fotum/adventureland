@@ -1,4 +1,4 @@
-import { Constants, Entity, GItem, Game, IPosition, MonsterName, PingCompensatedCharacter } from "alclient";
+import { Character, Constants, Entity, GItem, Game, IPosition, MonsterName, PingCompensatedCharacter } from "alclient";
 import { EventName, KEEP_GOLD, MERCHANT_KEEP_GOLD, SEND_GOLD_AT, SpecialName } from "../base/constants";
 import { generateRandomId, ignoreExceptions, mssince, sleep, ssince } from "../base/functions/general";
 import { SPECIAL_MONSTERS, STORE_ITEMS } from "../base/settings";
@@ -337,9 +337,13 @@ export function getInteractWithQuestNpcTask(runner: CharacterRunner<PingCompensa
     };
 
     return new RunnerTask(generateRandomId(), "quest_npc", runner).pushStep({
-        name: "get_or_turn_in",
+        name: action,
         fn: interactTask
     });
+}
+
+export function getEmptyTask(runner: CharacterRunner<PingCompensatedCharacter>): RunnerTask {
+    return new RunnerTask("-9999", "unknown", runner);
 }
 
 async function checkCompletionForMs(

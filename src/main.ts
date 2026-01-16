@@ -12,8 +12,9 @@ await Pathfinder.prepare(Game.G, { remove_abtesting: true, remove_test: true });
 
 const HOME_SERVER_NAME: ServerRegion = "EU";
 const HOME_SERVER_ID: ServerIdentifier = "II";
-const DEFAULT_SPOT: SpotName = "fireroamer";
+const DEFAULT_SPOT: SpotName = "xscorpion";
 const MAIN_TANK: string = "Flamme";
+const LOOTER: string = "Flamme";
 
 const SEND_TO_NAME: string = "Momental";
 const PARTY_LEADER: string = "Flamme";
@@ -27,9 +28,9 @@ const PARTY_CONTROLLER: PartyController = new PartyController({
     partyAllow: PARTY_ALLOW,
     mainTank: MAIN_TANK,
     sendToName: SEND_TO_NAME,
+    looter: LOOTER,
 
-    looter: "Archealer",
-    doQuests: new Set<CharacterType>(),
+    doQuests: new Set<CharacterType>(["mage"]),
 
     enableBosses: true,
     enableCyberland: true,

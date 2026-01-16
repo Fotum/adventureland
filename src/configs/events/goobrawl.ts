@@ -38,14 +38,17 @@ export function getGoobrawlConfig(partyController: PartyController): EventConfig
                     disableScare: true,
                     energize: DEFAULT_ENERGIZE
                 }),
-                move: new FollowMoveStrategy(partyController.config.mainTank)
+                move: new KiteInCircleStrategy({
+                    centre: partyController.getRunner(partyController.config.mainTank),
+                    radius: 200,
+                    typeList: ["pinkgoo", "bgoo", "rgoo"]
+                })
             },
             priest: {
                 attack: new PriestAttackStrategy(partyController, {
                     typeList: ["pinkgoo", "bgoo", "rgoo"],
                     disableIdleAttack: true,
                     enableGreedyAggro: true,
-                    maximumTargets: 15,
                     enableAbsorbToTank: true,
                     equipmentSet: PRIEST_GF,
                     startHealingAtRatio: 0.8
