@@ -427,6 +427,11 @@ export class BaseAttackStrategy<T extends PingCompensatedCharacter> implements S
                 continue;
             }
 
+            // Do not equip elixir if we are already have one
+            if (sType == "elixir" && bot.slots[sType]) {
+                continue;
+            }
+
             if (
                 !bot.slots[slotType] ||
                 bot.slots[slotType].name != equipInSlot.name ||
@@ -461,7 +466,6 @@ export class BaseAttackStrategy<T extends PingCompensatedCharacter> implements S
                     } else if (slotType == "earring2" && bot.slots["earring1"]?.name == equipInSlot.name && bot.esize > 0) {
                         toEquip = await bot.unequip("earring1");
                     } else if (slotType == "elixir") {
-                        // #TODO: this should not try to find elixir if there is no such in toEquip
                         continue;
                     } else {
                         throw new Error(`[${bot.id}]: Could not find ${equipInSlot.name} to equip in slot ${slotType}`);
@@ -549,7 +553,7 @@ export class NoAttackScareStrategy<T extends PingCompensatedCharacter> implement
 
     protected shouldScare(bot: T): boolean {
         if (bot.targets == 0) return false;
-        if (bot.hp > bot.max_hp * 0.5) return false;
+        if (bot.hp > bot.max_hp * 0.75) return false;
 
         let targetingMe: Entity[] = bot.getEntities({ targetingMe: true });
         if (targetingMe.length > 0) return true;

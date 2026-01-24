@@ -51,7 +51,8 @@ export const EXCHANGE_ITMES: Set<ItemName> = new Set<ItemName>([
     "basketofeggs",
     "ornament",
     "xbox",
-    "candypop"
+    "candypop",
+    "5bucks"
 ]);
 export const BUY_FROM_PONTY: Map<ItemName, number> = new Map<ItemName, number>([
     ["5bucks", 100_000_000],
@@ -335,7 +336,7 @@ export const MERCHANT_UPGRADE: Map<ItemName, UpgradeConfig> = new Map<ItemName, 
 
     // Winter holidays
     ["gcape", { level: 6 }],
-    ["mittens", { level: 8, primlingAt: 6 }],
+    ["mittens", { level: 8, primlingAt: 7 }],
     ["ornamentstaff", { level: 8 }],
     ["supermittens", { level: 5, primlingAt: 3 }],
 

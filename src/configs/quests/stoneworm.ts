@@ -13,7 +13,7 @@ export function getStonewormQuestConfig(partyController: PartyController): SpotC
             }),
             move: new KiteInCircleStrategy({
                 centre: { map: "spookytown", x: 860, y: -14 },
-                radius: 300,
+                radius: 100,
                 typeList: ["stoneworm"]
             })
         }

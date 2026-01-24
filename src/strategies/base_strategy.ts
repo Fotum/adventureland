@@ -10,6 +10,7 @@ import {
     Item,
     ItemData,
     ItemName,
+    Merchant,
     PingCompensatedCharacter,
     Player,
     Tools
@@ -460,6 +461,11 @@ export class BaseInventoryStrategy<T extends PingCompensatedCharacter> implement
         if (itemsToExchange.length == 0) return;
 
         itemsToExchange.sort((a, b) => (a[1].q ?? 1) - (b[1].q ?? 1));
+        if (bot instanceof Merchant) {
+            if (bot.canUse("massexchange")) await bot.massExchange();
+            if (bot.canUse("massexchangepp")) await bot.massExchangePP();
+        }
+
         return bot.exchange(itemsToExchange[0][0]).catch(ignoreExceptions);
     }
 

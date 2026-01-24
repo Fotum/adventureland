@@ -1,4 +1,4 @@
-import { Character, Constants, Entity, GItem, Game, IPosition, MonsterName, PingCompensatedCharacter } from "alclient";
+import { Constants, Entity, GItem, Game, IPosition, MonsterName, PingCompensatedCharacter } from "alclient";
 import { EventName, KEEP_GOLD, MERCHANT_KEEP_GOLD, SEND_GOLD_AT, SpecialName } from "../base/constants";
 import { generateRandomId, ignoreExceptions, mssince, sleep, ssince } from "../base/functions/general";
 import { SPECIAL_MONSTERS, STORE_ITEMS } from "../base/settings";
@@ -98,17 +98,23 @@ export function getEventTask(runner: CharacterRunner<PingCompensatedCharacter>, 
                     runner.applyStrategy(new NoAttackScareStrategy());
                 }
 
-                await runner.bot
-                    .smartMove(eventInfo.destination, {
-                        useBlink: runner.bot.ctype == "mage",
-                        stopIfTrue: async () => {
-                            return signal.aborted;
-                        }
-                    })
-                    .catch((ex) => {
-                        throw new Error(`Smart move error: ${ex}`);
+                if (eventInfo.name == "icegolem") {
+                    await runner.bot.join(eventInfo.name as unknown as MonsterName).catch((ex) => {
+                        throw new Error(ex);
                     });
-                signal.throwIfAborted();
+                } else {
+                    await runner.bot
+                        .smartMove(eventInfo.destination, {
+                            useBlink: runner.bot.ctype == "mage",
+                            stopIfTrue: async () => {
+                                return signal.aborted;
+                            }
+                        })
+                        .catch((ex) => {
+                            throw new Error(`Smart move error: ${ex}`);
+                        });
+                    signal.throwIfAborted();
+                }
             }
         })
         .pushStep({

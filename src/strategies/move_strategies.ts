@@ -95,7 +95,7 @@ export class FollowMoveStrategy<T extends PingCompensatedCharacter> implements S
 
     protected async move(bot: PingCompensatedCharacter): Promise<unknown> {
         let toFollow: IPosition & { ready?: boolean } = undefined;
-        if (this.friendToFollow instanceof CharacterRunner<PingCompensatedCharacter>) {
+        if (this.friendToFollow instanceof CharacterRunner) {
             toFollow = this.friendToFollow.bot;
         } else {
             toFollow = bot.getPlayers().find((player) => player.id == this.friendToFollow);
@@ -145,7 +145,7 @@ export class HoldPositionStrategy<T extends PingCompensatedCharacter> implements
     private async move(bot: T): Promise<unknown> {
         let configPosition: IPosition | CharacterRunner<PingCompensatedCharacter> = this.config.position;
         let holdPosition: IPosition = undefined;
-        if (configPosition instanceof CharacterRunner<PingCompensatedCharacter>) {
+        if (configPosition instanceof CharacterRunner) {
             if (configPosition.isReady()) {
                 this.lastPosition = { map: configPosition.bot.map, x: configPosition.bot.x, y: configPosition.bot.y };
             } else if (this.lastPosition === undefined) {
@@ -220,7 +220,7 @@ export class KiteInCircleStrategy<T extends PingCompensatedCharacter> implements
 
         let configPosition: IPosition | CharacterRunner<PingCompensatedCharacter> = this.config.centre;
         let configCentre: IPosition = undefined;
-        if (configPosition instanceof CharacterRunner<PingCompensatedCharacter>) {
+        if (configPosition instanceof CharacterRunner) {
             if (configPosition.isReady()) {
                 this.lastCentre = { map: configPosition.bot.map, x: configPosition.bot.x, y: configPosition.bot.y };
             } else if (this.lastCentre === undefined) {
@@ -317,7 +317,7 @@ export class MoveInCircleStrategy<T extends PingCompensatedCharacter> implements
     private async move(bot: T): Promise<unknown> {
         let configPosition: IPosition | CharacterRunner<PingCompensatedCharacter> = this.config.centre;
         let configCentre: IPosition = undefined;
-        if (configPosition instanceof CharacterRunner<PingCompensatedCharacter>) {
+        if (configPosition instanceof CharacterRunner) {
             if (configPosition.isReady()) {
                 this.lastCentre = { map: configPosition.bot.map, x: configPosition.bot.x, y: configPosition.bot.y };
             } else if (this.lastCentre === undefined) {
@@ -401,7 +401,7 @@ export class SpecialMonsterKiteStrategy<T extends PingCompensatedCharacter> impl
             getWithin: bot.range - 10,
             stopIfTrue: async (): Promise<boolean> => {
                 let target: CheckedBossData = this.checkGoodData(bot);
-                if (!target || target === bot) return false;
+                if (!target) return false;
                 return Tools.distance(target, bot.smartMoving) > bot.range;
             },
             useBlink: true,
