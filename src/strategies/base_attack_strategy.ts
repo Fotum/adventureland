@@ -19,6 +19,7 @@ import {
 import FastPriorityQueue from "fastpriorityqueue";
 import { filterRunners, ignoreExceptions, sleep } from "../base/functions/general";
 import { sortPriority } from "../base/functions/sort";
+import logger from "../base/logger";
 import { generateEquipmentSet } from "../configs/equipment_setups";
 import { PartyController } from "../controller/party_controller";
 import { Loop, LoopName, Loops, Strategy, StrategyName } from "./character_runner";
@@ -146,7 +147,7 @@ export class BaseAttackStrategy<T extends PingCompensatedCharacter> implements S
                         if (Tools.distance(bot, monster) > bot.range) continue;
 
                         bot.nextSkill.set("attack", new Date(Date.now() + bot.ping * 2));
-                        return bot.basicAttack(monster.id).catch(console.error);
+                        return bot.basicAttack(monster.id).catch(logger.error);
                     }
                 }
             };
@@ -169,13 +170,13 @@ export class BaseAttackStrategy<T extends PingCompensatedCharacter> implements S
             return;
         }
 
-        await this.equipItems(bot).catch(console.error);
+        await this.equipItems(bot).catch(logger.error);
 
         if (!this.config.disableBasicAttack) await this.basicAttack(bot, this.botSort).catch(ignoreExceptions);
         if (!this.config.disableZapperAttack) await this.zapperAttack(bot, this.botSort).catch(ignoreExceptions);
         if (!this.config.disableIdleAttack) await this.idleAttack(bot, this.botSort).catch(ignoreExceptions);
 
-        await this.equipItems(bot).catch(console.error);
+        await this.equipItems(bot).catch(logger.error);
     }
 
     protected async basicAttack(bot: T, priority: (a: Entity, b: Entity) => boolean): Promise<unknown> {
@@ -514,7 +515,7 @@ export class BaseAttackStrategy<T extends PingCompensatedCharacter> implements S
             }
         }
 
-        if (equipBatch.length) await bot.equipBatch(equipBatch).catch(console.error);
+        if (equipBatch.length) await bot.equipBatch(equipBatch).catch(logger.error);
     }
 
     protected preventOverkill(bot: PingCompensatedCharacter, target: Entity): void {

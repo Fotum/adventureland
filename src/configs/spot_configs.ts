@@ -1,5 +1,6 @@
 import { CharacterType, PingCompensatedCharacter } from "alclient";
 import { SpotName } from "../base/constants";
+import logger from "../base/logger";
 import { PartyController } from "../controller/party_controller";
 import { Strategy } from "../strategies/character_runner";
 import { getArmadilloSpotConfig } from "./spots/armadillo";
@@ -88,7 +89,7 @@ export function getSpotConfig(partyController: PartyController, spotName?: SpotN
         case "xscorpion":
             return getXscorpionConfig(partyController);
         default: {
-            console.warn(`Could not find spot named ${spotName}`);
+            logger.warn(`Could not find spot named ${spotName}`);
             return undefined;
         }
     }

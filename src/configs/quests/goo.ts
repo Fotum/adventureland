@@ -9,7 +9,6 @@ export function getGooQuestConfig(partyController: PartyController): SpotConfig 
         mage: {
             attack: new MageAttackStrategy(partyController, {
                 type: "goo",
-                enableGreedyAggro: true,
                 equipmentSet: MAGE_FAST,
                 disableCburst: true
             }),

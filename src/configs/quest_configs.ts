@@ -1,4 +1,6 @@
 import { MonsterName } from "alclient";
+import logger from "../base/logger";
+import { PartyController } from "../controller/party_controller";
 import { getArmadilloQuestConfig } from "./quests/armadillo";
 import { getBatQuestConfig } from "./quests/bat";
 import { getBeeQuestConfig } from "./quests/bee";
@@ -12,7 +14,6 @@ import { getRatQuestConfig } from "./quests/rat";
 import { getSnakeQuestConfig } from "./quests/snake";
 import { getSquigQuestConfig } from "./quests/squig";
 import { getStonewormQuestConfig } from "./quests/stoneworm";
-import { PartyController } from "../controller/party_controller";
 import { SpotConfig } from "./spot_configs";
 
 export function getQuestConfig(partyController: PartyController, questName: MonsterName): SpotConfig | undefined {
@@ -44,7 +45,7 @@ export function getQuestConfig(partyController: PartyController, questName: Mons
         case "armadillo":
             return getArmadilloQuestConfig(partyController);
         default: {
-            console.warn(`Could not find quest named ${questName}`);
+            logger.warn(`Could not find quest named ${questName}`);
             return undefined;
         }
     }

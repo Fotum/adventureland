@@ -6,7 +6,7 @@ import { WarriorAttackStrategy } from "../../strategies/warrior/warrior_attack_s
 import { WARRIOR_DPS, MAGE_FAST, PRIEST_MF } from "../equipment_setups";
 import { EventConfig } from "../event_configs";
 
-export function getValentinesConfig(partyController: PartyController): EventConfig {
+export function getPinkgooConfig(partyController: PartyController): EventConfig {
     return {
         targets: ["pinkgoo"],
         override: false,

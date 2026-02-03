@@ -16,6 +16,7 @@ import {
 } from "alclient";
 import FastPriorityQueue from "fastpriorityqueue";
 import { filterRunners, ignoreExceptions } from "../../base/functions/general";
+import logger from "../../base/logger";
 import { PartyController } from "../../controller/party_controller";
 import { BaseAttackConfig, BaseAttackStrategy } from "../base_attack_strategy";
 
@@ -113,7 +114,7 @@ export class MageAttackStrategy extends BaseAttackStrategy<Mage> {
                         if (Tools.distance(bot, monster) > bot.range) continue;
 
                         bot.nextSkill.set("attack", new Date(Date.now() + bot.ping * 2));
-                        return bot.basicAttack(monster.id).catch(console.error);
+                        return bot.basicAttack(monster.id).catch(logger.error);
                     }
                 }
             };

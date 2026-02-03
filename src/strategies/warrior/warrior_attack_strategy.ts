@@ -1,5 +1,6 @@
 import { EntitiesData, Entity, Game, Player, SlotType, Tools, Warrior } from "alclient";
 import { ignoreExceptions, sleep } from "../../base/functions/general";
+import logger from "../../base/logger";
 import { FILTER_HIGHEST } from "../../configs/equipment_setups";
 import { PartyController } from "../../controller/party_controller";
 import { BaseAttackConfig, BaseAttackStrategy, IDLE_ATTACK_MONSTERS } from "../base_attack_strategy";
@@ -58,7 +59,7 @@ export class WarriorAttackStrategy extends BaseAttackStrategy<Warrior> {
                         if (Tools.distance(bot, monster) > Game.G.skills.zapperzap.range) continue;
 
                         bot.nextSkill.set("zapperzap", new Date(Date.now() - bot.ping * 2));
-                        return bot.zapperZap(monster.id).catch(console.error);
+                        return bot.zapperZap(monster.id).catch(logger.error);
                     }
                 }
 
@@ -70,7 +71,7 @@ export class WarriorAttackStrategy extends BaseAttackStrategy<Warrior> {
                         if (Tools.distance(bot, monster) > Game.G.skills.taunt.range) continue;
 
                         bot.nextSkill.set("taunt", new Date(Date.now() + bot.ping * 2));
-                        return bot.taunt(monster.id).catch(console.error);
+                        return bot.taunt(monster.id).catch(logger.error);
                     }
                 }
 
@@ -82,7 +83,7 @@ export class WarriorAttackStrategy extends BaseAttackStrategy<Warrior> {
                         if (Tools.distance(bot, monster) > bot.range) continue;
 
                         bot.nextSkill.set("attack", new Date(Date.now() + bot.ping * 2));
-                        return bot.basicAttack(monster.id).catch(console.error);
+                        return bot.basicAttack(monster.id).catch(logger.error);
                     }
                 }
             };
@@ -101,7 +102,7 @@ export class WarriorAttackStrategy extends BaseAttackStrategy<Warrior> {
 
         let priority = this.botSort;
 
-        await this.equipItems(bot).catch(console.error);
+        await this.equipItems(bot).catch(logger.error);
 
         if (!this.config.disableAgitate) await this.agitateTargets(bot).catch(ignoreExceptions);
         if (!this.config.disableStomp) await this.stomp(bot).catch(ignoreExceptions);
@@ -110,7 +111,7 @@ export class WarriorAttackStrategy extends BaseAttackStrategy<Warrior> {
         if (!this.config.disableZapper) await this.zapperAttack(bot, priority).catch(ignoreExceptions);
         if (!this.config.disableIdleAttack) await this.idleAttack(bot, priority).catch(ignoreExceptions);
 
-        await this.equipItems(bot).catch(console.error);
+        await this.equipItems(bot).catch(logger.error);
     }
 
     protected async agitateTargets(bot: Warrior): Promise<unknown> {
@@ -249,7 +250,7 @@ export class WarriorAttackStrategy extends BaseAttackStrategy<Warrior> {
             if (mainhand) equipBatch.push({ num: mainhand, slot: "mainhand" });
             if (offhand) equipBatch.push({ num: offhand, slot: "offhand" });
 
-            if (equipBatch.length) await bot.equipBatch(equipBatch).catch(console.error);
+            if (equipBatch.length) await bot.equipBatch(equipBatch).catch(logger.error);
         }
     }
 

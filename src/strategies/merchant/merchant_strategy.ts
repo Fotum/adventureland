@@ -1,5 +1,6 @@
 import { Character, Constants, GItem, Game, Item, ItemDataTrade, Merchant, Pathfinder, Player, Tools } from "alclient";
 import { filterRunners, ignoreExceptions } from "../../base/functions/general";
+import logger from "../../base/logger";
 import { BUY_FROM_PONTY } from "../../base/settings";
 import { PartyController } from "../../controller/party_controller";
 import { Loop, LoopName, Strategy, StrategyName } from "../character_runner";
@@ -121,7 +122,7 @@ export class MerchantStrategy implements Strategy<Merchant> {
                 if (!bot.hasItem(item.name, bot.items, { quantityLessThan: 1 + gItem.s - item.q })) continue;
             }
 
-            await bot.buyFromPonty(item).catch(console.error);
+            await bot.buyFromPonty(item).catch(logger.error);
         }
     }
 }

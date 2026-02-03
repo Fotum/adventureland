@@ -5,9 +5,12 @@ import { FRIENDLY_CHARACTERS } from "./base/settings";
 import { BWIReporter } from "./bwi_reporter";
 import { PartyController } from "./controller/party_controller";
 import { CharacterRunner } from "./strategies/character_runner";
+import { wrapLog } from "./base/logger";
+
+// Redirect default console logging to winston logger
+wrapLog();
 
 await Promise.all([Game.loginJSONFile("credentials.json"), Game.getGData(true, true)]);
-// await Promise.all([Game.loginJSONFile("credentials_debug.json"), Game.getGData(true, true)]);
 await Pathfinder.prepare(Game.G, { remove_abtesting: true, remove_test: true });
 
 const HOME_SERVER_NAME: ServerRegion = "EU";

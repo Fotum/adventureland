@@ -16,7 +16,7 @@ export const EVENTS: Map<string, boolean> = new Map<string, boolean>([
     ["goobrawl", true],
     ["dragold", true],
     ["icegolem", true],
-    ["valentines", true],
+    ["pinkgoo", true],
     ["snowman", true]
 ]);
 export const QUESTS: Map<MonsterName, boolean> = new Map<MonsterName, boolean>([

@@ -1,5 +1,6 @@
 import { CMData, Mage, Pathfinder, PingCompensatedCharacter, Tools } from "alclient";
 import { filterRunners } from "../../base/functions/general";
+import logger from "../../base/logger";
 import { PartyController } from "../../controller/party_controller";
 import { Loop, LoopName, Strategy, StrategyName } from "../character_runner";
 
@@ -65,7 +66,7 @@ export class MagiportSmartMovingStrategy implements Strategy<Mage> {
                 await friend.stopSmartMove();
                 await friend.stopWarpToTown();
             } catch (ex) {
-                console.error(ex);
+                logger.error(ex);
             }
         }
     }

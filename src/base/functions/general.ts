@@ -34,6 +34,7 @@ import { AcceptPartyRequest, RequestParty } from "../../strategies/party_strateg
 import { PartyHealStrategy } from "../../strategies/priest/party_heal_strategy";
 import { UnstackStrategy } from "../../strategies/unstack_strategy";
 import { EventName, MY_CHARACTERS, SAVE_FILES_LOCATION } from "../constants";
+import logger from "../logger";
 import { EVENTS } from "../settings";
 
 export type FilterRunnersOptions = {
@@ -75,9 +76,9 @@ export function consoleLog(bot: Character, message: string, type?: ConsoleLogTyp
     if (!type) type = "info";
     let toSend: string = `[${bot.ctype}]: ${message}`;
 
-    if (type == "info") console.log(toSend);
-    else if (type == "error") console.error(toSend);
-    else if (type == "warn") console.warn(toSend);
+    if (type == "info") logger.info(toSend);
+    else if (type == "error") logger.error(toSend);
+    else if (type == "warn") logger.warn(toSend);
 }
 
 export function generateRandomId(idLength?: number): string {
@@ -185,7 +186,7 @@ export async function startCharacter(
                 break;
             }
             default: {
-                console.warn(`No handler for character ${name} of ctype ${ctype} found`);
+                logger.warn(`No handler for character ${name} of ctype ${ctype} found`);
                 return undefined;
             }
         }
@@ -209,7 +210,7 @@ export async function startCharacter(
 
         return runner;
     } catch (ex) {
-        console.error(ex);
+        logger.error(ex);
 
         if (!(ex instanceof RunnerException)) {
             // Reconnect again
@@ -244,7 +245,7 @@ export function saveBossTimersToFile(bossTimers: Map<MonsterName, number>): void
             fs.writeFileSync(filePath, JSON.stringify(saveToFile), { encoding: "utf8" });
         }
     } catch (ex) {
-        console.log(ex);
+        logger.error(ex);
     }
 }
 
@@ -264,7 +265,7 @@ export function loadBossTimersFromFile(): Map<MonsterName, number> | undefined {
 
         return bossTimers;
     } catch (ex) {
-        console.error(ex);
+        logger.error(ex);
         return undefined;
     }
 }
@@ -308,7 +309,7 @@ export function saveStateToFile(botName: string, state: RunnerState): void {
             fs.writeFileSync(filePath, JSON.stringify(queueToSave), { encoding: "utf8" });
         }
     } catch (ex) {
-        console.log(ex);
+        logger.error(ex);
     }
 }
 
@@ -363,7 +364,7 @@ export function loadStateFromFile(partyController: PartyController, runner: Char
 
         return { currTask: placeHolder, taskQueue: restoredQueue, taskTimers: new Map<RunnerTaskName, number>() };
     } catch (ex) {
-        console.log(ex);
+        logger.error(ex);
         return { currTask: placeHolder, taskQueue: [], taskTimers: new Map<RunnerTaskName, number>() };
     }
 }

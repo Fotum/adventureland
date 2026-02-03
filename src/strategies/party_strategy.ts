@@ -1,4 +1,5 @@
 import { InviteData, PingCompensatedCharacter } from "alclient";
+import logger from "../base/logger";
 import { Loop, LoopName, Strategy, StrategyName } from "./character_runner";
 
 export type PartyConfig = {
@@ -21,7 +22,7 @@ export class AcceptPartyRequest<T extends PingCompensatedCharacter> implements S
             if (this.options.accept && !this.options.accept.includes(data.name)) return;
             if (this.options.deny && this.options.deny.includes(data.name)) return;
 
-            await bot.acceptPartyRequest(data.name).catch(console.error);
+            await bot.acceptPartyRequest(data.name).catch(logger.error);
         };
         bot.socket.on("request", this.onRequest);
     }
@@ -46,7 +47,7 @@ export class RequestParty<T extends PingCompensatedCharacter> implements Strateg
 
         this.loops.set("party", {
             fn: async (bot: T) => {
-                await this.requestParty(bot);
+                await this.requestParty(bot).catch(logger.error);
             },
             interval: 2000
         });
@@ -58,7 +59,7 @@ export class RequestParty<T extends PingCompensatedCharacter> implements Strateg
 
     private async requestParty(bot: T): Promise<void> {
         if (!bot.partyData?.list.includes(this.partyLeader)) {
-            return bot.sendPartyRequest(this.partyLeader).catch(console.error);
+            return bot.sendPartyRequest(this.partyLeader);
         }
     }
 }

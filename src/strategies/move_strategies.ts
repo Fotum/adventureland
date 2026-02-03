@@ -19,6 +19,7 @@ import { HEAL_RETREAT_RATIO, PLAYER_MIN_DISTANCE } from "../base/constants";
 import { filterRunners, ignoreExceptions } from "../base/functions/general";
 import { sortClosestDistance } from "../base/functions/sort";
 import { Vector } from "../base/geometry/vector";
+import logger from "../base/logger";
 import { PartyController } from "../controller/party_controller";
 import { CharacterRunner, Loop, LoopName, Strategy, StrategyName } from "./character_runner";
 
@@ -428,7 +429,7 @@ export class SpecialMonsterKiteStrategy<T extends PingCompensatedCharacter> impl
                 await bot.smartMove(spawn, smartMoveOptions);
             } catch (ex) {
                 if (ex.message.includes("new smartMove started")) return;
-                else console.error(ex);
+                else logger.error(ex);
             }
 
             let target: CheckedBossData = this.checkGoodData(bot);
@@ -482,7 +483,7 @@ export class SpecialMonsterKiteStrategy<T extends PingCompensatedCharacter> impl
                 await bot.smartMove(spawn, smartMoveOptions).catch(ignoreExceptions);
             } catch (ex) {
                 if (ex.message.includes("new smartMove started")) return;
-                else console.error(ex);
+                else logger.error(ex);
             }
 
             let target: CheckedBossData = this.checkGoodData(bot);

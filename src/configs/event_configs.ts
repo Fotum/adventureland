@@ -1,4 +1,5 @@
 import { CharacterType, MonsterName, PingCompensatedCharacter } from "alclient";
+import logger from "../base/logger";
 import { PartyController } from "../controller/party_controller";
 import { Strategy } from "../strategies/character_runner";
 import { getDragoldConfig } from "./events/dragold";
@@ -10,9 +11,9 @@ import { getIcegolemConfig } from "./events/icegolem";
 import { getJrConfig } from "./events/jr";
 import { getMvampireConfig } from "./events/mvampire";
 import { getPhoenixConfig } from "./events/phoenix";
+import { getPinkgooConfig } from "./events/pinkgoo";
 import { getSkeletorConfig } from "./events/skeletor";
 import { getSnowmanConfig } from "./events/snowman";
-import { getValentinesConfig } from "./events/valentines";
 
 export type EventConfig = {
     targets: MonsterName[];
@@ -34,8 +35,8 @@ export function getEventConfig(eventName: string, partyController: PartyControll
             return getDragoldConfig(partyController);
         case "icegolem":
             return getIcegolemConfig(partyController);
-        case "valentines":
-            return getValentinesConfig(partyController);
+        case "pinkgoo":
+            return getPinkgooConfig(partyController);
         case "snowman":
             return getSnowmanConfig(partyController);
 
@@ -55,7 +56,7 @@ export function getEventConfig(eventName: string, partyController: PartyControll
         case "skeletor":
             return getSkeletorConfig(partyController);
         default: {
-            console.warn(`Could not find event named ${eventName}`);
+            logger.warn(`Could not find event named ${eventName}`);
             return undefined;
         }
     }

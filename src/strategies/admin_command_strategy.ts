@@ -1,6 +1,7 @@
 import { PingCompensatedCharacter, ServerIdentifier, ServerRegion } from "alclient";
 import { MY_CHARACTERS } from "../base/constants";
 import { startCharacter } from "../base/functions/general";
+import logger from "../base/logger";
 import { PartyController } from "../controller/party_controller";
 import { CharacterRunner, Strategy, StrategyName } from "./character_runner";
 
@@ -57,7 +58,7 @@ export class AdminCommandStrategy<T extends PingCompensatedCharacter> implements
                     break;
                 }
                 default:
-                    console.warn(`Received unknown command ${cmd}. Command was not executed`);
+                    logger.warn(`Received unknown command ${cmd}. Command was not executed`);
             }
         };
 

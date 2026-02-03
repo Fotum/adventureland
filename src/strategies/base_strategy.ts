@@ -1,7 +1,6 @@
 import {
     Attribute,
     ChestData,
-    ChestLootData,
     ChestOpenedData,
     Constants,
     GItem,
@@ -28,6 +27,7 @@ import {
     SEND_GOLD_AT
 } from "../base/constants";
 import { filterRunners, ignoreExceptions } from "../base/functions/general";
+import logger from "../base/logger";
 import { DISMANTLE_ITEMS, EXCHANGE_ITMES, SELL_ITMES } from "../base/settings";
 import { PartyController } from "../controller/party_controller";
 import { Loop, LoopName, Loops, Strategy, StrategyName } from "./character_runner";
@@ -74,11 +74,11 @@ export class BaseStrategy<T extends PingCompensatedCharacter> implements Strateg
             fn: async (bot: T) => {
                 for (const [, chest] of bot.chests) {
                     await this.lootChest(bot, chest)
-                        .then((data) => {
-                            console.log(`[${bot.ctype}]: Successfully looted simple ${data.id}`);
-                            let lootData: ChestLootData = data as unknown as ChestLootData;
-                            console.log(`[${bot.ctype}]: Gold: ${lootData.gold}\nItems: ${lootData.items.map((item) => item.name)}`);
-                        })
+                        // .then((data) => {
+                        //     logger.log(`[${bot.ctype}]: Successfully looted simple ${data.id}`);
+                        //     let lootData: ChestLootData = data as unknown as ChestLootData;
+                        //     logger.log(`[${bot.ctype}]: Gold: ${lootData.gold}\nItems: ${lootData.items.map((item) => item.name)}`);
+                        // })
                         .catch(ignoreExceptions);
                 }
             },
@@ -86,7 +86,7 @@ export class BaseStrategy<T extends PingCompensatedCharacter> implements Strateg
         });
         this.loops.set("buy_pots", {
             fn: async (bot: T) => {
-                await this.restockPotions(bot).catch(console.error);
+                await this.restockPotions(bot).catch(logger.error);
             },
             interval: 60_000
         });
@@ -109,12 +109,12 @@ export class BaseStrategy<T extends PingCompensatedCharacter> implements Strateg
 
         this.lootOnDrop = (data: ChestData) => {
             this.lootChest(bot, data)
-                .then((data) => () => {
-                    console.log(`[${bot.ctype}]: Successfully looted onDrop ${data.id}`);
-                    let lootData: ChestLootData = data as unknown as ChestLootData;
-                    console.log(`[${bot.ctype}]: Gold: ${lootData.gold}\nItems: ${lootData.items.map((item) => item.name)}`);
-                })
-                .catch(console.error);
+                // .then((data) => () => {
+                //     logger.log(`[${bot.ctype}]: Successfully looted onDrop ${data.id}`);
+                //     let lootData: ChestLootData = data as unknown as ChestLootData;
+                //     logger.log(`[${bot.ctype}]: Gold: ${lootData.gold}\nItems: ${lootData.items.map((item) => item.name)}`);
+                // })
+                .catch(ignoreExceptions);
         };
         bot.socket.on("drop", this.lootOnDrop);
     }
@@ -135,7 +135,7 @@ export class BaseStrategy<T extends PingCompensatedCharacter> implements Strateg
 
     private async respawnIfDead(bot: T): Promise<IPosition> {
         if (!bot.rip) return;
-        await bot.respawn().catch(console.error);
+        await bot.respawn().catch(logger.error);
     }
 
     private async usePotions(bot: T): Promise<void> {
@@ -233,9 +233,9 @@ export class BaseStrategy<T extends PingCompensatedCharacter> implements Strateg
         if (currHpPots <= this.config.keepPotions.min) {
             let toBuy: number = this.config.keepPotions.max - currHpPots;
             if (bot.canBuy(this.config.hpPotType, { quantity: toBuy })) {
-                await bot.buy(this.config.hpPotType, toBuy).catch(console.error);
+                await bot.buy(this.config.hpPotType, toBuy).catch(logger.error);
             } else {
-                console.warn(`[${bot.id}]: Cannot buy HP potions`);
+                logger.warn(`[${bot.id}]: Cannot buy HP potions`);
             }
         }
 
@@ -243,9 +243,9 @@ export class BaseStrategy<T extends PingCompensatedCharacter> implements Strateg
         if (currMpPots <= this.config.keepPotions.min) {
             let toBuy: number = this.config.keepPotions.max - currMpPots;
             if (bot.canBuy(this.config.mpPotType, { quantity: toBuy })) {
-                await bot.buy(this.config.mpPotType, toBuy).catch(console.error);
+                await bot.buy(this.config.mpPotType, toBuy).catch(logger.error);
             } else {
-                console.warn(`[${bot.id}]: Cannot buy MP potions`);
+                logger.warn(`[${bot.id}]: Cannot buy MP potions`);
             }
         }
     }
@@ -329,13 +329,13 @@ export class BaseInventoryStrategy<T extends PingCompensatedCharacter> implement
             if (currScrolls > replenishWhen) continue;
 
             if (bot.esize <= 0 && currScrolls == 0) {
-                console.warn(`[${bot.ctype}]: Cannot buy scrolls of type "${scroll}". No inventory space left`);
+                logger.warn(`[${bot.ctype}]: Cannot buy scrolls of type "${scroll}". No inventory space left`);
                 continue;
             }
             let needToBuy: number = amount - currScrolls;
             if (!bot.canBuy(scroll, { quantity: needToBuy })) continue;
 
-            await bot.buy(scroll, needToBuy).catch(console.error);
+            await bot.buy(scroll, needToBuy).catch(logger.error);
         }
     }
 

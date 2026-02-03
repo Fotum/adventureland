@@ -8,6 +8,7 @@ import {
     getActiveScheduleEvents,
     getBossesAroundCharacters
 } from "../base/functions/monsters";
+import logger from "../base/logger";
 import { QUESTS } from "../base/settings";
 import { getQuestConfig } from "../configs/quest_configs";
 import { getSpotConfig } from "../configs/spot_configs";
@@ -203,6 +204,8 @@ export class PartyController {
                     for (let preparedSpecial of preparedSpecials) {
                         if (currState.currTask.id == preparedSpecial.id) continue;
                         if (currState.taskQueue.some((task) => task.id == preparedSpecial.id)) continue;
+                        // Get strategies for current special, if no strategies provided -> skip
+                        if (!preparedSpecial.strategies[runner.bot.ctype]) continue;
 
                         currState.taskQueue.push(
                             getSpecialMonsterTask(runner, {
@@ -218,6 +221,8 @@ export class PartyController {
                     for (let preparedEvent of preparedEvents) {
                         if (currState.currTask.id == preparedEvent.id) continue;
                         if (currState.taskQueue.some((task) => task.id == preparedEvent.id)) continue;
+                        // Get strategies for current event, if no strategies provided -> skip
+                        if (!preparedEvent.strategies[runner.bot.ctype]) continue;
 
                         // Override current
                         let redoTask: RunnerTask = undefined;
@@ -249,7 +254,7 @@ export class PartyController {
                 }
             }
         } catch (ex) {
-            console.error(ex);
+            logger.error(ex);
         } finally {
             setTimeout(() => {
                 this.logicLoop();

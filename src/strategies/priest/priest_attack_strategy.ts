@@ -1,6 +1,7 @@
 import { Entity, Game, PingCompensatedCharacter, Player, Priest, Tools } from "alclient";
 import FastPriorityQueue from "fastpriorityqueue";
 import { ignoreExceptions } from "../../base/functions/general";
+import logger from "../../base/logger";
 import { PartyController } from "../../controller/party_controller";
 import { BaseAttackConfig, BaseAttackStrategy } from "../base_attack_strategy";
 
@@ -56,13 +57,13 @@ export class PriestAttackStrategy extends BaseAttackStrategy<Priest> {
             return;
         }
 
-        await this.equipItems(bot).catch(console.error);
+        await this.equipItems(bot).catch(logger.error);
 
         if (!this.config.disableBasicAttack) await this.basicAttack(bot, this.botSort).catch(ignoreExceptions);
         if (!this.config.disableIdleAttack) await this.idleAttack(bot, this.botSort).catch(ignoreExceptions);
         if (!this.config.disableAbsorb) await this.absorbTargets(bot).catch(ignoreExceptions);
 
-        await this.equipItems(bot).catch(console.error);
+        await this.equipItems(bot).catch(logger.error);
     }
 
     protected async basicAttack(bot: Priest, priority: (a: Entity, b: Entity) => boolean): Promise<unknown> {

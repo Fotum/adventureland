@@ -13,6 +13,7 @@ import {
     SkillName,
     Warrior
 } from "alclient";
+import logger from "../base/logger";
 
 export type Loop<T> = {
     fn: (bot: T) => Promise<unknown>;
@@ -119,7 +120,7 @@ export class CharacterRunner<T extends PingCompensatedCharacter> {
                             await loop.fn(this.bot);
                         }
                     } catch (ex) {
-                        console.error(`${name}`, ex);
+                        logger.error(`${name}`, ex);
                     }
 
                     // Next run
@@ -144,7 +145,7 @@ export class CharacterRunner<T extends PingCompensatedCharacter> {
                         );
                     }
                 };
-                newLoop().catch(console.error);
+                newLoop().catch(logger.error);
             }
         }
     }
@@ -265,7 +266,7 @@ export class CharacterRunner<T extends PingCompensatedCharacter> {
                 newBot.disconnect();
             }
 
-            console.error(`Couldn't reconnect ${this.bot.name}\nCause:`, ex);
+            logger.error(`Couldn't reconnect ${this.bot.name}\nCause:`, ex);
             if (retry) {
                 let wait = /wait_(\d+)_second/.exec(ex);
                 if (wait && wait[1]) {
@@ -392,7 +393,7 @@ export class CharacterRunner<T extends PingCompensatedCharacter> {
                         newBot = undefined;
                     }
 
-                    console.error(`Couldn't change server for ${this.bot.name}\nCause:`, ex);
+                    logger.error(`Couldn't change server for ${this.bot.name}\nCause:`, ex);
                     if (retry) {
                         let wait = /wait_(\d+)_second/.exec(ex);
                         if (wait && wait[1]) {
@@ -416,7 +417,7 @@ export class CharacterRunner<T extends PingCompensatedCharacter> {
                 resolve();
             };
 
-            switchBots().catch(console.error);
+            switchBots().catch(logger.error);
         });
     }
 
