@@ -1,7 +1,7 @@
 import { Game, IPosition, PingCompensatedCharacter } from "alclient";
 import { EventName, SpecialName } from "../base/constants";
 import { sleep } from "../base/functions/general";
-import logger from "../base/logger";
+import logger from "../logger";
 import { CharacterRunner } from "../strategies/character_runner";
 
 export type RunnerTaskName =

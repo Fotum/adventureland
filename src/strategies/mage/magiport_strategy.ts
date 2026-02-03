@@ -1,6 +1,6 @@
 import { CMData, Mage, Pathfinder, PingCompensatedCharacter, Tools } from "alclient";
 import { filterRunners } from "../../base/functions/general";
-import logger from "../../base/logger";
+import logger from "../../logger";
 import { PartyController } from "../../controller/party_controller";
 import { Loop, LoopName, Strategy, StrategyName } from "../character_runner";
 

@@ -13,7 +13,7 @@ import {
     SkillName,
     Warrior
 } from "alclient";
-import logger from "../base/logger";
+import logger from "../logger";
 
 export type Loop<T> = {
     fn: (bot: T) => Promise<unknown>;

@@ -34,7 +34,7 @@ import { AcceptPartyRequest, RequestParty } from "../../strategies/party_strateg
 import { PartyHealStrategy } from "../../strategies/priest/party_heal_strategy";
 import { UnstackStrategy } from "../../strategies/unstack_strategy";
 import { EventName, MY_CHARACTERS, SAVE_FILES_LOCATION } from "../constants";
-import logger from "../logger";
+import logger from "../../logger";
 import { EVENTS } from "../settings";
 
 export type FilterRunnersOptions = {

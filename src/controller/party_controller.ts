@@ -8,7 +8,7 @@ import {
     getActiveScheduleEvents,
     getBossesAroundCharacters
 } from "../base/functions/monsters";
-import logger from "../base/logger";
+import logger from "../logger";
 import { QUESTS } from "../base/settings";
 import { getQuestConfig } from "../configs/quest_configs";
 import { getSpotConfig } from "../configs/spot_configs";

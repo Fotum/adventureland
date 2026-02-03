@@ -5,7 +5,7 @@ import { FRIENDLY_CHARACTERS } from "./base/settings";
 import { BWIReporter } from "./bwi_reporter";
 import { PartyController } from "./controller/party_controller";
 import { CharacterRunner } from "./strategies/character_runner";
-import { wrapLog } from "./base/logger";
+import { wrapLog } from "./logger";
 
 // Redirect default console logging to winston logger
 wrapLog();

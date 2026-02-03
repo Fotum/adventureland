@@ -19,7 +19,7 @@ import {
 import FastPriorityQueue from "fastpriorityqueue";
 import { filterRunners, ignoreExceptions, sleep } from "../base/functions/general";
 import { sortPriority } from "../base/functions/sort";
-import logger from "../base/logger";
+import logger from "../logger";
 import { generateEquipmentSet } from "../configs/equipment_setups";
 import { PartyController } from "../controller/party_controller";
 import { Loop, LoopName, Loops, Strategy, StrategyName } from "./character_runner";

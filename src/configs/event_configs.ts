@@ -1,6 +1,6 @@
 import { CharacterType, MonsterName, PingCompensatedCharacter } from "alclient";
-import logger from "../base/logger";
 import { PartyController } from "../controller/party_controller";
+import logger from "../logger";
 import { Strategy } from "../strategies/character_runner";
 import { getDragoldConfig } from "./events/dragold";
 import { getFrogConfig } from "./events/frog";

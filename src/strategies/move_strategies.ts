@@ -19,7 +19,7 @@ import { HEAL_RETREAT_RATIO, PLAYER_MIN_DISTANCE } from "../base/constants";
 import { filterRunners, ignoreExceptions } from "../base/functions/general";
 import { sortClosestDistance } from "../base/functions/sort";
 import { Vector } from "../base/geometry/vector";
-import logger from "../base/logger";
+import logger from "../logger";
 import { PartyController } from "../controller/party_controller";
 import { CharacterRunner, Loop, LoopName, Strategy, StrategyName } from "./character_runner";
 

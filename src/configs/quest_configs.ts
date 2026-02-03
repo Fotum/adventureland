@@ -1,5 +1,5 @@
 import { MonsterName } from "alclient";
-import logger from "../base/logger";
+import logger from "../logger";
 import { PartyController } from "../controller/party_controller";
 import { getArmadilloQuestConfig } from "./quests/armadillo";
 import { getBatQuestConfig } from "./quests/bat";

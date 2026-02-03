@@ -1,6 +1,6 @@
 import { CharacterType, PingCompensatedCharacter } from "alclient";
 import { SpotName } from "../base/constants";
-import logger from "../base/logger";
+import logger from "../logger";
 import { PartyController } from "../controller/party_controller";
 import { Strategy } from "../strategies/character_runner";
 import { getArmadilloSpotConfig } from "./spots/armadillo";

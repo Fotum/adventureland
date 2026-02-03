@@ -27,7 +27,7 @@ import {
     SEND_GOLD_AT
 } from "../base/constants";
 import { filterRunners, ignoreExceptions } from "../base/functions/general";
-import logger from "../base/logger";
+import logger from "../logger";
 import { DISMANTLE_ITEMS, EXCHANGE_ITMES, SELL_ITMES } from "../base/settings";
 import { PartyController } from "../controller/party_controller";
 import { Loop, LoopName, Loops, Strategy, StrategyName } from "./character_runner";

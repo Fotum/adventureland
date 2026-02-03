@@ -16,7 +16,7 @@ import {
 } from "alclient";
 import FastPriorityQueue from "fastpriorityqueue";
 import { filterRunners, ignoreExceptions } from "../../base/functions/general";
-import logger from "../../base/logger";
+import logger from "../../logger";
 import { PartyController } from "../../controller/party_controller";
 import { BaseAttackConfig, BaseAttackStrategy } from "../base_attack_strategy";
 
