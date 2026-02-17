@@ -2,16 +2,11 @@ import { CharacterType, MonsterName, PingCompensatedCharacter, ServerIdentifier,
 import { SpotName } from "../base/constants";
 import { shouldGoBank } from "../base/functions/characters";
 import { loadBossTimersFromFile, loadStateFromFile, msince, saveBossTimersToFile, saveStateToFile } from "../base/functions/general";
-import {
-    PreparedScheduleEvent,
-    PreparedSpecialMonster,
-    getActiveScheduleEvents,
-    getBossesAroundCharacters
-} from "../base/functions/monsters";
-import logger from "../logger";
+import { PreparedEvent, getPreparedEvents } from "../base/functions/monsters";
 import { QUESTS } from "../base/settings";
 import { getQuestConfig } from "../configs/quest_configs";
 import { getSpotConfig } from "../configs/spot_configs";
+import logger from "../logger";
 import { CharacterRunner, Strategy } from "../strategies/character_runner";
 import { RunnerTask, RunnerTaskName } from "./runner_task";
 import {
@@ -22,8 +17,7 @@ import {
     getEmptyTask,
     getEventTask,
     getHolidayBuffTask,
-    getInteractWithQuestNpcTask,
-    getSpecialMonsterTask
+    getInteractWithQuestNpcTask
 } from "./runner_task_collection";
 
 export type PartyControllerConfig = {
@@ -73,6 +67,18 @@ export class PartyController {
 
         process.on("SIGINT", this.saveAndExit.bind(this));
         process.on("SIGTERM", this.saveAndExit.bind(this));
+
+        // #TODO: Temporary debug
+        // setInterval(() => {
+        //     for (const [name, state] of this.runnerStates) {
+        //         logger.info(`[${name}]: Current task is: ${state.currTask.name}, status: ${state.currTask.status}}`);
+        //         logger.info(
+        //             `[${name}]: Current task queue is: [${state.taskQueue
+        //                 .map((task) => `${task.id}:${task.name}(${task.status})`)
+        //                 .join(" -> ")}]`
+        //         );
+        //     }
+        // }, 10_000);
     }
 
     private async logicLoop(): Promise<void> {
@@ -185,71 +191,57 @@ export class PartyController {
 
             // Check bosses and push boss task
             if (this.config.enableBosses) {
-                // Check bosses around characters
-                let preparedSpecials: PreparedSpecialMonster[] = getBossesAroundCharacters(this);
-                // Check global events
-                let preparedEvents: PreparedScheduleEvent[] = getActiveScheduleEvents(this);
+                // Prepare events
+                // #TODO: Can generate an array of tasks instead of preparation
+                // #TODO: Add event prioerity ans sort taskQueue instead of concats and splices
+                let preparedEvents: PreparedEvent[] = getPreparedEvents(this);
+                if (preparedEvents.length == 0) return;
 
                 // #TODO: set boss check steps complete for found boss. In bcheck step.name == bossName
-
-                if (preparedSpecials.length == 0 && preparedEvents.length == 0) {
-                    return;
-                }
-
                 for (const [name, runner] of this.activeRunners) {
                     if (!runner.isReady()) continue;
                     if (runner.bot.ctype == "merchant") continue;
 
                     let currState: RunnerState = this.runnerStates.get(name);
-                    for (let preparedSpecial of preparedSpecials) {
-                        if (currState.currTask.id == preparedSpecial.id) continue;
-                        if (currState.taskQueue.some((task) => task.id == preparedSpecial.id)) continue;
-                        // Get strategies for current special, if no strategies provided -> skip
-                        if (!preparedSpecial.strategies[runner.bot.ctype]) continue;
-
-                        currState.taskQueue.push(
-                            getSpecialMonsterTask(runner, {
-                                id: preparedSpecial.id,
-                                name: preparedSpecial.name,
-                                moveTo: preparedSpecial.moveTo,
-                                targets: preparedSpecial.targets,
-                                strategies: preparedSpecial.strategies[runner.bot.ctype]
-                            })
-                        );
-                    }
-
-                    for (let preparedEvent of preparedEvents) {
+                    let overrideEvents: RunnerTask[] = [];
+                    let nonOverrideEvents: RunnerTask[] = [];
+                    for (const preparedEvent of preparedEvents) {
                         if (currState.currTask.id == preparedEvent.id) continue;
                         if (currState.taskQueue.some((task) => task.id == preparedEvent.id)) continue;
-                        // Get strategies for current event, if no strategies provided -> skip
+                        // Get strategies for current special, if no strategies provided -> skip
                         if (!preparedEvent.strategies[runner.bot.ctype]) continue;
 
-                        // Override current
-                        let redoTask: RunnerTask = undefined;
-                        if (preparedEvent.override && currState.currTask.canOverride) {
-                            currState.currTask.abortTask(`Overriden by ${preparedEvent.name}`);
-                            redoTask = currState.currTask;
-                            // Placeholder to clean current task
-                            currState.currTask = getEmptyTask(runner).setComplete("COMPLETE");
+                        let eventTask: RunnerTask = getEventTask(runner, preparedEvent);
+                        if (preparedEvent.scheduled) {
+                            if (preparedEvent.override) {
+                                eventTask.canOverride = false;
+                                overrideEvents.push(eventTask);
+                            } else {
+                                nonOverrideEvents.push(eventTask);
+                            }
+                        } else {
+                            currState.taskQueue.push(eventTask);
                         }
+                    }
 
-                        let eventTask: RunnerTask = getEventTask(runner, {
-                            id: preparedEvent.id,
-                            name: preparedEvent.name,
-                            targets: preparedEvent.targets,
-                            destination: preparedEvent.destination,
-                            waitForRespawnMs: preparedEvent.waitForRespawnMs,
-                            strategies: preparedEvent.strategies[runner.bot.ctype]
-                        });
-                        if (preparedEvent.override) {
-                            eventTask.canOverride = false;
-                        }
+                    // Handle basic events
+                    if (nonOverrideEvents.length > 0) {
+                        currState.taskQueue = nonOverrideEvents.concat(currState.taskQueue);
+                    }
 
-                        currState.taskQueue.splice(0, 0, eventTask);
-                        if (redoTask) {
-                            redoTask.reset();
-                            currState.taskQueue.splice(1, 0, redoTask);
+                    // Handle overrides
+                    if (overrideEvents.length > 0) {
+                        // Override current task
+                        if (currState.currTask.name != "farming" && currState.currTask.name != "quest" && currState.currTask.canOverride) {
+                            // let redoTask: RunnerTask = currState.currTask;
+
+                            currState.currTask.abortTask(`Overriden by ${overrideEvents[0].name}`);
+                            // currState.currTask = getEmptyTask(runner).setComplete("COMPLETE");
+
+                            // redoTask.reset();
+                            // currState.taskQueue.splice(0, 0, redoTask);
                         }
+                        currState.taskQueue = overrideEvents.concat(currState.taskQueue);
                     }
                 }
             }
@@ -274,8 +266,8 @@ export class PartyController {
         }
     }
 
-    public getRunners(): CharacterRunner<PingCompensatedCharacter>[] {
-        return Array.from(this.activeRunners.values());
+    public getRunners(onlyActive: boolean = false): CharacterRunner<PingCompensatedCharacter>[] {
+        return Array.from(this.activeRunners.values()).filter((r) => !onlyActive || r.isReady());
     }
 
     public addRunner(runner: CharacterRunner<PingCompensatedCharacter>): void {

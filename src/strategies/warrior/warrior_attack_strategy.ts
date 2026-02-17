@@ -18,11 +18,11 @@ export type WarriorAttackConfig = BaseAttackConfig & {
 export class WarriorAttackStrategy extends BaseAttackStrategy<Warrior> {
     protected config: WarriorAttackConfig;
 
-    public constructor(partyController: PartyController, options?: WarriorAttackConfig) {
-        super(partyController, options);
+    public constructor(partyController: PartyController, config?: WarriorAttackConfig) {
+        super(partyController, config);
 
-        if (!options.disableCleave) this.interval.push("cleave");
-        if (!options.disableWarCry) this.interval.push("warcry");
+        if (!config.disableCleave) this.interval.push("cleave");
+        if (!config.disableWarCry) this.interval.push("warcry");
 
         this.loops.set("attack", {
             fn: async (bot: Warrior) => {

@@ -13,7 +13,7 @@
     "author": "Fotum",
     "license": "MIT",
     "dependencies": {
-        "alclient": "^0.23.3",
+        "alclient": "^0.24.1",
         "bot-web-interface": "^2.0.14",
         "fastpriorityqueue": "^0.7.5",
         "pretty-ms": "^9.3.0",

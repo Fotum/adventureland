@@ -17,6 +17,7 @@ import { getSnowmanConfig } from "./events/snowman";
 
 export type EventConfig = {
     targets: MonsterName[];
+    scheduled: boolean;
     waitForRespawnMs?: number;
     override?: boolean;
     strategies: {

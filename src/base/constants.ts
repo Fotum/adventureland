@@ -18,6 +18,7 @@ export const MY_CHARACTERS: Map<string, CharacterType> = new Map<string, Charact
     ["Shalfey", "warrior"],
     ["Flamme", "priest"],
     ["MagicFotum", "mage"],
+    ["RangeFotum", "ranger"],
     ["Momental", "merchant"]
 ]);
 // export const MY_CHARACTERS: Map<string, CharacterType> = new Map<string, CharacterType>([

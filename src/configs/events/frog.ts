@@ -7,6 +7,7 @@ import { EventConfig } from "../event_configs";
 export function getFrogConfig(partyController: PartyController): EventConfig {
     return {
         targets: ["frog", "phoenix"],
+        scheduled: false,
         override: false,
         strategies: {
             mage: {

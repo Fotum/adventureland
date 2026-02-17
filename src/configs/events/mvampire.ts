@@ -9,6 +9,7 @@ import { EventConfig } from "../event_configs";
 export function getMvampireConfig(partyController: PartyController): EventConfig {
     return {
         targets: ["mvampire"],
+        scheduled: false,
         override: false,
         strategies: {
             warrior: {

@@ -499,8 +499,7 @@ export class SpecialMonsterKiteStrategy<T extends PingCompensatedCharacter> impl
         if (bot.map == "main") {
             let kane: Player = bot.players.get("$Kane");
             if (!kane && this.config?.partyController.getRunners()) {
-                for (let runner of this.config.partyController.getRunners()) {
-                    if (!runner.isReady()) continue;
+                for (let runner of this.config.partyController.getRunners(true)) {
                     if (runner.bot == bot) continue;
 
                     kane = runner.bot.players.get("$Kane");
@@ -511,8 +510,7 @@ export class SpecialMonsterKiteStrategy<T extends PingCompensatedCharacter> impl
 
             let angel: Player = bot.players.get("$Angel");
             if (!angel && this.config?.partyController.getRunners()) {
-                for (let runner of this.config.partyController.getRunners()) {
-                    if (!runner.isReady()) continue;
+                for (let runner of this.config.partyController.getRunners(true)) {
                     if (runner.bot == bot) continue;
 
                     angel = runner.bot.players.get("$Angel");

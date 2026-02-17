@@ -1,8 +1,9 @@
 import { Constants, Entity, GItem, Game, IPosition, MonsterName, PingCompensatedCharacter } from "alclient";
-import { EventName, KEEP_GOLD, MERCHANT_KEEP_GOLD, SEND_GOLD_AT, SpecialName } from "../base/constants";
+import { KEEP_GOLD, MERCHANT_KEEP_GOLD, SEND_GOLD_AT } from "../base/constants";
 import { generateRandomId, ignoreExceptions, mssince, sleep, ssince } from "../base/functions/general";
-import logger from "../logger";
+import { PreparedEvent } from "../base/functions/monsters";
 import { SPECIAL_MONSTERS, STORE_ITEMS } from "../base/settings";
+import logger from "../logger";
 import { NoAttackScareStrategy } from "../strategies/base_attack_strategy";
 import { CharacterRunner, Strategy } from "../strategies/character_runner";
 import { PartyController } from "./party_controller";
@@ -30,20 +31,10 @@ export function getChangeSpotTask(
     return new RunnerTask(generateRandomId(), taskName, runner).pushStep({ name: "spot_change", fn: taskFunction });
 }
 
-type TaskSpecialMonsterInfo = {
-    id: string;
-    name: SpecialName;
-    targets: MonsterName[];
-    moveTo: IPosition;
-    strategies: {
-        attack?: Strategy<PingCompensatedCharacter>;
-        move?: Strategy<PingCompensatedCharacter>;
-    };
-};
-export function getSpecialMonsterTask(runner: CharacterRunner<PingCompensatedCharacter>, specialInfo: TaskSpecialMonsterInfo): RunnerTask {
-    return new RunnerTask(specialInfo.id, specialInfo.name, runner, specialInfo.moveTo)
+export function getEventTask(runner: CharacterRunner<PingCompensatedCharacter>, eventInfo: PreparedEvent): RunnerTask {
+    return new RunnerTask(eventInfo.id, eventInfo.name, runner, eventInfo.destination)
         .pushStep({
-            name: "move_to_target",
+            name: `move_to_${eventInfo.name}`,
             fn: async (runner: CharacterRunner<PingCompensatedCharacter>, signal: AbortSignal) => {
                 runner.removeStrategy("move");
 
@@ -51,8 +42,14 @@ export function getSpecialMonsterTask(runner: CharacterRunner<PingCompensatedCha
                     runner.applyStrategy(new NoAttackScareStrategy());
                 }
 
+                if (eventInfo.name == "icegolem") {
+                    return await runner.bot.join(eventInfo.name as unknown as MonsterName).catch((ex) => {
+                        throw new Error(ex);
+                    });
+                }
+
                 await runner.bot
-                    .smartMove(specialInfo.moveTo, {
+                    .smartMove(eventInfo.destination, {
                         useBlink: runner.bot.ctype == "mage",
                         stopIfTrue: async () => {
                             return signal.aborted;
@@ -65,61 +62,9 @@ export function getSpecialMonsterTask(runner: CharacterRunner<PingCompensatedCha
             }
         })
         .pushStep({
-            name: "kill_special",
+            name: `do_${eventInfo.name}`,
             fn: async (runner: CharacterRunner<PingCompensatedCharacter>, signal: AbortSignal) => {
-                runner.applyStrategies([specialInfo.strategies.attack, specialInfo.strategies.move]);
-                // Remove move strategy so character wont go to new random spawn
-                await checkCompletionForMs(runner.bot, specialInfo.targets, signal);
-                signal.throwIfAborted();
-            }
-        });
-}
-
-type TaskEventInfo = {
-    id: string;
-    name: EventName;
-    targets: MonsterName[];
-    destination: IPosition | keyof typeof Game.G.events;
-    waitForRespawnMs?: number;
-    strategies: {
-        attack?: Strategy<PingCompensatedCharacter>;
-        move?: Strategy<PingCompensatedCharacter>;
-    };
-};
-export function getEventTask(runner: CharacterRunner<PingCompensatedCharacter>, eventInfo: TaskEventInfo): RunnerTask {
-    return new RunnerTask(eventInfo.id, eventInfo.name, runner, eventInfo.destination)
-        .pushStep({
-            name: "move_to_event",
-            fn: async (runner: CharacterRunner<PingCompensatedCharacter>, signal: AbortSignal) => {
-                runner.removeStrategy("move");
-
-                if (runner.bot.isEquipped("jacko") || runner.bot.hasItem("jacko")) {
-                    runner.applyStrategy(new NoAttackScareStrategy());
-                }
-
-                if (eventInfo.name == "icegolem") {
-                    await runner.bot.join(eventInfo.name as unknown as MonsterName).catch((ex) => {
-                        throw new Error(ex);
-                    });
-                } else {
-                    await runner.bot
-                        .smartMove(eventInfo.destination, {
-                            useBlink: runner.bot.ctype == "mage",
-                            stopIfTrue: async () => {
-                                return signal.aborted;
-                            }
-                        })
-                        .catch((ex) => {
-                            throw new Error(`Smart move error: ${ex}`);
-                        });
-                    signal.throwIfAborted();
-                }
-            }
-        })
-        .pushStep({
-            name: "do_event",
-            fn: async (runner: CharacterRunner<PingCompensatedCharacter>, signal: AbortSignal) => {
-                runner.applyStrategies([eventInfo.strategies.attack, eventInfo.strategies.move]);
+                runner.applyStrategies([eventInfo.strategies[runner.bot.ctype].attack, eventInfo.strategies[runner.bot.ctype].move]);
                 // Remove move strategy so character wont go to new random spawn
                 await checkCompletionForMs(runner.bot, eventInfo.targets, signal, eventInfo.waitForRespawnMs).finally(() => {
                     runner.removeStrategy("move");

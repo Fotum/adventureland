@@ -346,9 +346,10 @@ export function loadStateFromFile(partyController: PartyController, runner: Char
                     id: state.taskId,
                     name: state.taskName as EventName,
                     targets: eventConfig.targets,
+                    scheduled: true,
                     destination: joinTo ? joinTo : state.position,
                     waitForRespawnMs: eventConfig.waitForRespawnMs,
-                    strategies: eventConfig.strategies[runner.bot.ctype]
+                    strategies: eventConfig.strategies
                 });
             } else if (taskName == "bcheck") {
                 restoredTask = getCheckBossesTask(partyController, runner);

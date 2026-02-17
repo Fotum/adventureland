@@ -9,6 +9,7 @@ import { EventConfig } from "../event_configs";
 export function getIcegolemConfig(partyController: PartyController): EventConfig {
     return {
         targets: ["icegolem"],
+        scheduled: true,
         override: true,
         strategies: {
             warrior: {

@@ -9,6 +9,7 @@ import { EventConfig } from "../event_configs";
 export function getSkeletorConfig(partyController: PartyController): EventConfig {
     return {
         targets: ["skeletor"],
+        scheduled: false,
         override: false,
         strategies: {
             warrior: {

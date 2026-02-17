@@ -9,6 +9,7 @@ import { EventConfig } from "../event_configs";
 export function getPinkgooConfig(partyController: PartyController): EventConfig {
     return {
         targets: ["pinkgoo"],
+        scheduled: true,
         override: false,
         strategies: {
             warrior: {

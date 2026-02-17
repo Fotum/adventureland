@@ -10,6 +10,7 @@ export function getArmadilloQuestConfig(partyController: PartyController): SpotC
             attack: new MageAttackStrategy(partyController, {
                 typeList: ["armadillo", "phoenix"],
                 enableGreedyAggro: ["phoenix"],
+                disableCburst: true,
                 equipmentSet: MAGE_AOE
             }),
             move: new HoldPositionStrategy({ position: { map: "main", x: 506, y: 1817 } })

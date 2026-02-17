@@ -9,6 +9,7 @@ import { EventConfig } from "../event_configs";
 export function getDragoldConfig(partyController: PartyController): EventConfig {
     return {
         targets: ["dragold"],
+        scheduled: true,
         override: true,
         strategies: {
             warrior: {
@@ -37,7 +38,6 @@ export function getDragoldConfig(partyController: PartyController): EventConfig 
                     type: "dragold",
                     disableIdleAttack: true,
                     enableAbsorbToTank: true,
-                    maximumTargets: 3,
                     equipmentSet: PRIEST_TANKY_MAGIC,
                     enableHealStrangers: true,
                     startHealingAtRatio: 0.8

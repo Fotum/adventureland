@@ -7,6 +7,7 @@ import { EventConfig } from "../event_configs";
 export function getGreenjrConfig(partyController: PartyController): EventConfig {
     return {
         targets: ["greenjr"],
+        scheduled: false,
         override: false,
         strategies: {
             mage: {

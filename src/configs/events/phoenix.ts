@@ -33,6 +33,7 @@ class PhoenixMoveStrategy<T extends PingCompensatedCharacter> extends SpecialMon
 export function getPhoenixConfig(partyController: PartyController): EventConfig {
     return {
         targets: ["phoenix", "frog"],
+        scheduled: false,
         override: false,
         strategies: {
             warrior: {

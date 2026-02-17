@@ -7,6 +7,7 @@ import { EventConfig } from "../event_configs";
 export function getJrConfig(partyController: PartyController): EventConfig {
     return {
         targets: ["jr"],
+        scheduled: false,
         override: false,
         strategies: {
             mage: {

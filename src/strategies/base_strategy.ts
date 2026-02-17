@@ -305,7 +305,6 @@ export class BaseInventoryStrategy<T extends PingCompensatedCharacter> implement
         return this._name;
     }
 
-    // TODO#: This is not working that way. Have to create replenishables task for merchant? probably
     private async restockReplenishables(bot: T): Promise<void> {
         for (const [item, amount] of REPLENISHABLES) {
             let currHave: number = bot.countItem(item);

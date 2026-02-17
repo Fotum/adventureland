@@ -77,7 +77,6 @@ export class RunnerTask {
                 // Workaround because throwIfAborted does not getting caught
                 if (typeof ex == "string" && ex.startsWith("Abort request received")) {
                     logger.warn(ex);
-                    this.setComplete("ABORTED");
                     // #TODO: Properly rethrow error
                 } else if (ex.message && ex.message.startsWith("Smart move error:")) {
                     // Just redo step, do nothing
@@ -102,6 +101,7 @@ export class RunnerTask {
             reason = `, reason: ${reason}`;
         }
         this.abortController.abort(`Abort request received${reason}`);
+        this.setComplete("ABORTED");
     }
 
     public pushStep(step: RunnerTaskStep): RunnerTask {

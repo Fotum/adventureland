@@ -12,7 +12,7 @@ const fileRotateTransport: DailyRotateFile = new winston.transports.DailyRotateF
 });
 
 const logger: Logger = winston.createLogger({
-    level: "info",
+    level: process.env.AL_LOG_LEVEL || "info",
     format: combine(
         errors({ stack: true }),
         timestamp({

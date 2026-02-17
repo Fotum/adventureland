@@ -43,6 +43,7 @@ export const EXCHANGE_ITMES: Set<ItemName> = new Set<ItemName>([
     "gem0",
     "gem1",
     "greenenvelope",
+    "brownenvelope",
     "goldenegg",
     "candycane",
     "mistletoe",
@@ -106,7 +107,6 @@ export const SELL_ITMES: Set<ItemName> = new Set<ItemName>([
     "coat",
     "coat1",
     "crossbow",
-    "cupid",
     "dagger",
     "daggerofthedead",
     "dexamulet",
@@ -198,6 +198,7 @@ export const STORE_ITEMS: Map<ItemName, StoreItemInfo> = new Map<ItemName, Store
     ["bataxe", { bankTab: "items3", level: 5 }],
     ["mshield", { bankTab: "items3", level: 5 }],
     ["ornamentstaff", { bankTab: "items3", level: 6 }],
+    ["cupid", { bankTab: "items3", level: 6 }],
 
     // Armor
     ["hhelmet", { bankTab: "items3", level: 5 }],
@@ -211,6 +212,8 @@ export const STORE_ITEMS: Map<ItemName, StoreItemInfo> = new Map<ItemName, Store
     ["mittens", { bankTab: "items3", level: 6 }],
     ["mcape", { bankTab: "items3", level: 6 }],
     ["angelwings", { bankTab: "items3", level: 5 }],
+
+    ["horsecapeg", { bankTab: "items3", level: 5 }],
 
     // Jewelry
     ["intamulet", { bankTab: "items3", level: 3 }],
@@ -295,10 +298,8 @@ export const MERCHANT_UPGRADE: Map<ItemName, UpgradeConfig> = new Map<ItemName, 
     ["mshield", { level: 7, primlingAt: 6 }],
     ["wbreeches", { level: 8 }],
 
-    // Heavy set
-    // ["hhelmet", { level: 5 }],
-    // ["harmor", { level: 7, primlingAt: 5 }],
-    // ["hpants", { level: 5 }],
+    // Cupid
+    ["cupid", { level: 6 }],
 
     // Darkforge set
     ["xhelmet", { level: 4, primlingAt: 0 }],
@@ -315,8 +316,6 @@ export const MERCHANT_UPGRADE: Map<ItemName, UpgradeConfig> = new Map<ItemName, 
     ["sweaterhs", { level: 6 }],
 
     // Halloween
-    // ["phelmet", { level: 6 }],
-    // ["gphelmet", { level: 3 }],
     ["ololipop", { level: 8, primlingAt: 6 }],
     ["glolipop", { level: 8, primlingAt: 6 }],
 
@@ -328,6 +327,7 @@ export const MERCHANT_UPGRADE: Map<ItemName, UpgradeConfig> = new Map<ItemName, 
     ["eslippers", { level: 7 }],
 
     // ["mcape", { level: 7, primlingAt: 6 }],
+    ["horsecapeg", { level: 6, primlingAt: 4 }],
     ["wingedboots", { level: 7 }],
     ["lmace", { level: 3, primlingAt: 0 }],
     ["handofmidas", { level: 5 }],

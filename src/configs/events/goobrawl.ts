@@ -9,6 +9,7 @@ import { EventConfig } from "../event_configs";
 export function getGoobrawlConfig(partyController: PartyController): EventConfig {
     return {
         targets: ["pinkgoo", "bgoo", "rgoo"],
+        scheduled: true,
         waitForRespawnMs: 10_000,
         override: true,
         strategies: {

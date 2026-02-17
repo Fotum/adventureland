@@ -9,6 +9,7 @@ import { EventConfig } from "../event_configs";
 export function getSnowmanConfig(partyController: PartyController): EventConfig {
     return {
         targets: ["snowman"],
+        scheduled: true,
         override: false,
         strategies: {
             warrior: {
