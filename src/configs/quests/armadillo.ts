@@ -9,7 +9,7 @@ export function getArmadilloQuestConfig(partyController: PartyController): SpotC
         mage: {
             attack: new MageAttackStrategy(partyController, {
                 typeList: ["armadillo", "phoenix"],
-                enableGreedyAggro: ["phoenix"],
+                maximumTargets: 3,
                 disableCburst: true,
                 equipmentSet: MAGE_AOE
             }),

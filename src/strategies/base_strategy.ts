@@ -215,7 +215,11 @@ export class BaseStrategy<T extends PingCompensatedCharacter> implements Strateg
         if (bot.rip) return;
 
         let looter: PingCompensatedCharacter | Player = bot.players.get(this.partyController.config.looter);
-        if (!looter || Tools.squaredDistance(chest, looter) > Constants.NPC_INTERACTION_DISTANCE_SQUARED || looter.rip) {
+        if (
+            !looter ||
+            Tools.squaredDistance(chest, looter) > Constants.NPC_INTERACTION_DISTANCE_SQUARED ||
+            looter.rip
+        ) {
             looter = bot;
         }
         if (looter.id != bot.id) return;

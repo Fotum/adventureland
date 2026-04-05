@@ -10,7 +10,7 @@ import { wrapLog } from "./logger";
 // Redirect default console logging to winston logger
 wrapLog();
 
-await Promise.all([Game.loginJSONFile("credentials.json"), Game.getGData(true, true)]);
+await Promise.all([Game.loginJSONFile("credentials.json", true), Game.getGData(true, true)]);
 await Pathfinder.prepare(Game.G, { remove_abtesting: true, remove_test: true });
 
 const DEFAULT_COMP: string[] = ["Shalfey", "MagicFotum", "Flamme", "Momental"];

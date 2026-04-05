@@ -1,6 +1,13 @@
 import { BankPackName, ItemName, MonsterName } from "alclient";
 
-export const FRIENDLY_CHARACTERS: string[] = ["arMAGEdon", "aRanDonDon", "Archealer", "MerchanDiser", "Warious", "DonWar"];
+export const FRIENDLY_CHARACTERS: string[] = [
+    "arMAGEdon",
+    "aRanDonDon",
+    "Archealer",
+    "MerchanDiser",
+    "Warious",
+    "DonWar"
+];
 
 export const SPECIAL_MONSTERS: Map<MonsterName, boolean> = new Map<MonsterName, boolean>([
     ["phoenix", true],
@@ -17,7 +24,8 @@ export const EVENTS: Map<string, boolean> = new Map<string, boolean>([
     ["dragold", true],
     ["icegolem", true],
     ["pinkgoo", true],
-    ["snowman", true]
+    ["snowman", true],
+    ["wabbit", true]
 ]);
 export const QUESTS: Map<MonsterName, boolean> = new Map<MonsterName, boolean>([
     ["porcupine", true],
@@ -97,7 +105,7 @@ export const BUY_FROM_PONTY: Map<ItemName, number> = new Map<ItemName, number>([
     ["ornament", 7_200],
     ["supermittens", 20_000_000]
 ]);
-export const DISMANTLE_ITEMS: Set<ItemName> = new Set<ItemName>(["firebow"]);
+export const DISMANTLE_ITEMS: Set<ItemName> = new Set<ItemName>([]);
 export const SELL_ITMES: Set<ItemName> = new Set<ItemName>([
     "basher",
     "bowofthedead",
@@ -308,6 +316,7 @@ export const MERCHANT_UPGRADE: Map<ItemName, UpgradeConfig> = new Map<ItemName, 
 
     ["firestaff", { level: 8, primlingAt: 7 }],
     ["fireblade", { level: 8, primlingAt: 7 }],
+    ["firebow", { level: 8, primlingAt: 7 }],
 
     ["harbringer", { level: 6 }],
     ["oozingterror", { level: 6 }],

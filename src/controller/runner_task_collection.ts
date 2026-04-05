@@ -64,11 +64,16 @@ export function getEventTask(runner: CharacterRunner<PingCompensatedCharacter>, 
         .pushStep({
             name: `do_${eventInfo.name}`,
             fn: async (runner: CharacterRunner<PingCompensatedCharacter>, signal: AbortSignal) => {
-                runner.applyStrategies([eventInfo.strategies[runner.bot.ctype].attack, eventInfo.strategies[runner.bot.ctype].move]);
+                runner.applyStrategies([
+                    eventInfo.strategies[runner.bot.ctype].attack,
+                    eventInfo.strategies[runner.bot.ctype].move
+                ]);
                 // Remove move strategy so character wont go to new random spawn
-                await checkCompletionForMs(runner.bot, eventInfo.targets, signal, eventInfo.waitForRespawnMs).finally(() => {
-                    runner.removeStrategy("move");
-                });
+                await checkCompletionForMs(runner.bot, eventInfo.targets, signal, eventInfo.waitForRespawnMs).finally(
+                    () => {
+                        runner.removeStrategy("move");
+                    }
+                );
                 signal.throwIfAborted();
             }
         });
@@ -176,7 +181,9 @@ export function getCheckBossesTask(
     if (bossesToCheck.size == 0) {
         return undefined;
     }
-    let route: ({ name: MonsterName } & IPosition)[] = BOSS_CHECK_ROUTE.filter((spawn) => bossesToCheck.has(spawn.name));
+    let route: ({ name: MonsterName } & IPosition)[] = BOSS_CHECK_ROUTE.filter((spawn) =>
+        bossesToCheck.has(spawn.name)
+    );
 
     let checkBossesTask: RunnerTask = new RunnerTask(generateRandomId(), "bcheck", runner);
     checkBossesTask.pushStep({
@@ -230,7 +237,10 @@ export function getCheckCyberlandTask(runner: CharacterRunner<PingCompensatedCha
         await runner.bot.smartMove("main");
     };
 
-    return new RunnerTask(generateRandomId(), "cyberland", runner).pushStep({ name: "check_cyberland", fn: taskFunction });
+    return new RunnerTask(generateRandomId(), "cyberland", runner).pushStep({
+        name: "check_cyberland",
+        fn: taskFunction
+    });
 }
 
 export function getHolidayBuffTask(runner: CharacterRunner<PingCompensatedCharacter>): RunnerTask {
@@ -255,10 +265,16 @@ export function getHolidayBuffTask(runner: CharacterRunner<PingCompensatedCharac
         await runner.bot.getHolidaySpirit();
     };
 
-    return new RunnerTask(generateRandomId(), "holiday", runner).pushStep({ name: "get_holiday_buff", fn: taskFunction });
+    return new RunnerTask(generateRandomId(), "holiday", runner).pushStep({
+        name: "get_holiday_buff",
+        fn: taskFunction
+    });
 }
 
-export function getInteractWithQuestNpcTask(runner: CharacterRunner<PingCompensatedCharacter>, action: string): RunnerTask | undefined {
+export function getInteractWithQuestNpcTask(
+    runner: CharacterRunner<PingCompensatedCharacter>,
+    action: string
+): RunnerTask | undefined {
     if (action == "get" && runner.bot.s.monsterhunt) return undefined;
     if (action == "complete" && (!runner.bot.s.monsterhunt || runner.bot.s.monsterhunt.c !== 0)) return undefined;
 

@@ -11,7 +11,7 @@ export function getXscorpionConfig(partyController: PartyController): SpotConfig
     return {
         warrior: {
             attack: new WarriorAttackStrategy(partyController, {
-                typeList: ["xscorpion", "minimush", "phoenix"],
+                typeList: ["xscorpion", "minimush", "phoenix", "tinyp"],
                 maximumTargets: 3,
                 equipmentSet: WARRIOR_AOE,
                 enableEquipForCleave: true,
@@ -26,7 +26,7 @@ export function getXscorpionConfig(partyController: PartyController): SpotConfig
         },
         mage: {
             attack: new MageAttackStrategy(partyController, {
-                typeList: ["xscorpion", "minimush", "phoenix"],
+                typeList: ["xscorpion", "minimush", "phoenix", "tinyp"],
                 maximumTargets: 2,
                 equipmentSet: MAGE_AOE,
                 disableCburst: true,
@@ -36,7 +36,7 @@ export function getXscorpionConfig(partyController: PartyController): SpotConfig
         },
         priest: {
             attack: new PriestAttackStrategy(partyController, {
-                typeList: ["xscorpion", "minimush", "phoenix"],
+                typeList: ["xscorpion", "minimush", "phoenix", "tinyp"],
                 equipmentSet: PRIEST_TANKY_PHYSICAL,
                 enableGreedyAggro: true,
                 startHealingAtRatio: 0.8,

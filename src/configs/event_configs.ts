@@ -14,6 +14,7 @@ import { getPhoenixConfig } from "./events/phoenix";
 import { getPinkgooConfig } from "./events/pinkgoo";
 import { getSkeletorConfig } from "./events/skeletor";
 import { getSnowmanConfig } from "./events/snowman";
+import { getWabbitConfig } from "./events/wabbit";
 
 export type EventConfig = {
     targets: MonsterName[];
@@ -40,6 +41,8 @@ export function getEventConfig(eventName: string, partyController: PartyControll
             return getPinkgooConfig(partyController);
         case "snowman":
             return getSnowmanConfig(partyController);
+        case "wabbit":
+            return getWabbitConfig(partyController);
 
         // Special monsters
         case "phoenix":

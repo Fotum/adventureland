@@ -404,7 +404,9 @@ export class CharacterRunner<T extends PingCompensatedCharacter> {
                             setTimeout(() => switchBots(), 500);
                         } else if (/nouser/.test(ex)) {
                             this.stop();
-                            throw new Error(`Authorization failed for ${this.bot.name}! No longer trying to reconnect...`);
+                            throw new Error(
+                                `Authorization failed for ${this.bot.name}! No longer trying to reconnect...`
+                            );
                         } else {
                             setTimeout(() => switchBots(), 10000);
                             return;

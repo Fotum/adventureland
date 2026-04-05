@@ -21,12 +21,6 @@ export const MY_CHARACTERS: Map<string, CharacterType> = new Map<string, Charact
     ["RangeFotum", "ranger"],
     ["Momental", "merchant"]
 ]);
-// export const MY_CHARACTERS: Map<string, CharacterType> = new Map<string, CharacterType>([
-//     ["Ardy", "warrior"],
-//     ["NIami", "priest"],
-//     ["Memph1s", "mage"],
-//     ["Fotum", "merchant"]
-// ]);
 
 export const KEEP_GOLD: number = 5_000_000;
 export const SEND_GOLD_AT: number = 1.5;
