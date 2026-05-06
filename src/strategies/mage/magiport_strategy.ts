@@ -82,7 +82,7 @@ export class MagiportServiceStrategy implements Strategy<Mage> {
     private options: MagiportServiceConfig;
     private inviteListener: (data: CMData) => Promise<unknown>;
 
-    public constructor(options: MagiportServiceConfig = {}) {
+    public constructor(options: MagiportServiceConfig) {
         this.options = options;
     }
 

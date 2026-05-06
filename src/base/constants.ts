@@ -60,8 +60,8 @@ export const MERCHANT_KEEP_ITEMS: Set<ItemName> = new Set<ItemName>([
 ]);
 export const MERCHANT_REPLENISH_RATIO: number = 0.5;
 export const MERCHANT_REPLENISHABLES: Map<ItemName, number> = new Map<ItemName, number>([
-    ["scroll0", 50],
-    ["scroll1", 30],
+    ["scroll0", 90],
+    ["scroll1", 50],
     ["scroll2", 20],
     ["cscroll0", 50],
     ["cscroll1", 30],

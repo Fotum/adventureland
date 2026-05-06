@@ -16,7 +16,7 @@ await Pathfinder.prepare(Game.G, { remove_abtesting: true, remove_test: true });
 const DEFAULT_COMP: string[] = ["Shalfey", "MagicFotum", "Flamme", "Momental"];
 const HOME_SERVER_NAME: ServerRegion = "EU";
 const HOME_SERVER_ID: ServerIdentifier = "II";
-const DEFAULT_SPOT: SpotName = "xscorpion";
+const DEFAULT_SPOT: SpotName = "dryad";
 const MAIN_TANK: string = "Flamme";
 const LOOTER: string = "Flamme";
 
@@ -47,13 +47,16 @@ async function run(): Promise<void> {
         startRunner(name, ctype);
     }
 
-    while (PARTY_CONTROLLER.getRunners().length < DEFAULT_COMP.length || !PARTY_CONTROLLER.getRunners().every((r) => r.isReady())) {
+    while (
+        PARTY_CONTROLLER.getRunners().length < DEFAULT_COMP.length ||
+        !PARTY_CONTROLLER.getRunners().every((r) => r.isReady())
+    ) {
         await sleep(1000);
     }
 
     // Initialize and start bwi
     new BWIReporter(PARTY_CONTROLLER);
-    PARTY_CONTROLLER.startControler();
+    PARTY_CONTROLLER.startController();
 }
 run();
 

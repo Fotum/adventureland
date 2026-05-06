@@ -3,10 +3,10 @@ import { ignoreExceptions } from "../../base/functions/general";
 import { PartyController } from "../../controller/party_controller";
 import { DEFAULT_ENERGIZE, MageAttackStrategy } from "../../strategies/mage/mage_attack_strategy";
 import { SpecialMonsterKiteStrategy } from "../../strategies/move_strategies";
-import { PriestAttackStrategy } from "../../strategies/priest/priest_attack_strategy";
-import { WarriorAttackStrategy } from "../../strategies/warrior/warrior_attack_strategy";
 import { MAGE_DPS, PRIEST_MF, WARRIOR_DPS } from "../equipment_setups";
 import { EventConfig } from "../event_configs";
+import { PriestAttackStrategy } from "../../strategies/priest/priest_attack_strategy";
+import { WarriorAttackStrategy } from "../../strategies/warrior/warrior_attack_strategy";
 
 class PhoenixMoveStrategy<T extends PingCompensatedCharacter> extends SpecialMonsterKiteStrategy<T> {
     protected async move(bot: T): Promise<void | IPosition> {
@@ -17,7 +17,10 @@ class PhoenixMoveStrategy<T extends PingCompensatedCharacter> extends SpecialMon
                       .smartMove(target, {
                           getWithin: bot.range - 10,
                           stopIfTrue: async (): Promise<boolean> => {
-                              let target: Entity = bot.getEntity({ returnNearest: true, typeList: this.config.typeList });
+                              let target: Entity = bot.getEntity({
+                                  returnNearest: true,
+                                  typeList: this.config.typeList
+                              });
                               if (!target) return false;
                               return Tools.distance(target, bot.smartMoving) > bot.range;
                           },

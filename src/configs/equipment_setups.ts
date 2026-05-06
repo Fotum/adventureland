@@ -1,5 +1,13 @@
-import { Game, ItemData, LocateItemFilters, PingCompensatedCharacter, SlotType, WeaponType } from "alclient";
-import { EquipmentSet, EquipInSlot } from "../strategies/base_attack_strategy";
+import { Game, ItemData, ItemName, LocateItemFilters, PingCompensatedCharacter, SlotType, WeaponType } from "alclient";
+
+export type EquipInSlot = {
+    name: ItemName;
+    filters?: LocateItemFilters;
+    unequip?: boolean;
+};
+export type EquipmentSet = {
+    [T in SlotType]?: EquipInSlot;
+};
 
 export const FILTER_HIGHEST: LocateItemFilters = { returnHighestLevel: true };
 
@@ -41,16 +49,13 @@ export const PRIEST_TANKY_PHYSICAL: EquipmentSet = {
     chest: { name: "xarmor", filters: FILTER_HIGHEST },
     pants: { name: "xpants", filters: FILTER_HIGHEST },
     gloves: { name: "mittens", filters: FILTER_HIGHEST },
-    shoes: { name: "wingedboots", filters: FILTER_HIGHEST }
+    shoes: { name: "wingedboots", filters: FILTER_HIGHEST },
+    elixir: { name: "elixirluck" }
 };
 
 export const PRIEST_TANKY_MAGIC: EquipmentSet = {
-    offhand: { name: "wbookhs", filters: FILTER_HIGHEST },
-    helmet: { name: "xhelmet", filters: FILTER_HIGHEST },
-    chest: { name: "xarmor", filters: FILTER_HIGHEST },
-    pants: { name: "xpants", filters: FILTER_HIGHEST },
-    gloves: { name: "mittens", filters: FILTER_HIGHEST },
-    shoes: { name: "wingedboots", filters: FILTER_HIGHEST }
+    ...PRIEST_TANKY_PHYSICAL,
+    offhand: { name: "wbookhs", filters: FILTER_HIGHEST }
 };
 
 export const PRIEST_MF: EquipmentSet = {
@@ -59,16 +64,13 @@ export const PRIEST_MF: EquipmentSet = {
     chest: { name: "wattire", filters: FILTER_HIGHEST },
     pants: { name: "wbreeches", filters: FILTER_HIGHEST },
     gloves: { name: "wgloves", filters: FILTER_HIGHEST },
-    shoes: { name: "wshoes", filters: FILTER_HIGHEST }
+    shoes: { name: "wshoes", filters: FILTER_HIGHEST },
+    elixir: { name: "elixirluck" }
 };
 
 export const PRIEST_GF: EquipmentSet = {
-    offhand: { name: "mshield", filters: FILTER_HIGHEST },
-    helmet: { name: "wcap", filters: FILTER_HIGHEST },
-    chest: { name: "wattire", filters: FILTER_HIGHEST },
-    pants: { name: "wbreeches", filters: FILTER_HIGHEST },
-    gloves: { name: "handofmidas", filters: FILTER_HIGHEST },
-    shoes: { name: "wshoes", filters: FILTER_HIGHEST }
+    ...PRIEST_MF,
+    gloves: { name: "handofmidas", filters: FILTER_HIGHEST }
 };
 
 export function generateEquipmentSet(bot: PingCompensatedCharacter, override?: EquipmentSet): EquipmentSet {

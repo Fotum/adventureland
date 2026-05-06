@@ -73,13 +73,7 @@ export class BaseStrategy<T extends PingCompensatedCharacter> implements Strateg
         this.loops.set("loot", {
             fn: async (bot: T) => {
                 for (const [, chest] of bot.chests) {
-                    await this.lootChest(bot, chest)
-                        // .then((data) => {
-                        //     logger.log(`[${bot.ctype}]: Successfully looted simple ${data.id}`);
-                        //     let lootData: ChestLootData = data as unknown as ChestLootData;
-                        //     logger.log(`[${bot.ctype}]: Gold: ${lootData.gold}\nItems: ${lootData.items.map((item) => item.name)}`);
-                        // })
-                        .catch(ignoreExceptions);
+                    await this.lootChest(bot, chest).catch(ignoreExceptions);
                 }
             },
             interval: 250
@@ -108,13 +102,7 @@ export class BaseStrategy<T extends PingCompensatedCharacter> implements Strateg
         }
 
         this.lootOnDrop = (data: ChestData) => {
-            this.lootChest(bot, data)
-                // .then((data) => () => {
-                //     logger.log(`[${bot.ctype}]: Successfully looted onDrop ${data.id}`);
-                //     let lootData: ChestLootData = data as unknown as ChestLootData;
-                //     logger.log(`[${bot.ctype}]: Gold: ${lootData.gold}\nItems: ${lootData.items.map((item) => item.name)}`);
-                // })
-                .catch(ignoreExceptions);
+            this.lootChest(bot, data).catch(ignoreExceptions);
         };
         bot.socket.on("drop", this.lootOnDrop);
     }

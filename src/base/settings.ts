@@ -25,7 +25,7 @@ export const EVENTS: Map<string, boolean> = new Map<string, boolean>([
     ["icegolem", true],
     ["pinkgoo", true],
     ["snowman", true],
-    ["wabbit", true]
+    ["wabbit", false]
 ]);
 export const QUESTS: Map<MonsterName, boolean> = new Map<MonsterName, boolean>([
     ["porcupine", true],
@@ -85,6 +85,11 @@ export const BUY_FROM_PONTY: Map<ItemName, number> = new Map<ItemName, number>([
     ["strearring", 11_000_000],
     ["cearring", 10_500_000],
 
+    // Wanderer
+    ["wcap", 2_000_000],
+    ["wattire", 2_000_000],
+    ["wgloves", 2_000_000],
+
     // Rare items
     ["ololipop", 4_000_000],
     ["glolipop", 4_000_000],
@@ -131,13 +136,11 @@ export const SELL_ITMES: Set<ItemName> = new Set<ItemName>([
     "hdagger",
     "helmet",
     "helmet1",
-    // Heavy armor set
     "hhelmet",
     "harmor",
     "hpants",
     "hgloves",
     "hboots",
-    //
     "hpamulet",
     "hpbelt",
     "iceskates",
@@ -159,7 +162,6 @@ export const SELL_ITMES: Set<ItemName> = new Set<ItemName>([
     "shoes",
     "shoes1",
     "skullamulet",
-    "smoke",
     "smush",
     "snowball",
     "snowflakes",
@@ -177,10 +179,11 @@ export const SELL_ITMES: Set<ItemName> = new Set<ItemName>([
     "vitring",
     "vitscroll",
     "warmscarf",
-    "wattire",
     "wbook0",
-    "wcap",
-    "wgloves",
+    // "wcap",
+    // "wgloves",
+    // "wattire",
+    "wbreeches",
     "whiteegg",
     "wshoes",
     "xmace",
@@ -189,7 +192,9 @@ export const SELL_ITMES: Set<ItemName> = new Set<ItemName>([
     "xmasshoes",
     "xmassweater",
 
-    "mcape"
+    "mcape",
+    "pclaw",
+    "elixirpnres"
 ]);
 type StoreItemInfo = {
     level?: number;
@@ -261,6 +266,7 @@ export const STORE_ITEMS: Map<ItemName, StoreItemInfo> = new Map<ItemName, Store
     ["funtoken", { bankTab: "items1" }],
     ["monstertoken", { bankTab: "items1" }],
     ["candypop", { bankTab: "items1" }],
+    ["essenceofnature", { bankTab: "items1" }],
 
     // Consumables
     ["hotchocolate", { bankTab: "items1" }],
@@ -304,7 +310,12 @@ export const MERCHANT_UPGRADE: Map<ItemName, UpgradeConfig> = new Map<ItemName, 
     ["cape", { level: 5 }],
     ["sshield", { level: 7 }],
     ["mshield", { level: 7, primlingAt: 6 }],
-    ["wbreeches", { level: 8 }],
+
+    // Wanderer
+    // ["wbreeches", { level: 8 }],
+    ["wcap", { level: 8 }],
+    ["wgloves", { level: 8 }],
+    ["wattire", { level: 8 }],
 
     // Cupid
     ["cupid", { level: 6 }],

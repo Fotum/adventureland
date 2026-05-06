@@ -27,6 +27,7 @@ import { getSquigSpotConfig } from "./spots/squig";
 import { getStonewormSpotConfig } from "./spots/stoneworm";
 import { getTortoiseSpotConfig } from "./spots/tortoise";
 import { getXscorpionConfig } from "./spots/xscorpion";
+import { getDryadConfig } from "./spots/dryad";
 
 export type SpotConfig = {
     [T in CharacterType]?: {
@@ -88,6 +89,8 @@ export function getSpotConfig(partyController: PartyController, spotName?: SpotN
             return getFireroamerSpotConfig(partyController);
         case "xscorpion":
             return getXscorpionConfig(partyController);
+        case "dryad":
+            return getDryadConfig(partyController);
         default: {
             logger.warn(`Could not find spot named ${spotName}`);
             return undefined;

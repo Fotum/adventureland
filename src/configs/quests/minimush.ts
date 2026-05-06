@@ -10,7 +10,7 @@ export function getMinimushQuestConfig(partyController: PartyController): SpotCo
             attack: new MageAttackStrategy(partyController, {
                 typeList: ["minimush", "phoenix"],
                 notType: "greenfairy",
-                enableGreedyAggro: ["phoenix", "minimush"],
+                maximumTargets: 3,
                 equipmentSet: MAGE_AOE
             }),
             move: new HoldPositionStrategy({ position: { map: "halloween", x: 14, y: 414 } })

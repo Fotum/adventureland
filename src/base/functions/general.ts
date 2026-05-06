@@ -27,7 +27,7 @@ import { AdminCommandStrategy } from "../../strategies/admin_command_strategy";
 import { NoAttackScareStrategy } from "../../strategies/base_attack_strategy";
 import { BaseInventoryStrategy, BaseStrategy } from "../../strategies/base_strategy";
 import { CharacterRunner } from "../../strategies/character_runner";
-import { MagiportSmartMovingStrategy } from "../../strategies/mage/magiport_strategy";
+import { MagiportServiceStrategy, MagiportSmartMovingStrategy } from "../../strategies/mage/magiport_strategy";
 import { MerchantStrategy } from "../../strategies/merchant/merchant_strategy";
 import { MerchantUpgradeStrategy } from "../../strategies/merchant/merchant_upgrade_strategy";
 import { AcceptPartyRequest, RequestParty } from "../../strategies/party_strategy";
@@ -35,7 +35,7 @@ import { PartyHealStrategy } from "../../strategies/priest/party_heal_strategy";
 import { UnstackStrategy } from "../../strategies/unstack_strategy";
 import { EventName, MY_CHARACTERS, SAVE_FILES_LOCATION } from "../constants";
 import logger from "../../logger";
-import { EVENTS } from "../settings";
+import { EVENTS, FRIENDLY_CHARACTERS } from "../settings";
 
 export type FilterRunnersOptions = {
     owner?: string;
@@ -144,6 +144,7 @@ export async function startCharacter(
                 checkRunner(runner, name, ctype);
 
                 runner.applyStrategy(new MagiportSmartMovingStrategy(partyController));
+                runner.applyStrategy(new MagiportServiceStrategy({ allowList: [...MY_CHARACTERS.keys(), ...FRIENDLY_CHARACTERS] }));
                 break;
             }
             case "priest": {

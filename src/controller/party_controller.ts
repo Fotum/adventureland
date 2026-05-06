@@ -1,7 +1,13 @@
 import { CharacterType, MonsterName, PingCompensatedCharacter, ServerIdentifier, ServerRegion } from "alclient";
 import { SpotName } from "../base/constants";
 import { shouldGoBank } from "../base/functions/characters";
-import { loadBossTimersFromFile, loadStateFromFile, msince, saveBossTimersToFile, saveStateToFile } from "../base/functions/general";
+import {
+    loadBossTimersFromFile,
+    loadStateFromFile,
+    msince,
+    saveBossTimersToFile,
+    saveStateToFile
+} from "../base/functions/general";
 import { PreparedEvent, getPreparedEvents } from "../base/functions/monsters";
 import { QUESTS } from "../base/settings";
 import { getQuestConfig } from "../configs/quest_configs";
@@ -110,7 +116,10 @@ export class PartyController {
                 }
 
                 // Push get/complete quest task
-                if (this.config.doQuests?.has(runner.bot.ctype) && !currState.taskQueue.some((task) => task.name == "quest_npc")) {
+                if (
+                    this.config.doQuests?.has(runner.bot.ctype) &&
+                    !currState.taskQueue.some((task) => task.name == "quest_npc")
+                ) {
                     if (!runner.bot.s.monsterhunt) {
                         let questTask: RunnerTask | undefined = getInteractWithQuestNpcTask(runner, "get");
                         if (questTask) {
@@ -166,12 +175,18 @@ export class PartyController {
                 // Return to farm or quest if there is nothing else to do
                 if (currState.currTask.isComplete && currState.taskQueue.length == 0) {
                     // If we have some active quest -> do it
-                    if (this.config.doQuests?.has(runner.bot.ctype) && runner.bot.s.monsterhunt && currState.currTask.name != "quest") {
+                    if (
+                        this.config.doQuests?.has(runner.bot.ctype) &&
+                        runner.bot.s.monsterhunt &&
+                        currState.currTask.name != "quest"
+                    ) {
                         // Check if we can complete it
                         let questTarget: MonsterName = runner.bot.s.monsterhunt.id;
                         if (QUESTS.get(questTarget)) {
-                            let strategies: { attack?: Strategy<PingCompensatedCharacter>; move?: Strategy<PingCompensatedCharacter> } =
-                                getQuestConfig(this, questTarget)[runner.bot.ctype];
+                            let strategies: {
+                                attack?: Strategy<PingCompensatedCharacter>;
+                                move?: Strategy<PingCompensatedCharacter>;
+                            } = getQuestConfig(this, questTarget)[runner.bot.ctype];
                             currState.taskQueue.push(getChangeSpotTask("quest", runner, strategies));
                         }
                     }
@@ -182,8 +197,10 @@ export class PartyController {
                         !currState.taskQueue.some((task) => task.name == "quest")
                     ) {
                         // Go back to farm
-                        let strategies: { attack?: Strategy<PingCompensatedCharacter>; move?: Strategy<PingCompensatedCharacter> } =
-                            getSpotConfig(this)[runner.bot.ctype];
+                        let strategies: {
+                            attack?: Strategy<PingCompensatedCharacter>;
+                            move?: Strategy<PingCompensatedCharacter>;
+                        } = getSpotConfig(this)[runner.bot.ctype];
                         currState.taskQueue.push(getChangeSpotTask("farming", runner, strategies));
                     }
                 }
@@ -192,8 +209,6 @@ export class PartyController {
             // Check bosses and push boss task
             if (this.config.enableBosses) {
                 // Prepare events
-                // #TODO: Can generate an array of tasks instead of preparation
-                // #TODO: Add event prioerity ans sort taskQueue instead of concats and splices
                 let preparedEvents: PreparedEvent[] = getPreparedEvents(this);
                 if (preparedEvents.length == 0) return;
 
@@ -232,7 +247,11 @@ export class PartyController {
                     // Handle overrides
                     if (overrideEvents.length > 0) {
                         // Override current task
-                        if (currState.currTask.name != "farming" && currState.currTask.name != "quest" && currState.currTask.canOverride) {
+                        if (
+                            currState.currTask.name != "farming" &&
+                            currState.currTask.name != "quest" &&
+                            currState.currTask.canOverride
+                        ) {
                             // let redoTask: RunnerTask = currState.currTask;
 
                             currState.currTask.abortTask(`Overriden by ${overrideEvents[0].name}`);
@@ -254,7 +273,7 @@ export class PartyController {
         }
     }
 
-    public startControler(): void {
+    public startController(): void {
         if (!this.isRunning) {
             this.isRunning = true;
         }
