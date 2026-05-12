@@ -1,6 +1,71 @@
-import { BankPackName, ItemName, MonsterName } from "alclient";
+import { type BankPackName, type CharacterType, type ItemName, type MonsterName } from "alclient";
 
-export const FRIENDLY_CHARACTERS: string[] = ["arMAGEdon", "aRanDonDon", "Archealer", "MerchanDiser", "Warious", "DonWar"];
+export const PLAYER_MIN_DISTANCE: number = 5;
+export const HEAL_RETREAT_RATIO: number = 0.5;
+
+export const MY_CHARACTERS: Map<string, CharacterType> = new Map<string, CharacterType>([
+    ["Shalfey", "warrior"],
+    ["Flamme", "priest"],
+    ["MagicFotum", "mage"],
+    ["RangeFotum", "ranger"],
+    ["Momental", "merchant"]
+]);
+
+export const KEEP_GOLD: number = 5_000_000;
+export const SEND_GOLD_AT: number = 1.5;
+export const KEEP_ITEMS: Set<ItemName> = new Set<ItemName>([
+    "hpot0",
+    "hpot1",
+    "mpot0",
+    "mpot1",
+    "tracker",
+    "computer",
+    "elixirluck",
+    "pumpkinspice",
+    "luckbooster",
+    "supercomputer",
+    "xpbooster",
+    "xptome"
+]);
+
+export const REPLENISH_RATIO: number = 0.3;
+export const REPLENISHABLES: Map<ItemName, number> = new Map<ItemName, number>([
+    ["elixirluck", 20],
+    ["xptome", 1]
+]);
+
+export const MERCHANT_KEEP_GOLD: number = 500_000_000;
+export const MERCHANT_KEEP_ITEMS: Set<ItemName> = new Set<ItemName>([
+    ...KEEP_ITEMS,
+    "cscroll0",
+    "cscroll1",
+    "cscroll2",
+    "scroll0",
+    "scroll1",
+    "scroll2",
+    "pickaxe",
+    "rod",
+    "offeringp",
+    "offering"
+]);
+export const MERCHANT_REPLENISH_RATIO: number = 0.5;
+export const MERCHANT_REPLENISHABLES: Map<ItemName, number> = new Map<ItemName, number>([
+    ["scroll0", 90],
+    ["scroll1", 50],
+    ["scroll2", 20],
+    ["cscroll0", 50],
+    ["cscroll1", 30],
+    ["cscroll2", 0]
+]);
+
+export const FRIENDLY_CHARACTERS: string[] = [
+    "arMAGEdon",
+    "aRanDonDon",
+    "Archealer",
+    "MerchanDiser",
+    "Warious",
+    "DonWar"
+];
 
 export const SPECIAL_MONSTERS: Map<MonsterName, boolean> = new Map<MonsterName, boolean>([
     ["phoenix", true],
@@ -16,8 +81,9 @@ export const EVENTS: Map<string, boolean> = new Map<string, boolean>([
     ["goobrawl", true],
     ["dragold", true],
     ["icegolem", true],
-    ["valentines", true],
-    ["snowman", true]
+    ["pinkgoo", true],
+    ["snowman", true],
+    ["wabbit", false]
 ]);
 export const QUESTS: Map<MonsterName, boolean> = new Map<MonsterName, boolean>([
     ["porcupine", true],
@@ -43,6 +109,7 @@ export const EXCHANGE_ITMES: Set<ItemName> = new Set<ItemName>([
     "gem0",
     "gem1",
     "greenenvelope",
+    "brownenvelope",
     "goldenegg",
     "candycane",
     "mistletoe",
@@ -51,7 +118,8 @@ export const EXCHANGE_ITMES: Set<ItemName> = new Set<ItemName>([
     "basketofeggs",
     "ornament",
     "xbox",
-    "candypop"
+    "candypop",
+    "5bucks"
 ]);
 export const BUY_FROM_PONTY: Map<ItemName, number> = new Map<ItemName, number>([
     ["5bucks", 100_000_000],
@@ -75,6 +143,11 @@ export const BUY_FROM_PONTY: Map<ItemName, number> = new Map<ItemName, number>([
     ["strearring", 11_000_000],
     ["cearring", 10_500_000],
 
+    // Wanderer
+    ["wcap", 2_000_000],
+    ["wattire", 2_000_000],
+    ["wgloves", 2_000_000],
+
     // Rare items
     ["ololipop", 4_000_000],
     ["glolipop", 4_000_000],
@@ -95,7 +168,7 @@ export const BUY_FROM_PONTY: Map<ItemName, number> = new Map<ItemName, number>([
     ["ornament", 7_200],
     ["supermittens", 20_000_000]
 ]);
-export const DISMANTLE_ITEMS: Set<ItemName> = new Set<ItemName>(["firebow"]);
+export const DISMANTLE_ITEMS: Set<ItemName> = new Set<ItemName>([]);
 export const SELL_ITMES: Set<ItemName> = new Set<ItemName>([
     "basher",
     "bowofthedead",
@@ -105,7 +178,6 @@ export const SELL_ITMES: Set<ItemName> = new Set<ItemName>([
     "coat",
     "coat1",
     "crossbow",
-    "cupid",
     "dagger",
     "daggerofthedead",
     "dexamulet",
@@ -122,13 +194,11 @@ export const SELL_ITMES: Set<ItemName> = new Set<ItemName>([
     "hdagger",
     "helmet",
     "helmet1",
-    // Heavy armor set
     "hhelmet",
     "harmor",
     "hpants",
     "hgloves",
     "hboots",
-    //
     "hpamulet",
     "hpbelt",
     "iceskates",
@@ -150,7 +220,6 @@ export const SELL_ITMES: Set<ItemName> = new Set<ItemName>([
     "shoes",
     "shoes1",
     "skullamulet",
-    "smoke",
     "smush",
     "snowball",
     "snowflakes",
@@ -168,10 +237,11 @@ export const SELL_ITMES: Set<ItemName> = new Set<ItemName>([
     "vitring",
     "vitscroll",
     "warmscarf",
-    "wattire",
     "wbook0",
-    "wcap",
-    "wgloves",
+    // "wcap",
+    // "wgloves",
+    // "wattire",
+    "wbreeches",
     "whiteegg",
     "wshoes",
     "xmace",
@@ -180,7 +250,9 @@ export const SELL_ITMES: Set<ItemName> = new Set<ItemName>([
     "xmasshoes",
     "xmassweater",
 
-    "mcape"
+    "mcape",
+    "pclaw",
+    "elixirpnres"
 ]);
 type StoreItemInfo = {
     level?: number;
@@ -197,6 +269,7 @@ export const STORE_ITEMS: Map<ItemName, StoreItemInfo> = new Map<ItemName, Store
     ["bataxe", { bankTab: "items3", level: 5 }],
     ["mshield", { bankTab: "items3", level: 5 }],
     ["ornamentstaff", { bankTab: "items3", level: 6 }],
+    ["cupid", { bankTab: "items3", level: 6 }],
 
     // Armor
     ["hhelmet", { bankTab: "items3", level: 5 }],
@@ -210,6 +283,8 @@ export const STORE_ITEMS: Map<ItemName, StoreItemInfo> = new Map<ItemName, Store
     ["mittens", { bankTab: "items3", level: 6 }],
     ["mcape", { bankTab: "items3", level: 6 }],
     ["angelwings", { bankTab: "items3", level: 5 }],
+
+    ["horsecapeg", { bankTab: "items3", level: 5 }],
 
     // Jewelry
     ["intamulet", { bankTab: "items3", level: 3 }],
@@ -249,6 +324,7 @@ export const STORE_ITEMS: Map<ItemName, StoreItemInfo> = new Map<ItemName, Store
     ["funtoken", { bankTab: "items1" }],
     ["monstertoken", { bankTab: "items1" }],
     ["candypop", { bankTab: "items1" }],
+    ["essenceofnature", { bankTab: "items1" }],
 
     // Consumables
     ["hotchocolate", { bankTab: "items1" }],
@@ -292,12 +368,15 @@ export const MERCHANT_UPGRADE: Map<ItemName, UpgradeConfig> = new Map<ItemName, 
     ["cape", { level: 5 }],
     ["sshield", { level: 7 }],
     ["mshield", { level: 7, primlingAt: 6 }],
-    ["wbreeches", { level: 8 }],
 
-    // Heavy set
-    // ["hhelmet", { level: 5 }],
-    // ["harmor", { level: 7, primlingAt: 5 }],
-    // ["hpants", { level: 5 }],
+    // Wanderer
+    // ["wbreeches", { level: 8 }],
+    ["wcap", { level: 8 }],
+    ["wgloves", { level: 8 }],
+    ["wattire", { level: 8 }],
+
+    // Cupid
+    ["cupid", { level: 6 }],
 
     // Darkforge set
     ["xhelmet", { level: 4, primlingAt: 0 }],
@@ -306,6 +385,7 @@ export const MERCHANT_UPGRADE: Map<ItemName, UpgradeConfig> = new Map<ItemName, 
 
     ["firestaff", { level: 8, primlingAt: 7 }],
     ["fireblade", { level: 8, primlingAt: 7 }],
+    ["firebow", { level: 8, primlingAt: 7 }],
 
     ["harbringer", { level: 6 }],
     ["oozingterror", { level: 6 }],
@@ -314,8 +394,6 @@ export const MERCHANT_UPGRADE: Map<ItemName, UpgradeConfig> = new Map<ItemName, 
     ["sweaterhs", { level: 6 }],
 
     // Halloween
-    // ["phelmet", { level: 6 }],
-    // ["gphelmet", { level: 3 }],
     ["ololipop", { level: 8, primlingAt: 6 }],
     ["glolipop", { level: 8, primlingAt: 6 }],
 
@@ -327,6 +405,7 @@ export const MERCHANT_UPGRADE: Map<ItemName, UpgradeConfig> = new Map<ItemName, 
     ["eslippers", { level: 7 }],
 
     // ["mcape", { level: 7, primlingAt: 6 }],
+    ["horsecapeg", { level: 6, primlingAt: 4 }],
     ["wingedboots", { level: 7 }],
     ["lmace", { level: 3, primlingAt: 0 }],
     ["handofmidas", { level: 5 }],
@@ -335,7 +414,7 @@ export const MERCHANT_UPGRADE: Map<ItemName, UpgradeConfig> = new Map<ItemName, 
 
     // Winter holidays
     ["gcape", { level: 6 }],
-    ["mittens", { level: 8, primlingAt: 6 }],
+    ["mittens", { level: 8, primlingAt: 7 }],
     ["ornamentstaff", { level: 8 }],
     ["supermittens", { level: 5, primlingAt: 3 }],
 

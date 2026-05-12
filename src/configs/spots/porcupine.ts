@@ -1,9 +1,11 @@
-import { PartyController } from "../../controller/party_controller";
-import { MageAttackStrategy, DEFAULT_ENERGIZE } from "../../strategies/mage/mage_attack_strategy";
-import { BaseMoveStrategy, HoldPositionStrategy } from "../../strategies/move_strategies";
-import { PriestAttackStrategy } from "../../strategies/priest/priest_attack_strategy";
-import { MAGE_AOE, PRIEST_MF } from "../equipment_setups";
-import { SpotConfig } from "../spot_configs";
+import { type PingCompensatedCharacter } from "alclient";
+import { PartyController } from "../../controller/party_controller.js";
+import { type Strategy } from "../../strategies/character_runner.js";
+import { DEFAULT_ENERGIZE, MageAttackStrategy } from "../../strategies/mage/mage_attack_strategy.js";
+import { BaseMoveStrategy, HoldPositionStrategy } from "../../strategies/move_strategies.js";
+import { PriestAttackStrategy } from "../../strategies/priest/priest_attack_strategy.js";
+import { MAGE_AOE, PRIEST_MF } from "../equipment_setups.js";
+import { type SpotConfig } from "../spot_configs.js";
 
 export function getPorcupineSpotConfig(partyController: PartyController): SpotConfig {
     return {
@@ -15,7 +17,7 @@ export function getPorcupineSpotConfig(partyController: PartyController): SpotCo
                 maximumTargets: 5,
                 equipmentSet: MAGE_AOE,
                 energize: DEFAULT_ENERGIZE
-            }),
+            }) as unknown as Strategy<PingCompensatedCharacter>,
             move: new BaseMoveStrategy(["porcupine"])
         },
         priest: {
@@ -27,7 +29,7 @@ export function getPorcupineSpotConfig(partyController: PartyController): SpotCo
                 equipmentSet: PRIEST_MF,
                 enableAbsorbToTank: true,
                 startHealingAtRatio: 0.8
-            }),
+            }) as unknown as Strategy<PingCompensatedCharacter>,
             move: new BaseMoveStrategy(["porcupine"])
         },
         merchant: {

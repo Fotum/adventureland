@@ -1,7 +1,8 @@
 import { Priest } from "alclient";
-import { filterRunners, ignoreExceptions } from "../../base/functions/general";
-import { PartyController } from "../../controller/party_controller";
-import { Loop, LoopName, Loops, Strategy, StrategyName } from "../character_runner";
+import { filterRunners } from "../../base/functions/filter.js";
+import { ignoreExceptions } from "../../base/functions/general.js";
+import { PartyController } from "../../controller/party_controller.js";
+import { type Loop, type LoopName, type Loops, type Strategy, type StrategyName } from "../character_runner.js";
 
 export type PartyHealConfig = {
     hp?: number;

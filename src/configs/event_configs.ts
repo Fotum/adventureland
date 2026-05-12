@@ -1,21 +1,24 @@
-import { CharacterType, MonsterName, PingCompensatedCharacter } from "alclient";
-import { PartyController } from "../controller/party_controller";
-import { Strategy } from "../strategies/character_runner";
-import { getDragoldConfig } from "./events/dragold";
-import { getFrogConfig } from "./events/frog";
-import { getFvampireConfig } from "./events/fvampire";
-import { getGoobrawlConfig } from "./events/goobrawl";
-import { getGreenjrConfig } from "./events/greenjr";
-import { getIcegolemConfig } from "./events/icegolem";
-import { getJrConfig } from "./events/jr";
-import { getMvampireConfig } from "./events/mvampire";
-import { getPhoenixConfig } from "./events/phoenix";
-import { getSkeletorConfig } from "./events/skeletor";
-import { getSnowmanConfig } from "./events/snowman";
-import { getValentinesConfig } from "./events/valentines";
+import { PingCompensatedCharacter, type CharacterType, type MonsterName } from "alclient";
+import { PartyController } from "../controller/party_controller.js";
+import logger from "../logger.js";
+import { type Strategy } from "../strategies/character_runner.js";
+import { getDragoldConfig } from "./events/dragold.js";
+import { getFrogConfig } from "./events/frog.js";
+import { getFvampireConfig } from "./events/fvampire.js";
+import { getGoobrawlConfig } from "./events/goobrawl.js";
+import { getGreenjrConfig } from "./events/greenjr.js";
+import { getIcegolemConfig } from "./events/icegolem.js";
+import { getJrConfig } from "./events/jr.js";
+import { getMvampireConfig } from "./events/mvampire.js";
+import { getPhoenixConfig } from "./events/phoenix.js";
+import { getPinkgooConfig } from "./events/pinkgoo.js";
+import { getSkeletorConfig } from "./events/skeletor.js";
+import { getSnowmanConfig } from "./events/snowman.js";
+import { getWabbitConfig } from "./events/wabbit.js";
 
 export type EventConfig = {
     targets: MonsterName[];
+    scheduled: boolean;
     waitForRespawnMs?: number;
     override?: boolean;
     strategies: {
@@ -34,10 +37,12 @@ export function getEventConfig(eventName: string, partyController: PartyControll
             return getDragoldConfig(partyController);
         case "icegolem":
             return getIcegolemConfig(partyController);
-        case "valentines":
-            return getValentinesConfig(partyController);
+        case "pinkgoo":
+            return getPinkgooConfig(partyController);
         case "snowman":
             return getSnowmanConfig(partyController);
+        case "wabbit":
+            return getWabbitConfig(partyController);
 
         // Special monsters
         case "phoenix":
@@ -55,7 +60,7 @@ export function getEventConfig(eventName: string, partyController: PartyControll
         case "skeletor":
             return getSkeletorConfig(partyController);
         default: {
-            console.warn(`Could not find event named ${eventName}`);
+            logger.warn(`Could not find event named ${eventName}`);
             return undefined;
         }
     }

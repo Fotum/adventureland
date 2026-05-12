@@ -1,7 +1,7 @@
 import { PingCompensatedCharacter, Player } from "alclient";
-import { PLAYER_MIN_DISTANCE } from "../base/constants";
-import { ignoreExceptions } from "../base/functions/general";
-import { Loop, LoopName, Strategy, StrategyName } from "./character_runner";
+import { ignoreExceptions } from "../base/functions/general.js";
+import { PLAYER_MIN_DISTANCE } from "../base/settings.js";
+import { type Loop, type LoopName, type Strategy, type StrategyName } from "./character_runner.js";
 
 export class UnstackStrategy<T extends PingCompensatedCharacter> implements Strategy<T> {
     public loops = new Map<LoopName, Loop<PingCompensatedCharacter>>();

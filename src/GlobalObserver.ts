@@ -1,13 +1,13 @@
 import {
     EntityModel,
     Game,
-    ItemDataTrade,
-    MonsterName,
+    type ItemDataTrade,
+    type MonsterName,
     Observer,
     PingCompensatedCharacter,
     RespawnModel,
-    ServerIdentifier,
-    ServerRegion
+    type ServerIdentifier,
+    type ServerRegion
 } from "alclient";
 import fs from "fs";
 

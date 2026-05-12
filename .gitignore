@@ -21,3 +21,6 @@ dist
 
 # States
 settings/*
+
+# Logs
+logs/*

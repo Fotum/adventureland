@@ -1,18 +1,26 @@
-import { CharacterType, MonsterName, PingCompensatedCharacter, ServerIdentifier, ServerRegion } from "alclient";
-import { SpotName } from "../base/constants";
-import { shouldGoBank } from "../base/functions/characters";
-import { loadBossTimersFromFile, loadStateFromFile, msince, saveBossTimersToFile, saveStateToFile } from "../base/functions/general";
 import {
-    PreparedScheduleEvent,
-    PreparedSpecialMonster,
-    getActiveScheduleEvents,
-    getBossesAroundCharacters
-} from "../base/functions/monsters";
-import { QUESTS } from "../base/settings";
-import { getQuestConfig } from "../configs/quest_configs";
-import { getSpotConfig } from "../configs/spot_configs";
-import { CharacterRunner, Strategy } from "../strategies/character_runner";
-import { RunnerTask, RunnerTaskName } from "./runner_task";
+    PingCompensatedCharacter,
+    type CharacterType,
+    type MonsterName,
+    type ServerIdentifier,
+    type ServerRegion
+} from "alclient";
+import { type SpotName } from "../base/constants.js";
+import { shouldGoBank } from "../base/functions/characters.js";
+import { msince } from "../base/functions/general.js";
+import { getPreparedEvents, type PreparedEvent } from "../base/functions/monsters.js";
+import {
+    loadBossTimersFromFile,
+    loadStateFromFile,
+    saveBossTimersToFile,
+    saveStateToFile
+} from "../base/functions/persistance.js";
+import { QUESTS } from "../base/settings.js";
+import { getQuestConfig } from "../configs/quest_configs.js";
+import { getSpotConfig } from "../configs/spot_configs.js";
+import logger from "../logger.js";
+import { CharacterRunner, type Strategy } from "../strategies/character_runner.js";
+import { RunnerTask, type RunnerTaskName } from "./runner_task.js";
 import {
     getBankStoreTask,
     getChangeSpotTask,
@@ -20,9 +28,8 @@ import {
     getCheckCyberlandTask,
     getEventTask,
     getHolidayBuffTask,
-    getInteractWithQuestNpcTask,
-    getSpecialMonsterTask
-} from "./runner_task_collection";
+    getInteractWithQuestNpcTask
+} from "./runner_task_collection.js";
 
 export type PartyControllerConfig = {
     homeServerName: ServerRegion;
@@ -35,6 +42,7 @@ export type PartyControllerConfig = {
 
     looter?: string;
     doQuests?: Set<CharacterType>;
+    defSPotOverride?: Map<String, SpotName>;
 
     enableBosses?: boolean;
     enableCyberland?: boolean;
@@ -102,7 +110,10 @@ export class PartyController {
                 }
 
                 // Push get/complete quest task
-                if (this.config.doQuests?.has(runner.bot.ctype) && !currState.taskQueue.some((task) => task.name == "quest")) {
+                if (
+                    this.config.doQuests?.has(runner.bot.ctype) &&
+                    !currState.taskQueue.some((task) => task.name == "quest_npc")
+                ) {
                     if (!runner.bot.s.monsterhunt) {
                         let questTask: RunnerTask | undefined = getInteractWithQuestNpcTask(runner, "get");
                         if (questTask) {
@@ -158,20 +169,34 @@ export class PartyController {
                 // Return to farm or quest if there is nothing else to do
                 if (currState.currTask.isComplete && currState.taskQueue.length == 0) {
                     // If we have some active quest -> do it
-                    if (this.config.doQuests?.has(runner.bot.ctype) && runner.bot.s.monsterhunt && currState.currTask.name != "quest") {
+                    if (
+                        this.config.doQuests?.has(runner.bot.ctype) &&
+                        runner.bot.s.monsterhunt &&
+                        currState.currTask.name != "quest"
+                    ) {
                         // Check if we can complete it
                         let questTarget: MonsterName = runner.bot.s.monsterhunt.id;
                         if (QUESTS.get(questTarget)) {
-                            let strategies: { attack?: Strategy<PingCompensatedCharacter>; move?: Strategy<PingCompensatedCharacter> } =
-                                getQuestConfig(this, questTarget)[runner.bot.ctype];
+                            let strategies: {
+                                attack?: Strategy<PingCompensatedCharacter>;
+                                move?: Strategy<PingCompensatedCharacter>;
+                            } = getQuestConfig(this, questTarget)[runner.bot.ctype];
                             currState.taskQueue.push(getChangeSpotTask("quest", runner, strategies));
                         }
                     }
 
-                    if (currState.currTask.name != "farming" && currState.currTask.name != "quest") {
+                    if (
+                        currState.currTask.name != "farming" &&
+                        currState.currTask.name != "quest" &&
+                        !currState.taskQueue.some((task) => task.name == "quest")
+                    ) {
                         // Go back to farm
-                        let strategies: { attack?: Strategy<PingCompensatedCharacter>; move?: Strategy<PingCompensatedCharacter> } =
-                            getSpotConfig(this)[runner.bot.ctype];
+                        let spotName: SpotName =
+                            this.config.defSPotOverride?.get(runner.bot.name) ?? this.config.defaultSpot;
+                        let strategies: {
+                            attack?: Strategy<PingCompensatedCharacter>;
+                            move?: Strategy<PingCompensatedCharacter>;
+                        } = getSpotConfig(this, spotName)[runner.bot.ctype];
                         currState.taskQueue.push(getChangeSpotTask("farming", runner, strategies));
                     }
                 }
@@ -179,70 +204,64 @@ export class PartyController {
 
             // Check bosses and push boss task
             if (this.config.enableBosses) {
-                // Check bosses around characters
-                let preparedSpecials: PreparedSpecialMonster[] = getBossesAroundCharacters(this);
-                // Check global events
-                let preparedEvents: PreparedScheduleEvent[] = getActiveScheduleEvents(this);
+                // Prepare events
+                let preparedEvents: PreparedEvent[] = getPreparedEvents(this);
+                if (preparedEvents.length == 0) return;
 
                 // #TODO: set boss check steps complete for found boss. In bcheck step.name == bossName
-
-                if (preparedSpecials.length == 0 && preparedEvents.length == 0) {
-                    return;
-                }
-
                 for (const [name, runner] of this.activeRunners) {
                     if (!runner.isReady()) continue;
                     if (runner.bot.ctype == "merchant") continue;
 
                     let currState: RunnerState = this.runnerStates.get(name);
-                    for (let preparedSpecial of preparedSpecials) {
-                        if (currState.currTask.id == preparedSpecial.id) continue;
-                        if (currState.taskQueue.some((task) => task.id == preparedSpecial.id)) continue;
-
-                        currState.taskQueue.push(
-                            getSpecialMonsterTask(runner, {
-                                id: preparedSpecial.id,
-                                name: preparedSpecial.name,
-                                moveTo: preparedSpecial.moveTo,
-                                targets: preparedSpecial.targets,
-                                strategies: preparedSpecial.strategies[runner.bot.ctype]
-                            })
-                        );
-                    }
-
-                    for (let preparedEvent of preparedEvents) {
+                    let overrideEvents: RunnerTask[] = [];
+                    let nonOverrideEvents: RunnerTask[] = [];
+                    for (const preparedEvent of preparedEvents) {
                         if (currState.currTask.id == preparedEvent.id) continue;
                         if (currState.taskQueue.some((task) => task.id == preparedEvent.id)) continue;
+                        // Get strategies for current special, if no strategies provided -> skip
+                        if (!preparedEvent.strategies[runner.bot.ctype]) continue;
 
-                        // Override current
-                        if (preparedEvent.override && currState.currTask.canOverride) {
-                            currState.currTask.abortTask(`Overriden by ${preparedEvent.name}`);
-
-                            // Push overriden task back to queue
-                            // #TODO: If multiple events came (dunno if possible) queue will be incorrect
-                            let redoTask: RunnerTask = Object.assign({}, currState.currTask);
-                            redoTask.reset();
-                            currState.taskQueue.splice(1, 0, redoTask);
+                        let eventTask: RunnerTask = getEventTask(runner, preparedEvent);
+                        if (preparedEvent.scheduled) {
+                            if (preparedEvent.override) {
+                                eventTask.canOverride = false;
+                                overrideEvents.push(eventTask);
+                            } else {
+                                nonOverrideEvents.push(eventTask);
+                            }
+                        } else {
+                            currState.taskQueue.push(eventTask);
                         }
+                    }
 
-                        let eventTask: RunnerTask = getEventTask(runner, {
-                            id: preparedEvent.id,
-                            name: preparedEvent.name,
-                            targets: preparedEvent.targets,
-                            destination: preparedEvent.destination,
-                            waitForRespawnMs: preparedEvent.waitForRespawnMs,
-                            strategies: preparedEvent.strategies[runner.bot.ctype]
-                        });
-                        if (preparedEvent.override) {
-                            eventTask.canOverride = false;
+                    // Handle basic events
+                    if (nonOverrideEvents.length > 0) {
+                        currState.taskQueue = nonOverrideEvents.concat(currState.taskQueue);
+                    }
+
+                    // Handle overrides
+                    if (overrideEvents.length > 0) {
+                        // Override current task
+                        if (
+                            currState.currTask.name != "farming" &&
+                            currState.currTask.name != "quest" &&
+                            currState.currTask.canOverride
+                        ) {
+                            // let redoTask: RunnerTask = currState.currTask;
+
+                            currState.currTask.abortTask(`Overriden by ${overrideEvents[0].name}`);
+                            // currState.currTask = getEmptyTask(runner).setComplete("COMPLETE");
+
+                            // redoTask.reset();
+                            // currState.taskQueue.splice(0, 0, redoTask);
                         }
-
-                        currState.taskQueue.splice(1, 0, eventTask);
+                        currState.taskQueue = overrideEvents.concat(currState.taskQueue);
                     }
                 }
             }
         } catch (ex) {
-            console.error(ex);
+            logger.error(ex);
         } finally {
             setTimeout(() => {
                 this.logicLoop();
@@ -250,7 +269,7 @@ export class PartyController {
         }
     }
 
-    public startControler(): void {
+    public startController(): void {
         if (!this.isRunning) {
             this.isRunning = true;
         }
@@ -262,8 +281,8 @@ export class PartyController {
         }
     }
 
-    public getRunners(): CharacterRunner<PingCompensatedCharacter>[] {
-        return Array.from(this.activeRunners.values());
+    public getRunners(onlyActive: boolean = false): CharacterRunner<PingCompensatedCharacter>[] {
+        return Array.from(this.activeRunners.values()).filter((r) => !onlyActive || r.isReady());
     }
 
     public addRunner(runner: CharacterRunner<PingCompensatedCharacter>): void {

@@ -1,22 +1,33 @@
-import { CMData, Mage, Pathfinder, PingCompensatedCharacter, Tools } from "alclient";
-import { filterRunners } from "../../base/functions/general";
-import { PartyController } from "../../controller/party_controller";
-import { Loop, LoopName, Strategy, StrategyName } from "../character_runner";
+import { Mage, Pathfinder, Tools, type CMData } from "alclient";
+import { filterRunners } from "../../base/functions/filter.js";
+import { ignoreExceptions } from "../../base/functions/general.js";
+import { FRIENDLY_CHARACTERS, MY_CHARACTERS } from "../../base/settings.js";
+import { PartyController } from "../../controller/party_controller.js";
+import logger from "../../logger.js";
+import { type Loop, type LoopName, type Strategy, type StrategyName } from "../character_runner.js";
 
 export type MagiportConfig = {
     delay: number;
     range: number;
+    enableSmart: boolean;
+    enableService: boolean;
+    allowList?: string[];
 };
 
 export const DEFAULT_MAGIPORT_CONFIG: MagiportConfig = {
     delay: 1000,
-    range: 150
+    range: 150,
+    enableSmart: true,
+    enableService: true,
+    allowList: [...MY_CHARACTERS.keys(), ...FRIENDLY_CHARACTERS]
 };
 
-export class MagiportSmartMovingStrategy implements Strategy<Mage> {
-    public loops = new Map<LoopName, Loop<PingCompensatedCharacter>>();
+export class MagiportStrategy implements Strategy<Mage> {
+    public loops = new Map<LoopName, Loop<Mage>>();
 
     private static recentlyMagiported = new Map<string, number>();
+
+    private magiportCmListener: (data: CMData) => Promise<unknown>;
 
     private _name: StrategyName = "magiport";
     private partyController: PartyController;
@@ -28,10 +39,27 @@ export class MagiportSmartMovingStrategy implements Strategy<Mage> {
 
         this.loops.set("magiport", {
             fn: async (bot: Mage) => {
-                await this.magiport(bot);
+                await this.magiport(bot).catch(ignoreExceptions);
             },
             interval: ["magiport"]
         });
+    }
+
+    public onApply(bot: Mage) {
+        this.magiportCmListener = async (data: CMData) => {
+            if (!this.config.enableService) return;
+            if (this.config.allowList && !this.config.allowList.includes(data.name)) return;
+            if (!data.message.includes("magiport")) return;
+            if (bot.players.get(data.name)) return;
+            if (!bot.canUse("magiport")) return;
+
+            return bot.magiport(data.name);
+        };
+        bot.socket.on("cm", this.magiportCmListener);
+    }
+
+    public onRemove(bot: Mage) {
+        if (this.magiportCmListener) bot.socket.off("cm", this.magiportCmListener);
     }
 
     public get name() {
@@ -39,6 +67,7 @@ export class MagiportSmartMovingStrategy implements Strategy<Mage> {
     }
 
     protected async magiport(bot: Mage) {
+        if (!this.config.enableSmart) return;
         if (!bot.canUse("magiport")) return;
         if (bot.map.startsWith("bank")) return;
         if (bot.smartMoving) return;
@@ -54,54 +83,19 @@ export class MagiportSmartMovingStrategy implements Strategy<Mage> {
             if (Tools.distance(friend, friend.smartMoving) < 2 * this.config.range) continue;
             if (Tools.distance(bot, friend.smartMoving) > this.config.range) continue;
 
-            let lastMagiport = MagiportSmartMovingStrategy.recentlyMagiported.get(friend.id);
+            let lastMagiport = MagiportStrategy.recentlyMagiported.get(friend.id);
             if (lastMagiport && lastMagiport + this.config.delay > Date.now()) continue;
 
             try {
                 await bot.magiport(friend.id);
-                MagiportSmartMovingStrategy.recentlyMagiported.set(friend.id, Date.now());
+                MagiportStrategy.recentlyMagiported.set(friend.id, Date.now());
 
                 await friend.acceptMagiport(bot.id);
                 await friend.stopSmartMove();
                 await friend.stopWarpToTown();
             } catch (ex) {
-                console.error(ex);
+                logger.error(ex);
             }
         }
-    }
-}
-
-export type MagiportServiceConfig = {
-    allowList?: string[];
-};
-export class MagiportServiceStrategy implements Strategy<Mage> {
-    public loops = new Map<LoopName, Loop<PingCompensatedCharacter>>();
-
-    private _name: StrategyName = "utility";
-    private options: MagiportServiceConfig;
-    private inviteListener: (data: CMData) => Promise<unknown>;
-
-    public constructor(options: MagiportServiceConfig = {}) {
-        this.options = options;
-    }
-
-    public onApply(bot: Mage) {
-        this.inviteListener = async (data: CMData) => {
-            if (this.options.allowList && !this.options.allowList.includes(data.name)) return;
-            if (!data.message.includes("magiport")) return;
-            if (bot.players.get(data.name)) return;
-            if (!bot.canUse("magiport")) return;
-
-            return bot.magiport(data.name);
-        };
-        bot.socket.on("cm", this.inviteListener);
-    }
-
-    public onRemove(bot: Mage) {
-        if (this.inviteListener) bot.socket.off("cm", this.inviteListener);
-    }
-
-    public get name() {
-        return this._name;
     }
 }

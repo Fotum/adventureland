@@ -1,11 +1,20 @@
-import { Constants, Entity, GItem, Game, IPosition, MonsterName, PingCompensatedCharacter } from "alclient";
-import { EventName, KEEP_GOLD, MERCHANT_KEEP_GOLD, SEND_GOLD_AT, SpecialName } from "../base/constants";
-import { generateRandomId, ignoreExceptions, mssince, sleep, ssince } from "../base/functions/general";
-import { SPECIAL_MONSTERS, STORE_ITEMS } from "../base/settings";
-import { NoAttackScareStrategy } from "../strategies/base_attack_strategy";
-import { CharacterRunner, Strategy } from "../strategies/character_runner";
-import { PartyController } from "./party_controller";
-import { RunnerTask, RunnerTaskName } from "./runner_task";
+import {
+    Constants,
+    Entity,
+    Game,
+    PingCompensatedCharacter,
+    type GItem,
+    type IPosition,
+    type MonsterName
+} from "alclient";
+import { generateRandomId, ignoreExceptions, mssince, sleep, ssince } from "../base/functions/general.js";
+import { type PreparedEvent } from "../base/functions/monsters.js";
+import { KEEP_GOLD, MERCHANT_KEEP_GOLD, SEND_GOLD_AT, SPECIAL_MONSTERS, STORE_ITEMS } from "../base/settings.js";
+import logger from "../logger.js";
+import { NoAttackScareStrategy } from "../strategies/base_attack_strategy.js";
+import { CharacterRunner, type Strategy } from "../strategies/character_runner.js";
+import { PartyController } from "./party_controller.js";
+import { RunnerTask, type RunnerTaskName } from "./runner_task.js";
 
 export function getChangeSpotTask(
     taskName: RunnerTaskName,
@@ -29,20 +38,10 @@ export function getChangeSpotTask(
     return new RunnerTask(generateRandomId(), taskName, runner).pushStep({ name: "spot_change", fn: taskFunction });
 }
 
-type TaskSpecialMonsterInfo = {
-    id: string;
-    name: SpecialName;
-    targets: MonsterName[];
-    moveTo: IPosition;
-    strategies: {
-        attack?: Strategy<PingCompensatedCharacter>;
-        move?: Strategy<PingCompensatedCharacter>;
-    };
-};
-export function getSpecialMonsterTask(runner: CharacterRunner<PingCompensatedCharacter>, specialInfo: TaskSpecialMonsterInfo): RunnerTask {
-    return new RunnerTask(specialInfo.id, specialInfo.name, runner, specialInfo.moveTo)
+export function getEventTask(runner: CharacterRunner<PingCompensatedCharacter>, eventInfo: PreparedEvent): RunnerTask {
+    return new RunnerTask(eventInfo.id, eventInfo.name, runner, eventInfo.destination)
         .pushStep({
-            name: "move_to_target",
+            name: `move_to_${eventInfo.name}`,
             fn: async (runner: CharacterRunner<PingCompensatedCharacter>, signal: AbortSignal) => {
                 runner.removeStrategy("move");
 
@@ -50,52 +49,10 @@ export function getSpecialMonsterTask(runner: CharacterRunner<PingCompensatedCha
                     runner.applyStrategy(new NoAttackScareStrategy());
                 }
 
-                await runner.bot
-                    .smartMove(specialInfo.moveTo, {
-                        useBlink: runner.bot.ctype == "mage",
-                        stopIfTrue: async () => {
-                            return signal.aborted;
-                        }
-                    })
-                    .catch((ex) => {
-                        throw new Error(`Smart move error: ${ex}`);
+                if (eventInfo.name == "icegolem") {
+                    return await runner.bot.join(eventInfo.name as unknown as MonsterName).catch((ex) => {
+                        throw new Error(ex);
                     });
-                signal.throwIfAborted();
-            }
-        })
-        .pushStep({
-            name: "kill_special",
-            fn: async (runner: CharacterRunner<PingCompensatedCharacter>, signal: AbortSignal) => {
-                runner.applyStrategies([specialInfo.strategies.attack, specialInfo.strategies.move]);
-                // Remove move strategy so character wont go to new random spawn
-                await checkCompletionForMs(runner.bot, specialInfo.targets, signal).finally(() => {
-                    runner.removeStrategy("move");
-                });
-                signal.throwIfAborted();
-            }
-        });
-}
-
-type TaskEventInfo = {
-    id: string;
-    name: EventName;
-    targets: MonsterName[];
-    destination: IPosition | keyof typeof Game.G.events;
-    waitForRespawnMs?: number;
-    strategies: {
-        attack?: Strategy<PingCompensatedCharacter>;
-        move?: Strategy<PingCompensatedCharacter>;
-    };
-};
-export function getEventTask(runner: CharacterRunner<PingCompensatedCharacter>, eventInfo: TaskEventInfo): RunnerTask {
-    return new RunnerTask(eventInfo.id, eventInfo.name, runner, eventInfo.destination)
-        .pushStep({
-            name: "move_to_event",
-            fn: async (runner: CharacterRunner<PingCompensatedCharacter>, signal: AbortSignal) => {
-                runner.removeStrategy("move");
-
-                if (runner.bot.isEquipped("jacko") || runner.bot.hasItem("jacko")) {
-                    runner.applyStrategy(new NoAttackScareStrategy());
                 }
 
                 await runner.bot
@@ -112,13 +69,18 @@ export function getEventTask(runner: CharacterRunner<PingCompensatedCharacter>, 
             }
         })
         .pushStep({
-            name: "do_event",
+            name: `do_${eventInfo.name}`,
             fn: async (runner: CharacterRunner<PingCompensatedCharacter>, signal: AbortSignal) => {
-                runner.applyStrategies([eventInfo.strategies.attack, eventInfo.strategies.move]);
+                runner.applyStrategies([
+                    eventInfo.strategies[runner.bot.ctype].attack,
+                    eventInfo.strategies[runner.bot.ctype].move
+                ]);
                 // Remove move strategy so character wont go to new random spawn
-                await checkCompletionForMs(runner.bot, eventInfo.targets, signal, eventInfo.waitForRespawnMs).finally(() => {
-                    runner.removeStrategy("move");
-                });
+                await checkCompletionForMs(runner.bot, eventInfo.targets, signal, eventInfo.waitForRespawnMs).finally(
+                    () => {
+                        runner.removeStrategy("move");
+                    }
+                );
                 signal.throwIfAborted();
             }
         });
@@ -162,7 +124,7 @@ export function getBankStoreTask(runner: CharacterRunner<PingCompensatedCharacte
             try {
                 await runner.bot.depositItem(toStore.invIx, toStore.bankTab).catch(ignoreExceptions);
             } catch (ex) {
-                console.error("bank_store", ex);
+                logger.error("bank_store", ex);
             }
         }
     };
@@ -226,7 +188,9 @@ export function getCheckBossesTask(
     if (bossesToCheck.size == 0) {
         return undefined;
     }
-    let route: ({ name: MonsterName } & IPosition)[] = BOSS_CHECK_ROUTE.filter((spawn) => bossesToCheck.has(spawn.name));
+    let route: ({ name: MonsterName } & IPosition)[] = BOSS_CHECK_ROUTE.filter((spawn) =>
+        bossesToCheck.has(spawn.name)
+    );
 
     let checkBossesTask: RunnerTask = new RunnerTask(generateRandomId(), "bcheck", runner);
     checkBossesTask.pushStep({
@@ -280,7 +244,10 @@ export function getCheckCyberlandTask(runner: CharacterRunner<PingCompensatedCha
         await runner.bot.smartMove("main");
     };
 
-    return new RunnerTask(generateRandomId(), "cyberland", runner).pushStep({ name: "check_cyberland", fn: taskFunction });
+    return new RunnerTask(generateRandomId(), "cyberland", runner).pushStep({
+        name: "check_cyberland",
+        fn: taskFunction
+    });
 }
 
 export function getHolidayBuffTask(runner: CharacterRunner<PingCompensatedCharacter>): RunnerTask {
@@ -305,10 +272,16 @@ export function getHolidayBuffTask(runner: CharacterRunner<PingCompensatedCharac
         await runner.bot.getHolidaySpirit();
     };
 
-    return new RunnerTask(generateRandomId(), "holiday", runner).pushStep({ name: "get_holiday_buff", fn: taskFunction });
+    return new RunnerTask(generateRandomId(), "holiday", runner).pushStep({
+        name: "get_holiday_buff",
+        fn: taskFunction
+    });
 }
 
-export function getInteractWithQuestNpcTask(runner: CharacterRunner<PingCompensatedCharacter>, action: string): RunnerTask | undefined {
+export function getInteractWithQuestNpcTask(
+    runner: CharacterRunner<PingCompensatedCharacter>,
+    action: string
+): RunnerTask | undefined {
     if (action == "get" && runner.bot.s.monsterhunt) return undefined;
     if (action == "complete" && (!runner.bot.s.monsterhunt || runner.bot.s.monsterhunt.c !== 0)) return undefined;
 
@@ -337,9 +310,13 @@ export function getInteractWithQuestNpcTask(runner: CharacterRunner<PingCompensa
     };
 
     return new RunnerTask(generateRandomId(), "quest_npc", runner).pushStep({
-        name: "get_or_turn_in",
+        name: action,
         fn: interactTask
     });
+}
+
+export function getEmptyTask(runner: CharacterRunner<PingCompensatedCharacter>): RunnerTask {
+    return new RunnerTask("-9999", "unknown", runner);
 }
 
 async function checkCompletionForMs(

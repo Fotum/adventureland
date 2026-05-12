@@ -1,8 +1,9 @@
-import { EntitiesData, Entity, Game, Player, SlotType, Tools, Warrior } from "alclient";
-import { ignoreExceptions, sleep } from "../../base/functions/general";
-import { FILTER_HIGHEST } from "../../configs/equipment_setups";
-import { PartyController } from "../../controller/party_controller";
-import { BaseAttackConfig, BaseAttackStrategy, IDLE_ATTACK_MONSTERS } from "../base_attack_strategy";
+import { Entity, Game, Player, Tools, Warrior, type EntitiesData, type SlotType } from "alclient";
+import { ignoreExceptions, sleep } from "../../base/functions/general.js";
+import { FILTER_HIGHEST } from "../../configs/equipment_setups.js";
+import { PartyController } from "../../controller/party_controller.js";
+import logger from "../../logger.js";
+import { BaseAttackStrategy, IDLE_ATTACK_MONSTERS, type BaseAttackConfig } from "../base_attack_strategy.js";
 
 export type WarriorAttackConfig = BaseAttackConfig & {
     disableAgitate?: boolean;
@@ -15,13 +16,13 @@ export type WarriorAttackConfig = BaseAttackConfig & {
 };
 
 export class WarriorAttackStrategy extends BaseAttackStrategy<Warrior> {
-    protected config: WarriorAttackConfig;
+    declare protected config: WarriorAttackConfig;
 
-    public constructor(partyController: PartyController, options?: WarriorAttackConfig) {
-        super(partyController, options);
+    public constructor(partyController: PartyController, config?: WarriorAttackConfig) {
+        super(partyController, config);
 
-        if (!options.disableCleave) this.interval.push("cleave");
-        if (!options.disableWarCry) this.interval.push("warcry");
+        if (!config.disableCleave) this.interval.push("cleave");
+        if (!config.disableWarCry) this.interval.push("warcry");
 
         this.loops.set("attack", {
             fn: async (bot: Warrior) => {
@@ -50,7 +51,11 @@ export class WarriorAttackStrategy extends BaseAttackStrategy<Warrior> {
                     for (let monster of data.monsters) {
                         if (monster.target) continue;
                         // Check if target is in array of greedyAggro targets
-                        if (Array.isArray(this.config.enableGreedyAggro) && !this.config.enableGreedyAggro.includes(monster.type)) continue;
+                        if (
+                            Array.isArray(this.config.enableGreedyAggro) &&
+                            !this.config.enableGreedyAggro.includes(monster.type)
+                        )
+                            continue;
                         // Check if target is in typeList of monsters we want to farm
                         if (this.config.typeList && !this.config.typeList.includes(monster.type)) continue;
                         if (Game.G.monsters[monster.type].immune) continue;
@@ -58,31 +63,39 @@ export class WarriorAttackStrategy extends BaseAttackStrategy<Warrior> {
                         if (Tools.distance(bot, monster) > Game.G.skills.zapperzap.range) continue;
 
                         bot.nextSkill.set("zapperzap", new Date(Date.now() - bot.ping * 2));
-                        return bot.zapperZap(monster.id).catch(console.error);
+                        return bot.zapperZap(monster.id).catch(logger.error);
                     }
                 }
 
                 if (bot.canUse("taunt")) {
                     for (const monster of data.monsters) {
                         if (monster.target) continue;
-                        if (Array.isArray(this.config.enableGreedyAggro) && !this.config.enableGreedyAggro.includes(monster.type)) continue;
+                        if (
+                            Array.isArray(this.config.enableGreedyAggro) &&
+                            !this.config.enableGreedyAggro.includes(monster.type)
+                        )
+                            continue;
                         if (this.config.typeList && !this.config.typeList.includes(monster.type)) continue;
                         if (Tools.distance(bot, monster) > Game.G.skills.taunt.range) continue;
 
                         bot.nextSkill.set("taunt", new Date(Date.now() + bot.ping * 2));
-                        return bot.taunt(monster.id).catch(console.error);
+                        return bot.taunt(monster.id).catch(logger.error);
                     }
                 }
 
                 if (bot.canUse("attack")) {
                     for (const monster of data.monsters) {
                         if (monster.target) continue;
-                        if (Array.isArray(this.config.enableGreedyAggro) && !this.config.enableGreedyAggro.includes(monster.type)) continue;
+                        if (
+                            Array.isArray(this.config.enableGreedyAggro) &&
+                            !this.config.enableGreedyAggro.includes(monster.type)
+                        )
+                            continue;
                         if (this.config.typeList && !this.config.typeList.includes(monster.type)) continue;
                         if (Tools.distance(bot, monster) > bot.range) continue;
 
                         bot.nextSkill.set("attack", new Date(Date.now() + bot.ping * 2));
-                        return bot.basicAttack(monster.id).catch(console.error);
+                        return bot.basicAttack(monster.id).catch(logger.error);
                     }
                 }
             };
@@ -101,7 +114,7 @@ export class WarriorAttackStrategy extends BaseAttackStrategy<Warrior> {
 
         let priority = this.botSort;
 
-        await this.equipItems(bot).catch(console.error);
+        await this.equipItems(bot).catch(logger.error);
 
         if (!this.config.disableAgitate) await this.agitateTargets(bot).catch(ignoreExceptions);
         if (!this.config.disableStomp) await this.stomp(bot).catch(ignoreExceptions);
@@ -110,7 +123,7 @@ export class WarriorAttackStrategy extends BaseAttackStrategy<Warrior> {
         if (!this.config.disableZapper) await this.zapperAttack(bot, priority).catch(ignoreExceptions);
         if (!this.config.disableIdleAttack) await this.idleAttack(bot, priority).catch(ignoreExceptions);
 
-        await this.equipItems(bot).catch(console.error);
+        await this.equipItems(bot).catch(logger.error);
     }
 
     protected async agitateTargets(bot: Warrior): Promise<unknown> {
@@ -119,7 +132,10 @@ export class WarriorAttackStrategy extends BaseAttackStrategy<Warrior> {
         if (bot.canUse("cleave", { ignoreEquipped: this.config.enableEquipForCleave ?? false })) {
             let unwantedEntity: Entity = bot.getEntity({
                 hasTarget: false,
-                notTypeList: [...(this.config.typeList ?? []), ...(this.config.disableIdleAttack ? [] : IDLE_ATTACK_MONSTERS)],
+                notTypeList: [
+                    ...(this.config.typeList ?? []),
+                    ...(this.config.disableIdleAttack ? [] : IDLE_ATTACK_MONSTERS)
+                ],
                 withinRange: "cleave"
             });
             if (unwantedEntity) return;
@@ -127,14 +143,18 @@ export class WarriorAttackStrategy extends BaseAttackStrategy<Warrior> {
             let numIfAgitate: number = bot.getEntities({
                 hasTarget: false,
                 hasIncomingProjectile: false,
-                typeList: Array.isArray(this.config.enableGreedyAggro) ? this.config.enableGreedyAggro : this.config.typeList,
+                typeList: Array.isArray(this.config.enableGreedyAggro)
+                    ? this.config.enableGreedyAggro
+                    : this.config.typeList,
                 withinRange: "agitate"
             }).length;
 
             let numIfCleave: number = bot.getEntities({
                 hasTarget: false,
                 hasIncomingProjectile: false,
-                typeList: Array.isArray(this.config.enableGreedyAggro) ? this.config.enableGreedyAggro : this.config.typeList,
+                typeList: Array.isArray(this.config.enableGreedyAggro)
+                    ? this.config.enableGreedyAggro
+                    : this.config.typeList,
                 withinRange: "cleave"
             }).length;
 
@@ -145,7 +165,10 @@ export class WarriorAttackStrategy extends BaseAttackStrategy<Warrior> {
 
         let unwantedEntity: Entity = bot.getEntity({
             hasTarget: false,
-            notTypeList: [...(this.config.typeList ?? []), ...(this.config.disableIdleAttack ? [] : IDLE_ATTACK_MONSTERS)],
+            notTypeList: [
+                ...(this.config.typeList ?? []),
+                ...(this.config.disableIdleAttack ? [] : IDLE_ATTACK_MONSTERS)
+            ],
             withinRange: "agitate"
         });
         if (unwantedEntity) return;
@@ -153,7 +176,9 @@ export class WarriorAttackStrategy extends BaseAttackStrategy<Warrior> {
         let agitateTargets: Entity[] = bot.getEntities({
             hasTarget: false,
             hasIncomingProjectile: false,
-            typeList: Array.isArray(this.config.enableGreedyAggro) ? this.config.enableGreedyAggro : this.config.typeList,
+            typeList: Array.isArray(this.config.enableGreedyAggro)
+                ? this.config.enableGreedyAggro
+                : this.config.typeList,
             withinRange: "agitate"
         });
         if (agitateTargets.length == 0) return;
@@ -171,7 +196,11 @@ export class WarriorAttackStrategy extends BaseAttackStrategy<Warrior> {
 
     protected async cleave(bot: Warrior): Promise<unknown> {
         if (!bot.canUse("cleave", { ignoreEquipped: this.config.enableEquipForCleave ?? false })) return;
-        if (this.config.enableEquipForCleave && !(bot.isEquipped(["bataxe", "scythe"]) || bot.hasItem(["bataxe", "scythe"]))) return;
+        if (
+            this.config.enableEquipForCleave &&
+            !(bot.isEquipped(["bataxe", "scythe"]) || bot.hasItem(["bataxe", "scythe"]))
+        )
+            return;
 
         if (bot.isPVP()) {
             let nearbyPlayers: Player[] = bot.getPlayers({
@@ -184,7 +213,10 @@ export class WarriorAttackStrategy extends BaseAttackStrategy<Warrior> {
 
         let unwantedEntity: Entity = bot.getEntity({
             hasTarget: false,
-            notTypeList: [...(this.config.typeList ?? []), ...(this.config.disableIdleAttack ? [] : IDLE_ATTACK_MONSTERS)],
+            notTypeList: [
+                ...(this.config.typeList ?? []),
+                ...(this.config.disableIdleAttack ? [] : IDLE_ATTACK_MONSTERS)
+            ],
             withinRange: "cleave"
         });
         if (unwantedEntity) return;
@@ -249,7 +281,7 @@ export class WarriorAttackStrategy extends BaseAttackStrategy<Warrior> {
             if (mainhand) equipBatch.push({ num: mainhand, slot: "mainhand" });
             if (offhand) equipBatch.push({ num: offhand, slot: "offhand" });
 
-            if (equipBatch.length) await bot.equipBatch(equipBatch).catch(console.error);
+            if (equipBatch.length) await bot.equipBatch(equipBatch).catch(logger.error);
         }
     }
 

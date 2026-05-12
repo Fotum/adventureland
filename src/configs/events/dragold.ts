@@ -1,14 +1,17 @@
-import { PartyController } from "../../controller/party_controller";
-import { MageAttackStrategy, DEFAULT_ENERGIZE } from "../../strategies/mage/mage_attack_strategy";
-import { BaseMoveStrategy } from "../../strategies/move_strategies";
-import { PriestAttackStrategy } from "../../strategies/priest/priest_attack_strategy";
-import { WarriorAttackStrategy } from "../../strategies/warrior/warrior_attack_strategy";
-import { WARRIOR_DPS, MAGE_DPS, PRIEST_TANKY_MAGIC } from "../equipment_setups";
-import { EventConfig } from "../event_configs";
+import type { PingCompensatedCharacter } from "alclient";
+import { PartyController } from "../../controller/party_controller.js";
+import type { Strategy } from "../../strategies/character_runner.js";
+import { DEFAULT_ENERGIZE, MageAttackStrategy } from "../../strategies/mage/mage_attack_strategy.js";
+import { BaseMoveStrategy } from "../../strategies/move_strategies.js";
+import { PriestAttackStrategy } from "../../strategies/priest/priest_attack_strategy.js";
+import { WarriorAttackStrategy } from "../../strategies/warrior/warrior_attack_strategy.js";
+import { MAGE_DPS, PRIEST_TANKY_MAGIC, WARRIOR_DPS } from "../equipment_setups.js";
+import { type EventConfig } from "../event_configs.js";
 
 export function getDragoldConfig(partyController: PartyController): EventConfig {
     return {
         targets: ["dragold"],
+        scheduled: true,
         override: true,
         strategies: {
             warrior: {
@@ -19,7 +22,7 @@ export function getDragoldConfig(partyController: PartyController): EventConfig 
                     disableAgitate: true,
                     disableCleave: true,
                     disableStomp: true
-                }),
+                }) as unknown as Strategy<PingCompensatedCharacter>,
                 move: new BaseMoveStrategy(["dragold"])
             },
             mage: {
@@ -29,7 +32,7 @@ export function getDragoldConfig(partyController: PartyController): EventConfig 
                     equipmentSet: MAGE_DPS,
                     disableCburst: true,
                     energize: DEFAULT_ENERGIZE
-                }),
+                }) as unknown as Strategy<PingCompensatedCharacter>,
                 move: new BaseMoveStrategy(["dragold"])
             },
             priest: {
@@ -37,11 +40,10 @@ export function getDragoldConfig(partyController: PartyController): EventConfig 
                     type: "dragold",
                     disableIdleAttack: true,
                     enableAbsorbToTank: true,
-                    maximumTargets: 3,
                     equipmentSet: PRIEST_TANKY_MAGIC,
                     enableHealStrangers: true,
                     startHealingAtRatio: 0.8
-                }),
+                }) as unknown as Strategy<PingCompensatedCharacter>,
                 move: new BaseMoveStrategy(["dragold"])
             }
         }

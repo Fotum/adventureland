@@ -8,40 +8,42 @@ import { WarriorAttackStrategy } from "../../strategies/warrior/warrior_attack_s
 import { MAGE_FAST, PRIEST_MF, WARRIOR_DPS } from "../equipment_setups.js";
 import { type EventConfig } from "../event_configs.js";
 
-export function getSnowmanConfig(partyController: PartyController): EventConfig {
+export function getWabbitConfig(partyController: PartyController): EventConfig {
     return {
-        targets: ["snowman"],
+        targets: ["wabbit"],
         scheduled: true,
         override: false,
         strategies: {
             warrior: {
                 attack: new WarriorAttackStrategy(partyController, {
-                    type: "snowman",
+                    type: "wabbit",
+                    disableIdleAttack: true,
                     equipmentSet: WARRIOR_DPS,
                     disableAgitate: true,
                     disableCleave: true,
                     disableStomp: true
                 }) as unknown as Strategy<PingCompensatedCharacter>,
-                move: new BaseMoveStrategy(["snowman"])
+                move: new BaseMoveStrategy(["wabbit"])
             },
             mage: {
                 attack: new MageAttackStrategy(partyController, {
-                    type: "snowman",
+                    type: "wabbit",
+                    disableIdleAttack: true,
                     equipmentSet: MAGE_FAST,
                     disableKillSteal: true,
                     disableCburst: true,
                     energize: DEFAULT_ENERGIZE
                 }) as unknown as Strategy<PingCompensatedCharacter>,
-                move: new BaseMoveStrategy(["snowman"])
+                move: new BaseMoveStrategy(["wabbit"])
             },
             priest: {
                 attack: new PriestAttackStrategy(partyController, {
-                    type: "snowman",
+                    type: "wabbit",
+                    disableIdleAttack: true,
                     equipmentSet: PRIEST_MF,
-                    startHealingAtRatio: 0.8,
-                    disableAbsorb: true
+                    startHealingAtRatio: 0.8
                 }) as unknown as Strategy<PingCompensatedCharacter>,
-                move: new BaseMoveStrategy(["snowman"])
+                move: new BaseMoveStrategy(["wabbit"])
             }
         }
     };

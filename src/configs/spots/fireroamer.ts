@@ -1,12 +1,13 @@
-import { Constants, Mage, Player, Tools, Warrior } from "alclient";
-import { PartyController } from "../../controller/party_controller";
-import { NoAttackScareStrategy } from "../../strategies/base_attack_strategy";
-import { DEFAULT_ENERGIZE, MageAttackStrategy } from "../../strategies/mage/mage_attack_strategy";
-import { HoldPositionStrategy, KiteInCircleStrategy } from "../../strategies/move_strategies";
-import { PriestAttackStrategy } from "../../strategies/priest/priest_attack_strategy";
-import { WarriorAttackStrategy } from "../../strategies/warrior/warrior_attack_strategy";
-import { MAGE_AOE, PRIEST_TANKY_MAGIC, WARRIOR_AOE } from "../equipment_setups";
-import { SpotConfig } from "../spot_configs";
+import { Constants, Mage, PingCompensatedCharacter, Player, Tools, Warrior } from "alclient";
+import { PartyController } from "../../controller/party_controller.js";
+import { NoAttackScareStrategy } from "../../strategies/base_attack_strategy.js";
+import type { Strategy } from "../../strategies/character_runner.js";
+import { DEFAULT_ENERGIZE, MageAttackStrategy } from "../../strategies/mage/mage_attack_strategy.js";
+import { HoldPositionStrategy, KiteInCircleStrategy } from "../../strategies/move_strategies.js";
+import { PriestAttackStrategy } from "../../strategies/priest/priest_attack_strategy.js";
+import { WarriorAttackStrategy } from "../../strategies/warrior/warrior_attack_strategy.js";
+import { MAGE_AOE, PRIEST_TANKY_MAGIC, WARRIOR_AOE } from "../equipment_setups.js";
+import { type SpotConfig } from "../spot_configs.js";
 
 const MAIN_TANK: string = "Archealer";
 const MAX_DISTANCE: number = Constants.NPC_INTERACTION_DISTANCE_SQUARED;
@@ -42,7 +43,7 @@ export function getFireroamerSpotConfig(partyController: PartyController): SpotC
                 equipmentSet: WARRIOR_AOE,
                 enableEquipForCleave: true,
                 enableEquipForStomp: true
-            }),
+            }) as unknown as Strategy<PingCompensatedCharacter>,
             move: new KiteInCircleStrategy({
                 centre: { map: "desertland", x: 221, y: -804 },
                 radius: 150,
@@ -58,7 +59,7 @@ export function getFireroamerSpotConfig(partyController: PartyController): SpotC
                 equipmentSet: MAGE_AOE,
                 disableCburst: true,
                 energize: DEFAULT_ENERGIZE
-            }),
+            }) as unknown as Strategy<PingCompensatedCharacter>,
             move: new KiteInCircleStrategy({
                 centre: { map: "desertland", x: 221, y: -804 },
                 radius: 150,
@@ -74,7 +75,7 @@ export function getFireroamerSpotConfig(partyController: PartyController): SpotC
                 startHealingAtRatio: 0.8,
                 disableZapper: true,
                 disableAbsorb: true
-            }),
+            }) as unknown as Strategy<PingCompensatedCharacter>,
             move: new KiteInCircleStrategy({
                 centre: { map: "desertland", x: 241, y: -835 },
                 radius: 35,

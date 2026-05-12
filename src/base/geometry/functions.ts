@@ -1,5 +1,5 @@
-import { Tools, IPosition, MonsterName, PingCompensatedCharacter, Entity } from "alclient";
-import { Vector } from "./vector";
+import { Entity, PingCompensatedCharacter, Tools, type IPosition, type MonsterName } from "alclient";
+import { Vector } from "./vector.js";
 
 export function getRandomAngle(): number {
     return Math.random() * Math.PI * (Math.random() < 0.5 ? 1 : -1);
@@ -35,11 +35,14 @@ export function getEntityAvoidanceVector(bot: PingCompensatedCharacter, config: 
     if (!config.ignoreMonsters) config.ignoreMonsters = [];
 
     const scale: number =
-        1 - (config.affectArea > config.magLimit ? config.magLimit / config.affectArea : config.affectArea / config.magLimit);
+        1 -
+        (config.affectArea > config.magLimit
+            ? config.magLimit / config.affectArea
+            : config.affectArea / config.magLimit);
 
     const entities: Entity[] = bot.getEntities({
         withinRange: config.affectArea,
-        notTypeList: this.config.ignoreMonsters ? this.config.ignoreMonsters : undefined,
+        notTypeList: config.ignoreMonsters ? config.ignoreMonsters : undefined,
         willBurnToDeath: false,
         willDieToProjectiles: false
     });
@@ -49,13 +52,14 @@ export function getEntityAvoidanceVector(bot: PingCompensatedCharacter, config: 
         if (config.ignoreMonsters.includes(entity.type)) continue;
 
         let entityScale: number = scale;
-        if (config.entityScaleAdd && config.entityScaleAdd[entity.type]) entityScale += config.entityScaleAdd[entity.type];
+        if (config.entityScaleAdd && config.entityScaleAdd[entity.type])
+            entityScale += config.entityScaleAdd[entity.type];
 
         let entityDistance: number = Tools.squaredDistance(bot, entity);
-        if (entityDistance > this.config.affectArea) continue;
+        if (entityDistance > config.affectArea) continue;
 
         let entityVector: Vector = new Vector(bot.x - entity.x, bot.y - entity.y).normalize();
-        entityVector.multiply(entityDistance * entityScale).limit(this.config.magLimit);
+        entityVector.multiply(entityDistance * entityScale).limit(config.magLimit);
 
         avoidanceVector.add(entityVector);
     }

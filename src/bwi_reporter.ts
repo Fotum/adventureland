@@ -1,7 +1,8 @@
 import { PingCompensatedCharacter } from "alclient";
 import BotWebInterface from "bot-web-interface";
 import prettyMilliseconds from "pretty-ms";
-import { PartyController } from "./controller/party_controller";
+import { PartyController } from "./controller/party_controller.js";
+import { BWIException } from "./exceptions/exceptions.js";
 
 type BWIMetricSchema = {
     name: string;
@@ -24,7 +25,7 @@ type BWIDataSource = {
     isize: number;
     esize: number;
     gold: number;
-    party: string;
+    party: string | undefined;
     status: string;
     target: string;
     cc: number;
@@ -78,43 +79,50 @@ export class BWIReporter {
             };
 
             this.botDataSources.set(executor.bot.id, dataSourceObj);
-            this.createMonitorUi(this.botDataSources.get(executor.bot.id));
+            this.createMonitorUi(dataSourceObj);
         }
 
         this.statisticsInterval = setInterval(this.updateStatistics.bind(this), this.statBeatIntrval);
     }
 
     private updateStatistics(): void {
-        for (let executor of this.controller.getRunners()) {
-            let bot: PingCompensatedCharacter = executor.bot;
-            let dataSource: BWIDataSource = this.botDataSources.get(bot.id);
+        try {
+            for (let executor of this.controller.getRunners()) {
+                let bot: PingCompensatedCharacter = executor.bot;
+                let dataSource: BWIDataSource | undefined = this.botDataSources.get(bot.id);
+                if (!dataSource) {
+                    throw new BWIException("bwi_exception", `Could not find data source for '${bot.id}'`);
+                }
 
-            dataSource.realm = `${bot.serverData.region}${bot.serverData.name}`;
-            dataSource.rip = bot.rip;
-            if (dataSource.level != bot.level) {
-                dataSource.xpHisto = [];
+                dataSource.realm = `${bot.serverData.region}${bot.serverData.name}`;
+                dataSource.rip = bot.rip;
+                if (dataSource.level != bot.level) {
+                    dataSource.xpHisto = [];
+                }
+                dataSource.level = bot.level;
+                dataSource.health = bot.hp;
+                dataSource.maxHealth = bot.max_hp;
+                dataSource.mana = bot.mp;
+                dataSource.maxMana = bot.max_mp;
+                dataSource.xp = bot.xp;
+                dataSource.maxXp = bot.max_xp;
+                dataSource.isize = bot.isize;
+                dataSource.esize = bot.esize;
+                dataSource.gold = bot.gold;
+                dataSource.party = bot.party;
+                dataSource.status = this.controller.getRunnerState(bot.id);
+                dataSource.target = bot.getTargetEntity()?.name ?? "None";
+                dataSource.cc = bot.cc;
+
+                dataSource.goldHisto.push(bot.gold);
+                dataSource.goldHisto.slice(-100);
+
+                dataSource.xpHisto.push(bot.xp);
+                dataSource.xpHisto.slice(-100);
+                dataSource.xpPh = this.valPh(dataSource.xpHisto);
             }
-            dataSource.level = bot.level;
-            dataSource.health = bot.hp;
-            dataSource.maxHealth = bot.max_hp;
-            dataSource.mana = bot.mp;
-            dataSource.maxMana = bot.max_mp;
-            dataSource.xp = bot.xp;
-            dataSource.maxXp = bot.max_xp;
-            dataSource.isize = bot.isize;
-            dataSource.esize = bot.esize;
-            dataSource.gold = bot.gold;
-            dataSource.party = bot.party;
-            dataSource.status = this.controller.getRunnerState(bot.id);
-            dataSource.target = bot.getTargetEntity()?.name ?? "None";
-            dataSource.cc = bot.cc;
-
-            dataSource.goldHisto.push(bot.gold);
-            dataSource.goldHisto.slice(-100);
-
-            dataSource.xpHisto.push(bot.xp);
-            dataSource.xpHisto.slice(-100);
-            dataSource.xpPh = this.valPh(dataSource.xpHisto);
+        } catch (ex) {
+            console.error(ex);
         }
     }
 
@@ -162,7 +170,9 @@ export class BWIReporter {
                 name: "ttlu",
                 type: "text",
                 label: "TTLU",
-                getter: () => (ds.xpPh <= 0 && "N/A") || prettyMilliseconds(((ds.maxXp - ds.xp) * 3_600_000) / ds.xpPh, { unitCount: 2 })
+                getter: () =>
+                    (ds.xpPh <= 0 && "N/A") ||
+                    prettyMilliseconds(((ds.maxXp - ds.xp) * 3_600_000) / ds.xpPh, { unitCount: 2 })
             },
             { name: "cc", type: "text", label: "CC", getter: () => Math.round(ds.cc) }
         ];
@@ -177,7 +187,7 @@ export class BWIReporter {
         );
 
         ui.setDataSource(() => {
-            let result = {};
+            let result: any = {};
             schema.forEach((x) => (result[x.name] = x.getter()));
             return result;
         });
@@ -198,7 +208,9 @@ export class BWIReporter {
             return Math.abs(num) < item.value;
         });
 
-        return item ? ((num * 1e3) / item.value).toFixed(digits).replace(regexp, "$1") + item.symbol : num.toExponential(digits);
+        return item
+            ? ((num * 1e3) / item.value).toFixed(digits).replace(regexp, "$1") + item.symbol
+            : num.toExponential(digits);
     }
 
     private quickBarVal(num: number, denom: number, humanize: boolean = false): [number, string] {

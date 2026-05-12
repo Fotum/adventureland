@@ -1,19 +1,32 @@
-import { CharacterType, Game, Pathfinder, PingCompensatedCharacter, ServerIdentifier, ServerRegion } from "alclient";
-import { MY_CHARACTERS, SpotName } from "./base/constants";
-import { sleep, startCharacter } from "./base/functions/general";
-import { FRIENDLY_CHARACTERS } from "./base/settings";
-import { BWIReporter } from "./bwi_reporter";
-import { PartyController } from "./controller/party_controller";
-import { CharacterRunner } from "./strategies/character_runner";
+import {
+    Game,
+    Pathfinder,
+    PingCompensatedCharacter,
+    type CharacterType,
+    type ServerIdentifier,
+    type ServerRegion
+} from "alclient";
+import { type SpotName } from "./base/constants.js";
+import { startCharacter } from "./base/functions/characters.js";
+import { sleep } from "./base/functions/general.js";
+import { FRIENDLY_CHARACTERS, MY_CHARACTERS } from "./base/settings.js";
+import { BWIReporter } from "./bwi_reporter.js";
+import { PartyController } from "./controller/party_controller.js";
+import { wrapLog } from "./logger.js";
+import { CharacterRunner } from "./strategies/character_runner.js";
 
-await Promise.all([Game.loginJSONFile("credentials.json"), Game.getGData(true, true)]);
-// await Promise.all([Game.loginJSONFile("credentials_debug.json"), Game.getGData(true, true)]);
+// Redirect default console logging to winston logger
+wrapLog();
+
+await Promise.all([Game.loginJSONFile("credentials.json", true), Game.getGData(true, true)]);
 await Pathfinder.prepare(Game.G, { remove_abtesting: true, remove_test: true });
 
+const DEFAULT_COMP: string[] = ["Shalfey", "MagicFotum", "Flamme", "Momental"];
 const HOME_SERVER_NAME: ServerRegion = "EU";
 const HOME_SERVER_ID: ServerIdentifier = "II";
-const DEFAULT_SPOT: SpotName = "fireroamer";
+const DEFAULT_SPOT: SpotName = "dryad";
 const MAIN_TANK: string = "Flamme";
+const LOOTER: string = "Flamme";
 
 const SEND_TO_NAME: string = "Momental";
 const PARTY_LEADER: string = "Flamme";
@@ -27,9 +40,10 @@ const PARTY_CONTROLLER: PartyController = new PartyController({
     partyAllow: PARTY_ALLOW,
     mainTank: MAIN_TANK,
     sendToName: SEND_TO_NAME,
+    looter: LOOTER,
 
-    looter: "Archealer",
-    doQuests: new Set<CharacterType>(),
+    doQuests: new Set<CharacterType>(["mage"]),
+    defSPotOverride: new Map<String, SpotName>(),
 
     enableBosses: true,
     enableCyberland: true,
@@ -38,16 +52,20 @@ const PARTY_CONTROLLER: PartyController = new PartyController({
 async function run(): Promise<void> {
     // Start characters
     for (const [name, ctype] of MY_CHARACTERS) {
+        if (!DEFAULT_COMP.includes(name)) continue;
         startRunner(name, ctype);
     }
 
-    while (PARTY_CONTROLLER.getRunners().length < MY_CHARACTERS.size || !PARTY_CONTROLLER.getRunners().every((r) => r.isReady())) {
+    while (
+        PARTY_CONTROLLER.getRunners().length < DEFAULT_COMP.length ||
+        !PARTY_CONTROLLER.getRunners().every((r) => r.isReady())
+    ) {
         await sleep(1000);
     }
 
     // Initialize and start bwi
     new BWIReporter(PARTY_CONTROLLER);
-    PARTY_CONTROLLER.startControler();
+    PARTY_CONTROLLER.startController();
 }
 run();
 

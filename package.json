@@ -13,11 +13,13 @@
     "author": "Fotum",
     "license": "MIT",
     "dependencies": {
-        "alclient": "^0.23.1",
+        "alclient": "^0.25.3",
         "bot-web-interface": "^2.0.14",
-        "fastpriorityqueue": "^0.7.5",
+        "fastpriorityqueue": "^0.8.0",
         "pretty-ms": "^9.3.0",
-        "typescript": "^5.9.3"
+        "typescript": "^6.0.3",
+        "winston": "^3.19.0",
+        "winston-daily-rotate-file": "^5.0.0"
     },
     "devDependencies": {
         "tsx": "^4.21.0"

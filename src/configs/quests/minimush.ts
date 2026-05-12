@@ -1,8 +1,10 @@
-import { PartyController } from "../../controller/party_controller";
-import { MageAttackStrategy } from "../../strategies/mage/mage_attack_strategy";
-import { HoldPositionStrategy } from "../../strategies/move_strategies";
-import { MAGE_AOE } from "../equipment_setups";
-import { SpotConfig } from "../spot_configs";
+import type { PingCompensatedCharacter } from "alclient";
+import { PartyController } from "../../controller/party_controller.js";
+import type { Strategy } from "../../strategies/character_runner.js";
+import { MageAttackStrategy } from "../../strategies/mage/mage_attack_strategy.js";
+import { HoldPositionStrategy } from "../../strategies/move_strategies.js";
+import { MAGE_AOE } from "../equipment_setups.js";
+import { type SpotConfig } from "../spot_configs.js";
 
 export function getMinimushQuestConfig(partyController: PartyController): SpotConfig {
     return {
@@ -10,9 +12,9 @@ export function getMinimushQuestConfig(partyController: PartyController): SpotCo
             attack: new MageAttackStrategy(partyController, {
                 typeList: ["minimush", "phoenix"],
                 notType: "greenfairy",
-                enableGreedyAggro: ["phoenix", "minimush"],
+                maximumTargets: 3,
                 equipmentSet: MAGE_AOE
-            }),
+            }) as unknown as Strategy<PingCompensatedCharacter>,
             move: new HoldPositionStrategy({ position: { map: "halloween", x: 14, y: 414 } })
         }
     };

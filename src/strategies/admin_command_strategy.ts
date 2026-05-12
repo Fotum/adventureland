@@ -1,7 +1,9 @@
-import { CharacterType, PingCompensatedCharacter, ServerIdentifier, ServerRegion } from "alclient";
-import { startCharacter } from "../base/functions/general";
-import { PartyController } from "../controller/party_controller";
-import { CharacterRunner, Strategy, StrategyName } from "./character_runner";
+import { PingCompensatedCharacter, type ServerIdentifier, type ServerRegion } from "alclient";
+import { startCharacter } from "../base/functions/characters.js";
+import { MY_CHARACTERS } from "../base/settings.js";
+import { PartyController } from "../controller/party_controller.js";
+import logger from "../logger.js";
+import { CharacterRunner, type Strategy, type StrategyName } from "./character_runner.js";
 
 export class AdminCommandStrategy<T extends PingCompensatedCharacter> implements Strategy<T> {
     private partyController: PartyController;
@@ -27,22 +29,23 @@ export class AdminCommandStrategy<T extends PingCompensatedCharacter> implements
                     break;
                 }
                 case "deploy": {
-                    if (args.length < 4) break;
+                    if (args.length == 0) break;
                     if (this.partyController.getRunner(args[0])) break;
 
-                    let ctype: CharacterType = args[1] as CharacterType;
+                    let serverRegion: ServerRegion = this.partyController.config.homeServerName;
+                    let serverIdentifier: ServerIdentifier = this.partyController.config.homeServerId;
+                    if (args.length == 3) {
+                        serverRegion = args[1] as unknown as ServerRegion;
+                        serverIdentifier = args[2] as unknown as ServerIdentifier;
+                    }
+
                     let newRunner: CharacterRunner<PingCompensatedCharacter> = await startCharacter(
                         this.partyController,
                         args[0],
-                        ctype,
-                        args[2] as ServerRegion,
-                        args[3] as ServerIdentifier
+                        MY_CHARACTERS.get(args[0]),
+                        serverRegion,
+                        serverIdentifier
                     );
-                    if (!newRunner) {
-                        console.error(`Error deploying character ${args[0]}`);
-                        break;
-                    }
-
                     this.partyController.addRunner(newRunner);
                     break;
                 }
@@ -55,7 +58,7 @@ export class AdminCommandStrategy<T extends PingCompensatedCharacter> implements
                     break;
                 }
                 default:
-                    console.warn(`Received unknown command ${cmd}. Command was not executed`);
+                    logger.warn(`Received unknown command ${cmd}. Command was not executed`);
             }
         };
 

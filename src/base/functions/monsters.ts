@@ -1,14 +1,23 @@
-import { CharacterType, Entity, Game, IPosition, MapName, MonsterName, PingCompensatedCharacter } from "alclient";
-import { EventConfig, getEventConfig } from "../../configs/event_configs";
-import { PartyController } from "../../controller/party_controller";
-import { Strategy } from "../../strategies/character_runner";
-import { EventName, SpecialName } from "../constants";
-import { EVENTS, SPECIAL_MONSTERS } from "../settings";
+import {
+    Entity,
+    Game,
+    PingCompensatedCharacter,
+    type CharacterType,
+    type IPosition,
+    type MapName,
+    type MonsterName
+} from "alclient";
+import { getEventConfig, type EventConfig } from "../../configs/event_configs.js";
+import { PartyController } from "../../controller/party_controller.js";
+import { CharacterRunner, type Strategy } from "../../strategies/character_runner.js";
+import { type EventName, type SpecialName } from "../constants.js";
+import { EVENTS, SPECIAL_MONSTERS } from "../settings.js";
 
-export type PreparedScheduleEvent = {
+export type PreparedEvent = {
     id: string;
-    name: EventName;
+    name: EventName | SpecialName;
     targets: MonsterName[];
+    scheduled: boolean;
     destination: IPosition | keyof typeof Game.G.events;
     waitForRespawnMs?: number;
     override?: boolean;
@@ -19,16 +28,18 @@ export type PreparedScheduleEvent = {
         };
     };
 };
-export function getActiveScheduleEvents(partyController: PartyController): PreparedScheduleEvent[] {
-    let preparedEvents: PreparedScheduleEvent[] = [];
+export function getPreparedEvents(partyController: PartyController): PreparedEvent[] {
+    let preparedEvents: PreparedEvent[] = [];
 
-    for (const runner of partyController.getRunners()) {
-        if (!runner.isReady()) continue;
-
+    let runners: CharacterRunner<PingCompensatedCharacter>[] = partyController.getRunners(true);
+    // Check schedule
+    for (const runner of runners) {
         const bot: PingCompensatedCharacter = runner.bot;
         Object.keys(bot.S).forEach((key) => {
             let eventIsActive: boolean = EVENTS.get(key) ?? false;
+            // @ts-ignore: key is extracted from bot.S
             if (eventIsActive && (!("live" in bot.S[key]) || bot.S[key].live)) {
+                // @ts-ignore: key will always be MapName or MonsterName
                 let canJoin: boolean = Game.G.events[key]?.join ?? false;
 
                 let joinTo: MonsterName | MapName = undefined;
@@ -45,6 +56,8 @@ export function getActiveScheduleEvents(partyController: PartyController): Prepa
                     id: key,
                     name: key as EventName,
                     targets: eventConfig.targets,
+                    scheduled: eventConfig.scheduled,
+                    // @ts-ignore: key will always be MapName or MonsterName
                     destination: joinTo ? joinTo : { map: bot.S[key].map, x: bot.S[key].x, y: bot.S[key].y },
                     waitForRespawnMs: eventConfig.waitForRespawnMs,
                     override: eventConfig.override,
@@ -55,42 +68,26 @@ export function getActiveScheduleEvents(partyController: PartyController): Prepa
         break;
     }
 
-    return preparedEvents;
-}
-
-export type PreparedSpecialMonster = {
-    id: string;
-    name: SpecialName;
-    targets: MonsterName[];
-    moveTo: IPosition;
-    strategies: {
-        [T in CharacterType]?: {
-            attack?: Strategy<PingCompensatedCharacter>;
-            move?: Strategy<PingCompensatedCharacter>;
-        };
-    };
-};
-export function getBossesAroundCharacters(partyController: PartyController): PreparedSpecialMonster[] {
-    let lookFor: Map<MonsterName, boolean> = new Map<MonsterName, boolean>(
-        Array.from(SPECIAL_MONSTERS.entries()).filter(([, isActive]) => isActive)
-    );
-
-    let preparedSpecials: PreparedSpecialMonster[] = [];
-    for (const runner of partyController.getRunners()) {
-        let specialsAround: Entity[] = runner.bot.getEntities({ typeList: Array.from(lookFor.keys()) });
+    // Check monsters around characters
+    let lookFor: MonsterName[] = Array.from(SPECIAL_MONSTERS.entries())
+        .filter(([, isActive]) => isActive)
+        .map(([type]) => type);
+    for (const runner of runners) {
+        let specialsAround: Entity[] = runner.bot.getEntities({ typeList: lookFor });
         for (let special of specialsAround) {
             partyController.bossTimers.set(special.type, Date.now());
 
             let specialConfig: EventConfig = getEventConfig(special.type, partyController);
-            preparedSpecials.push({
+            preparedEvents.push({
                 id: special.id,
                 name: special.type as SpecialName,
                 targets: specialConfig.targets,
-                moveTo: { map: special.map, x: special.x, y: special.y },
+                scheduled: specialConfig.scheduled,
+                destination: { map: special.map, x: special.x, y: special.y },
                 strategies: specialConfig.strategies
             });
         }
     }
 
-    return preparedSpecials;
+    return preparedEvents;
 }

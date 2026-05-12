@@ -1,7 +1,8 @@
-import { Game, IPosition, PingCompensatedCharacter } from "alclient";
-import { EventName, SpecialName } from "../base/constants";
-import { sleep } from "../base/functions/general";
-import { CharacterRunner } from "../strategies/character_runner";
+import { Game, PingCompensatedCharacter, type IPosition } from "alclient";
+import { type EventName, type SpecialName } from "../base/constants.js";
+import { sleep } from "../base/functions/general.js";
+import logger from "../logger.js";
+import { CharacterRunner } from "../strategies/character_runner.js";
 
 export type RunnerTaskName =
     | "unknown"
@@ -66,23 +67,22 @@ export class RunnerTask {
                 step = this.taskSteps[this._step];
                 if (step.isComplete) continue;
 
-                console.log(`[${this._runner.bot.id}]: Executing step ${step.name}(${this._step})`);
+                logger.info(`[${this._runner.bot.id}]: Executing step ${step.name}(${this._step})`);
                 await step.fn(this._runner, this.abortController.signal);
-                console.log(`[${this._runner.bot.id}]: Step execution finished ${step.name}(${this._step})`);
+                logger.info(`[${this._runner.bot.id}]: Step execution finished ${step.name}(${this._step})`);
 
                 step.isComplete = true;
                 this._step++;
             } catch (ex: any) {
                 // Workaround because throwIfAborted does not getting caught
                 if (typeof ex == "string" && ex.startsWith("Abort request received")) {
-                    console.warn(ex);
-                    this.setComplete("ABORTED");
+                    logger.warn(ex);
                     // #TODO: Properly rethrow error
                 } else if (ex.message && ex.message.startsWith("Smart move error:")) {
                     // Just redo step, do nothing
-                    console.warn(ex);
+                    logger.warn(ex);
                 } else {
-                    console.error(ex);
+                    logger.error(ex);
                     this.setComplete("ERROR");
                     // #TODO: Properly rethrow error
                 }
@@ -101,6 +101,7 @@ export class RunnerTask {
             reason = `, reason: ${reason}`;
         }
         this.abortController.abort(`Abort request received${reason}`);
+        this.setComplete("ABORTED");
     }
 
     public pushStep(step: RunnerTaskStep): RunnerTask {
