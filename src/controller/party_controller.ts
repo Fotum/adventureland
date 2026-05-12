@@ -1,30 +1,35 @@
-import { CharacterType, MonsterName, PingCompensatedCharacter, ServerIdentifier, ServerRegion } from "alclient";
-import { SpotName } from "../base/constants";
-import { shouldGoBank } from "../base/functions/characters";
+import {
+    PingCompensatedCharacter,
+    type CharacterType,
+    type MonsterName,
+    type ServerIdentifier,
+    type ServerRegion
+} from "alclient";
+import { type SpotName } from "../base/constants.js";
+import { shouldGoBank } from "../base/functions/characters.js";
+import { msince } from "../base/functions/general.js";
+import { getPreparedEvents, type PreparedEvent } from "../base/functions/monsters.js";
 import {
     loadBossTimersFromFile,
     loadStateFromFile,
-    msince,
     saveBossTimersToFile,
     saveStateToFile
-} from "../base/functions/general";
-import { PreparedEvent, getPreparedEvents } from "../base/functions/monsters";
-import { QUESTS } from "../base/settings";
-import { getQuestConfig } from "../configs/quest_configs";
-import { getSpotConfig } from "../configs/spot_configs";
-import logger from "../logger";
-import { CharacterRunner, Strategy } from "../strategies/character_runner";
-import { RunnerTask, RunnerTaskName } from "./runner_task";
+} from "../base/functions/persistance.js";
+import { QUESTS } from "../base/settings.js";
+import { getQuestConfig } from "../configs/quest_configs.js";
+import { getSpotConfig } from "../configs/spot_configs.js";
+import logger from "../logger.js";
+import { CharacterRunner, type Strategy } from "../strategies/character_runner.js";
+import { RunnerTask, type RunnerTaskName } from "./runner_task.js";
 import {
     getBankStoreTask,
     getChangeSpotTask,
     getCheckBossesTask,
     getCheckCyberlandTask,
-    getEmptyTask,
     getEventTask,
     getHolidayBuffTask,
     getInteractWithQuestNpcTask
-} from "./runner_task_collection";
+} from "./runner_task_collection.js";
 
 export type PartyControllerConfig = {
     homeServerName: ServerRegion;
@@ -37,6 +42,7 @@ export type PartyControllerConfig = {
 
     looter?: string;
     doQuests?: Set<CharacterType>;
+    defSPotOverride?: Map<String, SpotName>;
 
     enableBosses?: boolean;
     enableCyberland?: boolean;
@@ -73,18 +79,6 @@ export class PartyController {
 
         process.on("SIGINT", this.saveAndExit.bind(this));
         process.on("SIGTERM", this.saveAndExit.bind(this));
-
-        // #TODO: Temporary debug
-        // setInterval(() => {
-        //     for (const [name, state] of this.runnerStates) {
-        //         logger.info(`[${name}]: Current task is: ${state.currTask.name}, status: ${state.currTask.status}}`);
-        //         logger.info(
-        //             `[${name}]: Current task queue is: [${state.taskQueue
-        //                 .map((task) => `${task.id}:${task.name}(${task.status})`)
-        //                 .join(" -> ")}]`
-        //         );
-        //     }
-        // }, 10_000);
     }
 
     private async logicLoop(): Promise<void> {
@@ -197,10 +191,12 @@ export class PartyController {
                         !currState.taskQueue.some((task) => task.name == "quest")
                     ) {
                         // Go back to farm
+                        let spotName: SpotName =
+                            this.config.defSPotOverride?.get(runner.bot.name) ?? this.config.defaultSpot;
                         let strategies: {
                             attack?: Strategy<PingCompensatedCharacter>;
                             move?: Strategy<PingCompensatedCharacter>;
-                        } = getSpotConfig(this)[runner.bot.ctype];
+                        } = getSpotConfig(this, spotName)[runner.bot.ctype];
                         currState.taskQueue.push(getChangeSpotTask("farming", runner, strategies));
                     }
                 }

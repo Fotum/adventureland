@@ -1,4 +1,12 @@
-import { Game, ItemData, ItemName, LocateItemFilters, PingCompensatedCharacter, SlotType, WeaponType } from "alclient";
+import {
+    Game,
+    PingCompensatedCharacter,
+    type ItemData,
+    type ItemName,
+    type LocateItemFilters,
+    type SlotType,
+    type WeaponType
+} from "alclient";
 
 export type EquipInSlot = {
     name: ItemName;
@@ -19,13 +27,15 @@ export const UNEQUIP: EquipInSlot = {
 export const WARRIOR_DPS: EquipmentSet = {
     mainhand: { name: "fireblade", filters: FILTER_HIGHEST },
     offhand: { name: "fireblade", filters: FILTER_HIGHEST },
-    orb: { name: "orbofstr", filters: FILTER_HIGHEST }
+    orb: { name: "orbofstr", filters: FILTER_HIGHEST },
+    elixir: { name: "pumpkinspice" }
 };
 
 export const WARRIOR_AOE: EquipmentSet = {
     mainhand: { name: "ololipop", filters: FILTER_HIGHEST },
     offhand: { name: "ololipop", filters: FILTER_HIGHEST },
-    orb: { name: "orbofstr", filters: FILTER_HIGHEST }
+    orb: { name: "orbofstr", filters: FILTER_HIGHEST },
+    elixir: { name: "pumpkinspice" }
 };
 
 export const MAGE_FAST: EquipmentSet = {
@@ -104,11 +114,14 @@ export function generateEquipmentSet(bot: PingCompensatedCharacter, override?: E
     }
 
     // Swap slots if something is wrong
-    for (let [slot1, slot2] of [
+    for (let [slot1str, slot2str] of [
         ["earring1", "earring2"],
         ["ring1", "ring2"],
         ["mainhand", "offhand"]
     ]) {
+        const slot1: SlotType = slot1str as SlotType;
+        const slot2: SlotType = slot2str as SlotType;
+
         let slot1Current: ItemData = bot.slots[slot1];
         let slot2Current: ItemData = bot.slots[slot2];
 

@@ -1,10 +1,12 @@
-import { PartyController } from "../../controller/party_controller";
-import { DEFAULT_ENERGIZE, MageAttackStrategy } from "../../strategies/mage/mage_attack_strategy";
-import { SpecialMonsterKiteStrategy } from "../../strategies/move_strategies";
-import { PriestAttackStrategy } from "../../strategies/priest/priest_attack_strategy";
-import { WarriorAttackStrategy } from "../../strategies/warrior/warrior_attack_strategy";
-import { MAGE_DPS, PRIEST_TANKY_MAGIC, WARRIOR_DPS } from "../equipment_setups";
-import { EventConfig } from "../event_configs";
+import type { PingCompensatedCharacter } from "alclient";
+import { PartyController } from "../../controller/party_controller.js";
+import type { Strategy } from "../../strategies/character_runner.js";
+import { DEFAULT_ENERGIZE, MageAttackStrategy } from "../../strategies/mage/mage_attack_strategy.js";
+import { SpecialMonsterKiteStrategy } from "../../strategies/move_strategies.js";
+import { PriestAttackStrategy } from "../../strategies/priest/priest_attack_strategy.js";
+import { WarriorAttackStrategy } from "../../strategies/warrior/warrior_attack_strategy.js";
+import { MAGE_DPS, PRIEST_TANKY_MAGIC, WARRIOR_DPS } from "../equipment_setups.js";
+import { type EventConfig } from "../event_configs.js";
 
 export function getSkeletorConfig(partyController: PartyController): EventConfig {
     return {
@@ -19,7 +21,7 @@ export function getSkeletorConfig(partyController: PartyController): EventConfig
                     disableAgitate: true,
                     disableCleave: true,
                     disableStomp: true
-                }),
+                }) as unknown as Strategy<PingCompensatedCharacter>,
                 move: new SpecialMonsterKiteStrategy({ partyController: partyController, typeList: ["skeletor"] })
             },
             mage: {
@@ -28,7 +30,7 @@ export function getSkeletorConfig(partyController: PartyController): EventConfig
                     equipmentSet: MAGE_DPS,
                     energize: DEFAULT_ENERGIZE,
                     disableCburst: true
-                }),
+                }) as unknown as Strategy<PingCompensatedCharacter>,
                 move: new SpecialMonsterKiteStrategy({ partyController: partyController, typeList: ["skeletor"] })
             },
             priest: {
@@ -37,7 +39,7 @@ export function getSkeletorConfig(partyController: PartyController): EventConfig
                     enableAbsorbToTank: true,
                     equipmentSet: PRIEST_TANKY_MAGIC,
                     startHealingAtRatio: 0.8
-                }),
+                }) as unknown as Strategy<PingCompensatedCharacter>,
                 move: new SpecialMonsterKiteStrategy({ partyController: partyController, typeList: ["skeletor"] })
             }
         }

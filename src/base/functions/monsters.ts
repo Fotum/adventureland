@@ -1,9 +1,17 @@
-import { CharacterType, Entity, Game, IPosition, MapName, MonsterName, PingCompensatedCharacter } from "alclient";
-import { EventConfig, getEventConfig } from "../../configs/event_configs";
-import { PartyController } from "../../controller/party_controller";
-import { CharacterRunner, Strategy } from "../../strategies/character_runner";
-import { EventName, SpecialName } from "../constants";
-import { EVENTS, SPECIAL_MONSTERS } from "../settings";
+import {
+    Entity,
+    Game,
+    PingCompensatedCharacter,
+    type CharacterType,
+    type IPosition,
+    type MapName,
+    type MonsterName
+} from "alclient";
+import { getEventConfig, type EventConfig } from "../../configs/event_configs.js";
+import { PartyController } from "../../controller/party_controller.js";
+import { CharacterRunner, type Strategy } from "../../strategies/character_runner.js";
+import { type EventName, type SpecialName } from "../constants.js";
+import { EVENTS, SPECIAL_MONSTERS } from "../settings.js";
 
 export type PreparedEvent = {
     id: string;
@@ -29,7 +37,9 @@ export function getPreparedEvents(partyController: PartyController): PreparedEve
         const bot: PingCompensatedCharacter = runner.bot;
         Object.keys(bot.S).forEach((key) => {
             let eventIsActive: boolean = EVENTS.get(key) ?? false;
+            // @ts-ignore: key is extracted from bot.S
             if (eventIsActive && (!("live" in bot.S[key]) || bot.S[key].live)) {
+                // @ts-ignore: key will always be MapName or MonsterName
                 let canJoin: boolean = Game.G.events[key]?.join ?? false;
 
                 let joinTo: MonsterName | MapName = undefined;
@@ -47,6 +57,7 @@ export function getPreparedEvents(partyController: PartyController): PreparedEve
                     name: key as EventName,
                     targets: eventConfig.targets,
                     scheduled: eventConfig.scheduled,
+                    // @ts-ignore: key will always be MapName or MonsterName
                     destination: joinTo ? joinTo : { map: bot.S[key].map, x: bot.S[key].x, y: bot.S[key].y },
                     waitForRespawnMs: eventConfig.waitForRespawnMs,
                     override: eventConfig.override,

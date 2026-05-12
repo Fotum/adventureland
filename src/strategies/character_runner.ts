@@ -8,12 +8,12 @@ import {
     Priest,
     Ranger,
     Rogue,
-    ServerIdentifier,
-    ServerRegion,
-    SkillName,
-    Warrior
+    Warrior,
+    type ServerIdentifier,
+    type ServerRegion,
+    type SkillName
 } from "alclient";
-import logger from "../logger";
+import logger from "../logger.js";
 
 export type Loop<T> = {
     fn: (bot: T) => Promise<unknown>;
@@ -32,6 +32,7 @@ export type StrategyName =
     | "magiport"
     | "upgrade"
     | "inventory"
+    | "merchant"
     | "utility";
 export type LoopName =
     | "attack"
@@ -40,6 +41,7 @@ export type LoopName =
     | "use_pots"
     | "buy_pots"
     | "loot"
+    | "temporal"
     | "respawn"
     | "party"
     | "party_heal"
@@ -66,9 +68,9 @@ type ExecLoop<T> = Loop<T> & {
 type ExecLoops<T> = Map<string, ExecLoop<T>>;
 
 export class CharacterRunner<T extends PingCompensatedCharacter> {
-    public bot: T;
+    public bot!: T;
 
-    private started: Date;
+    private started!: Date;
     private stopped: boolean = false;
 
     private strategies: Map<StrategyName, Strategy<T>> = new Map<StrategyName, Strategy<T>>();
@@ -96,7 +98,7 @@ export class CharacterRunner<T extends PingCompensatedCharacter> {
                 this.stopLoop(name);
             } else if (this.loops.has(name)) {
                 // Change loop
-                let oldLoop: ExecLoop<T> = this.loops.get(name);
+                let oldLoop: ExecLoop<T> = this.loops.get(name)!;
                 this.loops.set(name, {
                     fn: loop.fn,
                     interval: loop.interval,
@@ -114,7 +116,7 @@ export class CharacterRunner<T extends PingCompensatedCharacter> {
                     // Run loop
                     let started: number = Date.now();
                     try {
-                        let loop: ExecLoop<T> = this.loops.get(name);
+                        let loop: ExecLoop<T> = this.loops.get(name)!;
                         if (!loop || this.stopped) return;
                         if (this.bot.ready) {
                             await loop.fn(this.bot);
@@ -124,7 +126,7 @@ export class CharacterRunner<T extends PingCompensatedCharacter> {
                     }
 
                     // Next run
-                    let loop: ExecLoop<T> = this.loops.get(name);
+                    let loop: ExecLoop<T> = this.loops.get(name)!;
                     if (!loop || this.stopped) return;
                     if (loop.started.getTime() > started) return;
                     if (typeof loop.interval == "number") {
@@ -154,7 +156,7 @@ export class CharacterRunner<T extends PingCompensatedCharacter> {
         for (let strategy of strategies) this.applyStrategy(strategy);
     }
 
-    public getStrategy(name: StrategyName): Strategy<T> {
+    public getStrategy(name: StrategyName): Strategy<T> | undefined {
         return this.strategies.get(name);
     }
 
@@ -180,7 +182,7 @@ export class CharacterRunner<T extends PingCompensatedCharacter> {
 
         if (this.stopped) return;
 
-        let newBot: PingCompensatedCharacter;
+        let newBot: PingCompensatedCharacter | undefined;
         try {
             switch (this.bot.ctype) {
                 case "mage": {
@@ -189,7 +191,7 @@ export class CharacterRunner<T extends PingCompensatedCharacter> {
                         this.bot.userAuth,
                         this.bot.characterID,
                         Game.G,
-                        Game.servers[this.bot.serverData.region][this.bot.serverData.name]
+                        Game.servers[this.bot.serverData.region]![this.bot.serverData.name]!
                     );
                     break;
                 }
@@ -199,7 +201,7 @@ export class CharacterRunner<T extends PingCompensatedCharacter> {
                         this.bot.userAuth,
                         this.bot.characterID,
                         Game.G,
-                        Game.servers[this.bot.serverData.region][this.bot.serverData.name]
+                        Game.servers[this.bot.serverData.region]![this.bot.serverData.name]!
                     );
                     break;
                 }
@@ -209,7 +211,7 @@ export class CharacterRunner<T extends PingCompensatedCharacter> {
                         this.bot.userAuth,
                         this.bot.characterID,
                         Game.G,
-                        Game.servers[this.bot.serverData.region][this.bot.serverData.name]
+                        Game.servers[this.bot.serverData.region]![this.bot.serverData.name]!
                     );
                     break;
                 }
@@ -219,7 +221,7 @@ export class CharacterRunner<T extends PingCompensatedCharacter> {
                         this.bot.userAuth,
                         this.bot.characterID,
                         Game.G,
-                        Game.servers[this.bot.serverData.region][this.bot.serverData.name]
+                        Game.servers[this.bot.serverData.region]![this.bot.serverData.name]!
                     );
                     break;
                 }
@@ -229,7 +231,7 @@ export class CharacterRunner<T extends PingCompensatedCharacter> {
                         this.bot.userAuth,
                         this.bot.characterID,
                         Game.G,
-                        Game.servers[this.bot.serverData.region][this.bot.serverData.name]
+                        Game.servers[this.bot.serverData.region]![this.bot.serverData.name]!
                     );
                     break;
                 }
@@ -239,7 +241,7 @@ export class CharacterRunner<T extends PingCompensatedCharacter> {
                         this.bot.userAuth,
                         this.bot.characterID,
                         Game.G,
-                        Game.servers[this.bot.serverData.region][this.bot.serverData.name]
+                        Game.servers[this.bot.serverData.region]![this.bot.serverData.name]!
                     );
                     break;
                 }
@@ -249,7 +251,7 @@ export class CharacterRunner<T extends PingCompensatedCharacter> {
                         this.bot.userAuth,
                         this.bot.characterID,
                         Game.G,
-                        Game.servers[this.bot.serverData.region][this.bot.serverData.name]
+                        Game.servers[this.bot.serverData.region]![this.bot.serverData.name]!
                     );
                     break;
                 }
@@ -260,7 +262,7 @@ export class CharacterRunner<T extends PingCompensatedCharacter> {
 
             await newBot.connect();
             this.changeBot(newBot as T);
-        } catch (ex) {
+        } catch (ex: any) {
             if (newBot) {
                 newBot.socket.removeAllListeners("disconnect");
                 newBot.disconnect();
@@ -306,7 +308,7 @@ export class CharacterRunner<T extends PingCompensatedCharacter> {
             }
 
             const switchBots = async () => {
-                let newBot: PingCompensatedCharacter;
+                let newBot: PingCompensatedCharacter | undefined;
                 try {
                     switch (this.bot.ctype) {
                         case "mage": {
@@ -315,7 +317,7 @@ export class CharacterRunner<T extends PingCompensatedCharacter> {
                                 this.bot.userAuth,
                                 this.bot.characterID,
                                 Game.G,
-                                Game.servers[this.bot.serverData.region][this.bot.serverData.name]
+                                Game.servers[this.bot.serverData.region]![this.bot.serverData.name]!
                             );
                             break;
                         }
@@ -325,7 +327,7 @@ export class CharacterRunner<T extends PingCompensatedCharacter> {
                                 this.bot.userAuth,
                                 this.bot.characterID,
                                 Game.G,
-                                Game.servers[this.bot.serverData.region][this.bot.serverData.name]
+                                Game.servers[this.bot.serverData.region]![this.bot.serverData.name]!
                             );
                             break;
                         }
@@ -335,7 +337,7 @@ export class CharacterRunner<T extends PingCompensatedCharacter> {
                                 this.bot.userAuth,
                                 this.bot.characterID,
                                 Game.G,
-                                Game.servers[this.bot.serverData.region][this.bot.serverData.name]
+                                Game.servers[this.bot.serverData.region]![this.bot.serverData.name]!
                             );
                             break;
                         }
@@ -345,7 +347,7 @@ export class CharacterRunner<T extends PingCompensatedCharacter> {
                                 this.bot.userAuth,
                                 this.bot.characterID,
                                 Game.G,
-                                Game.servers[this.bot.serverData.region][this.bot.serverData.name]
+                                Game.servers[this.bot.serverData.region]![this.bot.serverData.name]!
                             );
                             break;
                         }
@@ -355,7 +357,7 @@ export class CharacterRunner<T extends PingCompensatedCharacter> {
                                 this.bot.userAuth,
                                 this.bot.characterID,
                                 Game.G,
-                                Game.servers[this.bot.serverData.region][this.bot.serverData.name]
+                                Game.servers[this.bot.serverData.region]![this.bot.serverData.name]!
                             );
                             break;
                         }
@@ -365,7 +367,7 @@ export class CharacterRunner<T extends PingCompensatedCharacter> {
                                 this.bot.userAuth,
                                 this.bot.characterID,
                                 Game.G,
-                                Game.servers[this.bot.serverData.region][this.bot.serverData.name]
+                                Game.servers[this.bot.serverData.region]![this.bot.serverData.name]!
                             );
                             break;
                         }
@@ -375,7 +377,7 @@ export class CharacterRunner<T extends PingCompensatedCharacter> {
                                 this.bot.userAuth,
                                 this.bot.characterID,
                                 Game.G,
-                                Game.servers[this.bot.serverData.region][this.bot.serverData.name]
+                                Game.servers[this.bot.serverData.region]![this.bot.serverData.name]!
                             );
                             break;
                         }
@@ -386,7 +388,7 @@ export class CharacterRunner<T extends PingCompensatedCharacter> {
 
                     await newBot.connect();
                     this.changeBot(newBot as T);
-                } catch (ex) {
+                } catch (ex: any) {
                     if (newBot) {
                         newBot.socket.removeAllListeners("disconnect");
                         newBot.disconnect();

@@ -1,20 +1,20 @@
-import { MonsterName } from "alclient";
-import logger from "../logger";
-import { PartyController } from "../controller/party_controller";
-import { getArmadilloQuestConfig } from "./quests/armadillo";
-import { getBatQuestConfig } from "./quests/bat";
-import { getBeeQuestConfig } from "./quests/bee";
-import { getCrabQuestConfig } from "./quests/crab";
-import { getCrabxQuestConfig } from "./quests/crabx";
-import { getGooQuestConfig } from "./quests/goo";
-import { getMinimushQuestConfig } from "./quests/minimush";
-import { getOsnakeQuestConfig } from "./quests/osnake";
-import { getPorcupineQuestConfig } from "./quests/porcupine";
-import { getRatQuestConfig } from "./quests/rat";
-import { getSnakeQuestConfig } from "./quests/snake";
-import { getSquigQuestConfig } from "./quests/squig";
-import { getStonewormQuestConfig } from "./quests/stoneworm";
-import { SpotConfig } from "./spot_configs";
+import { type MonsterName } from "alclient";
+import { PartyController } from "../controller/party_controller.js";
+import logger from "../logger.js";
+import { getArmadilloQuestConfig } from "./quests/armadillo.js";
+import { getBatQuestConfig } from "./quests/bat.js";
+import { getBeeQuestConfig } from "./quests/bee.js";
+import { getCrabQuestConfig } from "./quests/crab.js";
+import { getCrabxQuestConfig } from "./quests/crabx.js";
+import { getGooQuestConfig } from "./quests/goo.js";
+import { getMinimushQuestConfig } from "./quests/minimush.js";
+import { getOsnakeQuestConfig } from "./quests/osnake.js";
+import { getPorcupineQuestConfig } from "./quests/porcupine.js";
+import { getRatQuestConfig } from "./quests/rat.js";
+import { getSnakeQuestConfig } from "./quests/snake.js";
+import { getSquigQuestConfig } from "./quests/squig.js";
+import { getStonewormQuestConfig } from "./quests/stoneworm.js";
+import { type SpotConfig } from "./spot_configs.js";
 
 export function getQuestConfig(partyController: PartyController, questName: MonsterName): SpotConfig | undefined {
     switch (questName) {

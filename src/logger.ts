@@ -24,12 +24,32 @@ const logger: Logger = winston.createLogger({
     transports: [fileRotateTransport]
 });
 
+function toLogMessage(args: any[]): string {
+    return args
+        .map((arg) => {
+            if (arg instanceof Error) {
+                return arg.stack || `${arg.name}: ${arg.message}`;
+            }
+
+            if (arg === "object") {
+                try {
+                    return JSON.stringify(arg);
+                } catch {
+                    return String(arg);
+                }
+            }
+
+            return String(arg);
+        })
+        .join(" ");
+}
+
 export function wrapLog(): void {
-    console.log = (...args) => logger.info.call(logger, ...args);
-    console.info = (...args) => logger.info.call(logger, ...args);
-    console.warn = (...args) => logger.warn.call(logger, ...args);
-    console.error = (...args) => logger.error.call(logger, ...args);
-    console.debug = (...args) => logger.debug.call(logger, ...args);
+    console.log = (...args) => logger.info(toLogMessage(args));
+    console.info = (...args) => logger.info(toLogMessage(args));
+    console.warn = (...args) => logger.warn(toLogMessage(args));
+    console.error = (...args) => logger.error(toLogMessage(args));
+    console.debug = (...args) => logger.debug(toLogMessage(args));
 }
 
 const originalConsole = {

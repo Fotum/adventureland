@@ -1,12 +1,13 @@
-import { Entity, IPosition, PingCompensatedCharacter, Tools } from "alclient";
-import { ignoreExceptions } from "../../base/functions/general";
-import { PartyController } from "../../controller/party_controller";
-import { DEFAULT_ENERGIZE, MageAttackStrategy } from "../../strategies/mage/mage_attack_strategy";
-import { SpecialMonsterKiteStrategy } from "../../strategies/move_strategies";
-import { MAGE_DPS, PRIEST_MF, WARRIOR_DPS } from "../equipment_setups";
-import { EventConfig } from "../event_configs";
-import { PriestAttackStrategy } from "../../strategies/priest/priest_attack_strategy";
-import { WarriorAttackStrategy } from "../../strategies/warrior/warrior_attack_strategy";
+import { Entity, PingCompensatedCharacter, Tools, type IPosition } from "alclient";
+import { ignoreExceptions } from "../../base/functions/general.js";
+import { PartyController } from "../../controller/party_controller.js";
+import type { Strategy } from "../../strategies/character_runner.js";
+import { DEFAULT_ENERGIZE, MageAttackStrategy } from "../../strategies/mage/mage_attack_strategy.js";
+import { SpecialMonsterKiteStrategy } from "../../strategies/move_strategies.js";
+import { PriestAttackStrategy } from "../../strategies/priest/priest_attack_strategy.js";
+import { WarriorAttackStrategy } from "../../strategies/warrior/warrior_attack_strategy.js";
+import { MAGE_DPS, PRIEST_MF, WARRIOR_DPS } from "../equipment_setups.js";
+import { type EventConfig } from "../event_configs.js";
 
 class PhoenixMoveStrategy<T extends PingCompensatedCharacter> extends SpecialMonsterKiteStrategy<T> {
     protected async move(bot: T): Promise<void | IPosition> {
@@ -46,7 +47,7 @@ export function getPhoenixConfig(partyController: PartyController): EventConfig 
                     disableAgitate: true,
                     disableCleave: true,
                     enableEquipForStomp: true
-                }),
+                }) as unknown as Strategy<PingCompensatedCharacter>,
                 move: new PhoenixMoveStrategy({ partyController: partyController, typeList: ["phoenix", "frog"] })
             },
             mage: {
@@ -55,7 +56,7 @@ export function getPhoenixConfig(partyController: PartyController): EventConfig 
                     equipmentSet: MAGE_DPS,
                     energize: DEFAULT_ENERGIZE,
                     disableCburst: true
-                }),
+                }) as unknown as Strategy<PingCompensatedCharacter>,
                 move: new PhoenixMoveStrategy({ partyController: partyController, typeList: ["phoenix", "frog"] })
             },
             priest: {
@@ -63,7 +64,7 @@ export function getPhoenixConfig(partyController: PartyController): EventConfig 
                     type: "phoenix",
                     equipmentSet: PRIEST_MF,
                     startHealingAtRatio: 0.8
-                }),
+                }) as unknown as Strategy<PingCompensatedCharacter>,
                 move: new PhoenixMoveStrategy({ partyController: partyController, typeList: ["phoenix", "frog"] })
             }
         }

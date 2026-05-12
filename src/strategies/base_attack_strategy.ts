@@ -1,27 +1,28 @@
 import {
-    ActionData,
     Constants,
-    EntitiesData,
     Entity,
     Game,
-    GetEntityFilters,
-    ItemData,
-    ItemName,
-    MonsterName,
     PingCompensatedCharacter,
     Player,
-    SkillName,
-    SlotType,
     Tools,
-    WeaponType
+    type ActionData,
+    type EntitiesData,
+    type GetEntityFilters,
+    type ItemData,
+    type ItemName,
+    type MonsterName,
+    type SkillName,
+    type SlotType,
+    type WeaponType
 } from "alclient";
 import FastPriorityQueue from "fastpriorityqueue";
-import { filterRunners, ignoreExceptions, sleep } from "../base/functions/general";
-import { sortPriority } from "../base/functions/sort";
-import { EquipInSlot, EquipmentSet, generateEquipmentSet } from "../configs/equipment_setups";
-import { PartyController } from "../controller/party_controller";
-import logger from "../logger";
-import { Loop, LoopName, Loops, Strategy, StrategyName } from "./character_runner";
+import { filterRunners } from "../base/functions/filter.js";
+import { ignoreExceptions, sleep } from "../base/functions/general.js";
+import { sortPriority } from "../base/functions/sort.js";
+import { generateEquipmentSet, type EquipInSlot, type EquipmentSet } from "../configs/equipment_setups.js";
+import { PartyController } from "../controller/party_controller.js";
+import logger from "../logger.js";
+import { type Loop, type LoopName, type Loops, type Strategy, type StrategyName } from "./character_runner.js";
 
 export type BaseAttackConfig = GetEntityFilters & {
     disableBasicAttack?: boolean;
@@ -81,7 +82,7 @@ export class BaseAttackStrategy<T extends PingCompensatedCharacter> implements S
                 if (bot.rip) return;
 
                 if (this.shouldScare(bot)) await this.scare(bot);
-                await this.attack(bot).catch(ignoreExceptions);
+                await this.attack(bot);
             },
             interval: this.interval
         });

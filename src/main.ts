@@ -1,11 +1,19 @@
-import { CharacterType, Game, Pathfinder, PingCompensatedCharacter, ServerIdentifier, ServerRegion } from "alclient";
-import { MY_CHARACTERS, SpotName } from "./base/constants";
-import { sleep, startCharacter } from "./base/functions/general";
-import { FRIENDLY_CHARACTERS } from "./base/settings";
-import { BWIReporter } from "./bwi_reporter";
-import { PartyController } from "./controller/party_controller";
-import { CharacterRunner } from "./strategies/character_runner";
-import { wrapLog } from "./logger";
+import {
+    Game,
+    Pathfinder,
+    PingCompensatedCharacter,
+    type CharacterType,
+    type ServerIdentifier,
+    type ServerRegion
+} from "alclient";
+import { type SpotName } from "./base/constants.js";
+import { startCharacter } from "./base/functions/characters.js";
+import { sleep } from "./base/functions/general.js";
+import { FRIENDLY_CHARACTERS, MY_CHARACTERS } from "./base/settings.js";
+import { BWIReporter } from "./bwi_reporter.js";
+import { PartyController } from "./controller/party_controller.js";
+import { wrapLog } from "./logger.js";
+import { CharacterRunner } from "./strategies/character_runner.js";
 
 // Redirect default console logging to winston logger
 wrapLog();
@@ -35,6 +43,7 @@ const PARTY_CONTROLLER: PartyController = new PartyController({
     looter: LOOTER,
 
     doQuests: new Set<CharacterType>(["mage"]),
+    defSPotOverride: new Map<String, SpotName>(),
 
     enableBosses: true,
     enableCyberland: true,

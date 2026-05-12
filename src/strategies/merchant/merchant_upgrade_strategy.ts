@@ -1,7 +1,7 @@
-import { GItem, Game, Item, ItemName, Merchant } from "alclient";
-import { Loop, LoopName, Strategy, StrategyName } from "../character_runner";
-import { MERCHANT_UPGRADE, UpgradeConfig } from "../../base/settings";
-import { ignoreExceptions } from "../../base/functions/general";
+import { Game, Item, Merchant, type GItem, type ItemName } from "alclient";
+import { ignoreExceptions } from "../../base/functions/general.js";
+import { MERCHANT_UPGRADE, type UpgradeConfig } from "../../base/settings.js";
+import { type Loop, type LoopName, type Strategy, type StrategyName } from "../character_runner.js";
 
 export class MerchantUpgradeStrategy implements Strategy<Merchant> {
     public loops? = new Map<LoopName, Loop<Merchant>>();

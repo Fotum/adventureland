@@ -1,9 +1,9 @@
-import { PingCompensatedCharacter, ServerIdentifier, ServerRegion } from "alclient";
-import { MY_CHARACTERS } from "../base/constants";
-import { startCharacter } from "../base/functions/general";
-import logger from "../logger";
-import { PartyController } from "../controller/party_controller";
-import { CharacterRunner, Strategy, StrategyName } from "./character_runner";
+import { PingCompensatedCharacter, type ServerIdentifier, type ServerRegion } from "alclient";
+import { startCharacter } from "../base/functions/characters.js";
+import { MY_CHARACTERS } from "../base/settings.js";
+import { PartyController } from "../controller/party_controller.js";
+import logger from "../logger.js";
+import { CharacterRunner, type Strategy, type StrategyName } from "./character_runner.js";
 
 export class AdminCommandStrategy<T extends PingCompensatedCharacter> implements Strategy<T> {
     private partyController: PartyController;

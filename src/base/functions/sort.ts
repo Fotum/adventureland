@@ -1,6 +1,6 @@
-import { Character, Entity, Game, IPosition, MonsterName, Tools } from "alclient";
-import { SpecialName } from "../constants";
-import { SPECIAL_MONSTERS } from "../settings";
+import { Character, Entity, Game, Tools, type IPosition, type MonsterName } from "alclient";
+import { type SpecialName } from "../constants.js";
+import { SPECIAL_MONSTERS } from "../settings.js";
 
 export function sortPriority(bot: Character, types?: MonsterName[]): (a: Entity, b: Entity) => boolean {
     return (a: Entity, b: Entity): boolean => {
@@ -71,14 +71,18 @@ export function sortPriority(bot: Character, types?: MonsterName[]): (a: Entity,
             const a_party_distance = players
                 .map((player) => {
                     const distance = Tools.squaredDistance(a, player);
-                    const moving = player.moving ? Tools.squaredDistance(a, { x: player.going_x, y: player.going_y }) : 0;
+                    const moving = player.moving
+                        ? Tools.squaredDistance(a, { x: player.going_x, y: player.going_y })
+                        : 0;
                     return distance + moving;
                 })
                 .reduce((sum, distance) => sum + distance, 0);
             const b_party_distance = players
                 .map((player) => {
                     const distance = Tools.squaredDistance(b, player);
-                    const moving = player.moving ? Tools.squaredDistance(b, { x: player.going_x, y: player.going_y }) : 0;
+                    const moving = player.moving
+                        ? Tools.squaredDistance(b, { x: player.going_x, y: player.going_y })
+                        : 0;
                     return distance + moving;
                 })
                 .reduce((sum, distance) => sum + distance, 0);

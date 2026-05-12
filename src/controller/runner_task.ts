@@ -1,8 +1,8 @@
-import { Game, IPosition, PingCompensatedCharacter } from "alclient";
-import { EventName, SpecialName } from "../base/constants";
-import { sleep } from "../base/functions/general";
-import logger from "../logger";
-import { CharacterRunner } from "../strategies/character_runner";
+import { Game, PingCompensatedCharacter, type IPosition } from "alclient";
+import { type EventName, type SpecialName } from "../base/constants.js";
+import { sleep } from "../base/functions/general.js";
+import logger from "../logger.js";
+import { CharacterRunner } from "../strategies/character_runner.js";
 
 export type RunnerTaskName =
     | "unknown"

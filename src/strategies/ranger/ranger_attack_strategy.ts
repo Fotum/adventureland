@@ -1,9 +1,9 @@
-import { Entity, Game, GetEntityFilters, Ranger } from "alclient";
+import { Entity, Game, Ranger, type GetEntityFilters } from "alclient";
 import FastPriorityQueue from "fastpriorityqueue";
-import { ignoreExceptions } from "../../base/functions/general";
-import { PartyController } from "../../controller/party_controller";
-import logger from "../../logger";
-import { BaseAttackConfig, BaseAttackStrategy, IDLE_ATTACK_MONSTERS } from "../base_attack_strategy";
+import { ignoreExceptions } from "../../base/functions/general.js";
+import { PartyController } from "../../controller/party_controller.js";
+import logger from "../../logger.js";
+import { BaseAttackStrategy, IDLE_ATTACK_MONSTERS, type BaseAttackConfig } from "../base_attack_strategy.js";
 
 export type RangerAttackConfig = BaseAttackConfig & {
     disableHuntersMark?: boolean;
@@ -12,7 +12,7 @@ export type RangerAttackConfig = BaseAttackConfig & {
 };
 
 export class RangerAttackStrategy extends BaseAttackStrategy<Ranger> {
-    protected config: RangerAttackConfig;
+    protected declare config: RangerAttackConfig;
 
     public constructor(partyController: PartyController, config: RangerAttackConfig) {
         super(partyController, config);
@@ -204,7 +204,9 @@ export class RangerAttackStrategy extends BaseAttackStrategy<Ranger> {
                 }
             }
 
-            return bot.fiveShot(entities[0].id, entities[1].id, entities[2].id, entities[3].id, entities[4].id).catch(ignoreExceptions);
+            return bot
+                .fiveShot(entities[0].id, entities[1].id, entities[2].id, entities[3].id, entities[4].id)
+                .catch(ignoreExceptions);
         } else if (!this.config.disableMultiShot && threeShotTargets.size >= 3 && bot.canUse("3shot")) {
             let entities: Entity[] = [];
             while (entities.length < 3) {

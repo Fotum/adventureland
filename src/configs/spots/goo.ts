@@ -1,10 +1,12 @@
-import { PartyController } from "../../controller/party_controller";
-import { MageAttackStrategy, DEFAULT_ENERGIZE } from "../../strategies/mage/mage_attack_strategy";
-import { KiteMonsterStrategy, HoldPositionStrategy } from "../../strategies/move_strategies";
-import { PriestAttackStrategy } from "../../strategies/priest/priest_attack_strategy";
-import { WarriorAttackStrategy } from "../../strategies/warrior/warrior_attack_strategy";
-import { WARRIOR_AOE, MAGE_AOE, PRIEST_MF } from "../equipment_setups";
-import { SpotConfig } from "../spot_configs";
+import type { PingCompensatedCharacter } from "alclient";
+import { PartyController } from "../../controller/party_controller.js";
+import type { Strategy } from "../../strategies/character_runner.js";
+import { DEFAULT_ENERGIZE, MageAttackStrategy } from "../../strategies/mage/mage_attack_strategy.js";
+import { HoldPositionStrategy, KiteMonsterStrategy } from "../../strategies/move_strategies.js";
+import { PriestAttackStrategy } from "../../strategies/priest/priest_attack_strategy.js";
+import { WarriorAttackStrategy } from "../../strategies/warrior/warrior_attack_strategy.js";
+import { MAGE_AOE, PRIEST_MF, WARRIOR_AOE } from "../equipment_setups.js";
+import { type SpotConfig } from "../spot_configs.js";
 
 export function getGooSpotConfig(partyController: PartyController): SpotConfig {
     return {
@@ -16,7 +18,7 @@ export function getGooSpotConfig(partyController: PartyController): SpotConfig {
                 equipmentSet: WARRIOR_AOE,
                 enableEquipForCleave: true,
                 enableEquipForStomp: true
-            }),
+            }) as unknown as Strategy<PingCompensatedCharacter>,
             move: new KiteMonsterStrategy({
                 partyController: partyController,
                 typeList: ["goo"]
@@ -27,7 +29,7 @@ export function getGooSpotConfig(partyController: PartyController): SpotConfig {
                 type: "goo",
                 equipmentSet: MAGE_AOE,
                 energize: DEFAULT_ENERGIZE
-            }),
+            }) as unknown as Strategy<PingCompensatedCharacter>,
             move: new KiteMonsterStrategy({
                 partyController: partyController,
                 typeList: ["goo"]
@@ -41,7 +43,7 @@ export function getGooSpotConfig(partyController: PartyController): SpotConfig {
                 equipmentSet: PRIEST_MF,
                 enableAbsorbToTank: true,
                 startHealingAtRatio: 0.8
-            }),
+            }) as unknown as Strategy<PingCompensatedCharacter>,
             move: new KiteMonsterStrategy({
                 partyController: partyController,
                 typeList: ["goo"]

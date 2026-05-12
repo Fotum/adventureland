@@ -1,6 +1,6 @@
-import { InviteData, PingCompensatedCharacter } from "alclient";
-import logger from "../logger";
-import { Loop, LoopName, Strategy, StrategyName } from "./character_runner";
+import { PingCompensatedCharacter, type InviteData } from "alclient";
+import logger from "../logger.js";
+import { type Loop, type LoopName, type Strategy, type StrategyName } from "./character_runner.js";
 
 export type PartyConfig = {
     accept?: string[];
@@ -10,7 +10,7 @@ export type PartyConfig = {
 export class AcceptPartyRequest<T extends PingCompensatedCharacter> implements Strategy<T> {
     private _name: StrategyName = "party";
     private options: PartyConfig;
-    private onRequest: (data: { name: string }) => Promise<void>;
+    private onRequest: ((data: { name: string }) => Promise<void>) | undefined;
 
     public constructor(config?: PartyConfig) {
         if (!config) config = {};

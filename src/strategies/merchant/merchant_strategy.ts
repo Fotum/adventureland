@@ -1,9 +1,21 @@
-import { Character, Constants, GItem, Game, Item, ItemDataTrade, Merchant, Pathfinder, Player, Tools } from "alclient";
-import { filterRunners, ignoreExceptions } from "../../base/functions/general";
-import logger from "../../logger";
-import { BUY_FROM_PONTY } from "../../base/settings";
-import { PartyController } from "../../controller/party_controller";
-import { Loop, LoopName, Strategy, StrategyName } from "../character_runner";
+import {
+    Character,
+    Constants,
+    Game,
+    Item,
+    Merchant,
+    Pathfinder,
+    Player,
+    Tools,
+    type GItem,
+    type ItemDataTrade
+} from "alclient";
+import { filterRunners } from "../../base/functions/filter.js";
+import { ignoreExceptions } from "../../base/functions/general.js";
+import { BUY_FROM_PONTY } from "../../base/settings.js";
+import { PartyController } from "../../controller/party_controller.js";
+import logger from "../../logger.js";
+import { type Loop, type LoopName, type Strategy, type StrategyName } from "../character_runner.js";
 
 export type MerchantConfig = {
     enableFishing?: boolean;
@@ -30,7 +42,7 @@ export class MerchantStrategy implements Strategy<Merchant> {
     public loops = new Map<LoopName, Loop<Merchant>>();
 
     private config: MerchantConfig;
-    private _name: StrategyName = "utility";
+    private _name: StrategyName = "merchant";
 
     protected partyController: PartyController;
 
@@ -79,7 +91,8 @@ export class MerchantStrategy implements Strategy<Merchant> {
             let mluckWhen: number = this.config.enableMluck?.when ? this.config.enableMluck.when : 0.75;
 
             if (!canMluck(target)) return false;
-            if (target.s.mluck.f == bot.id && target.s.mluck.ms > Game.G.skills.mluck.duration * mluckWhen) return false;
+            if (target.s.mluck.f == bot.id && target.s.mluck.ms > Game.G.skills.mluck.duration * mluckWhen)
+                return false;
             return true;
         };
 

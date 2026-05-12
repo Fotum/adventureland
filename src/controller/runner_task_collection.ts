@@ -1,13 +1,20 @@
-import { Constants, Entity, GItem, Game, IPosition, MonsterName, PingCompensatedCharacter } from "alclient";
-import { KEEP_GOLD, MERCHANT_KEEP_GOLD, SEND_GOLD_AT } from "../base/constants";
-import { generateRandomId, ignoreExceptions, mssince, sleep, ssince } from "../base/functions/general";
-import { PreparedEvent } from "../base/functions/monsters";
-import { SPECIAL_MONSTERS, STORE_ITEMS } from "../base/settings";
-import logger from "../logger";
-import { NoAttackScareStrategy } from "../strategies/base_attack_strategy";
-import { CharacterRunner, Strategy } from "../strategies/character_runner";
-import { PartyController } from "./party_controller";
-import { RunnerTask, RunnerTaskName } from "./runner_task";
+import {
+    Constants,
+    Entity,
+    Game,
+    PingCompensatedCharacter,
+    type GItem,
+    type IPosition,
+    type MonsterName
+} from "alclient";
+import { generateRandomId, ignoreExceptions, mssince, sleep, ssince } from "../base/functions/general.js";
+import { type PreparedEvent } from "../base/functions/monsters.js";
+import { KEEP_GOLD, MERCHANT_KEEP_GOLD, SEND_GOLD_AT, SPECIAL_MONSTERS, STORE_ITEMS } from "../base/settings.js";
+import logger from "../logger.js";
+import { NoAttackScareStrategy } from "../strategies/base_attack_strategy.js";
+import { CharacterRunner, type Strategy } from "../strategies/character_runner.js";
+import { PartyController } from "./party_controller.js";
+import { RunnerTask, type RunnerTaskName } from "./runner_task.js";
 
 export function getChangeSpotTask(
     taskName: RunnerTaskName,

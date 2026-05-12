@@ -1,36 +1,39 @@
 import {
-    Attribute,
-    ChestData,
-    ChestOpenedData,
     Constants,
-    GItem,
     Game,
-    IPosition,
     Item,
-    ItemData,
-    ItemName,
     Merchant,
     PingCompensatedCharacter,
     Player,
-    Tools
+    Tools,
+    type Attribute,
+    type ChestData,
+    type ChestOpenedData,
+    type GItem,
+    type IPosition,
+    type ItemData,
+    type ItemName
 } from "alclient";
+import { type PotionName } from "../base/constants.js";
+import { filterRunners } from "../base/functions/filter.js";
+import { ignoreExceptions } from "../base/functions/general.js";
 import {
+    DISMANTLE_ITEMS,
+    EXCHANGE_ITMES,
     KEEP_GOLD,
     KEEP_ITEMS,
     MERCHANT_KEEP_GOLD,
     MERCHANT_KEEP_ITEMS,
     MERCHANT_REPLENISHABLES,
     MERCHANT_REPLENISH_RATIO,
-    PotionName,
     REPLENISHABLES,
     REPLENISH_RATIO,
+    SELL_ITMES,
     SEND_GOLD_AT
-} from "../base/constants";
-import { filterRunners, ignoreExceptions } from "../base/functions/general";
-import logger from "../logger";
-import { DISMANTLE_ITEMS, EXCHANGE_ITMES, SELL_ITMES } from "../base/settings";
-import { PartyController } from "../controller/party_controller";
-import { Loop, LoopName, Loops, Strategy, StrategyName } from "./character_runner";
+} from "../base/settings.js";
+import { PartyController } from "../controller/party_controller.js";
+import logger from "../logger.js";
+import { type Loop, type LoopName, type Loops, type Strategy, type StrategyName } from "./character_runner.js";
 
 export type BaseStrategyConfig = {
     hpPotType: PotionName;
@@ -45,14 +48,12 @@ export type BaseStrategyConfig = {
 export class BaseStrategy<T extends PingCompensatedCharacter> implements Strategy<T> {
     public loops: Loops<T> = new Map<LoopName, Loop<T>>();
 
-    // protected static recentlyLooted = new LRUCache<string, boolean>({ max: 10 });
-
     private _name: StrategyName = "base";
     private partyController: PartyController;
     private config: BaseStrategyConfig;
     private chestCache = new Map<string, Map<string, Map<string, ChestData>>>();
 
-    private lootOnDrop: (data: ChestData) => void;
+    private lootOnDrop: ((data: ChestData) => void) | undefined;
 
     public constructor(partyController: PartyController, config: BaseStrategyConfig) {
         this.partyController = partyController;
@@ -91,10 +92,10 @@ export class BaseStrategy<T extends PingCompensatedCharacter> implements Strateg
             this.chestCache.set(bot.id, new Map());
         }
 
-        let myChestCache = this.chestCache.get(bot.id);
+        let myChestCache = this.chestCache.get(bot.id)!;
         let server = `${bot.serverData.region}${bot.serverData.name}`;
         if (myChestCache.has(server)) {
-            for (let [chestId, chestData] of myChestCache.get(server)) {
+            for (let [chestId, chestData] of myChestCache.get(server)!) {
                 bot.chests.set(chestId, chestData);
             }
 
@@ -109,7 +110,7 @@ export class BaseStrategy<T extends PingCompensatedCharacter> implements Strateg
 
     public onRemove(bot: T): void {
         if (bot.chests.size) {
-            let myChestCache = this.chestCache.get(bot.id);
+            let myChestCache = this.chestCache.get(bot.id)!;
             let server = `${bot.serverData.region}${bot.serverData.name}`;
             myChestCache.set(server, bot.chests);
         }
@@ -121,7 +122,7 @@ export class BaseStrategy<T extends PingCompensatedCharacter> implements Strateg
         return this._name;
     }
 
-    private async respawnIfDead(bot: T): Promise<IPosition> {
+    private async respawnIfDead(bot: T): Promise<IPosition | undefined> {
         if (!bot.rip) return;
         await bot.respawn().catch(logger.error);
     }
@@ -150,7 +151,7 @@ export class BaseStrategy<T extends PingCompensatedCharacter> implements Strateg
 
         let maxGiveHpPotion: ItemName | "regen_hp" = "regen_hp";
         let maxGiveMpPotion: ItemName | "regen_mp" = "regen_mp";
-        let maxGiveBothPotion: ItemName;
+        let maxGiveBothPotion: ItemName | undefined;
 
         for (let potion of [this.config.hpPotType, this.config.mpPotType]) {
             let gItem: GItem = Game.G.items[potion];

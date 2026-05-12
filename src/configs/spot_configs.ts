@@ -1,33 +1,33 @@
-import { CharacterType, PingCompensatedCharacter } from "alclient";
-import { SpotName } from "../base/constants";
-import logger from "../logger";
-import { PartyController } from "../controller/party_controller";
-import { Strategy } from "../strategies/character_runner";
-import { getArmadilloSpotConfig } from "./spots/armadillo";
-import { getBatSpotConfig } from "./spots/bat";
-import { getBeeSpotConfig } from "./spots/bee";
-import { getBigbirdSpotConfig } from "./spots/bigbird";
-import { getBoobooSpotConfig } from "./spots/booboo";
-import { getCgooSpotConfig } from "./spots/cgoo";
-import { getCrabSpotConfig } from "./spots/crab";
-import { getCrabxSpotConfig } from "./spots/crabx";
-import { getCrocSpotConfig } from "./spots/croc";
-import { getFireroamerSpotConfig } from "./spots/fireroamer";
-import { getGooSpotConfig } from "./spots/goo";
-import { getIceroamerSpotConfig } from "./spots/iceroamer";
-import { getMinimushSpotConfig } from "./spots/minimush";
-import { getMoleSpotConfig } from "./spots/mole";
-import { getOsnakeSpotConfig } from "./spots/osnake";
-import { getPorcupineSpotConfig } from "./spots/porcupine";
-import { getRatSpotConfig } from "./spots/rat";
-import { getScorpionSpotConfig } from "./spots/scorpion";
-import { getSnakeSpotConfig } from "./spots/snake";
-import { getSpiderSpotConfig } from "./spots/spider";
-import { getSquigSpotConfig } from "./spots/squig";
-import { getStonewormSpotConfig } from "./spots/stoneworm";
-import { getTortoiseSpotConfig } from "./spots/tortoise";
-import { getXscorpionConfig } from "./spots/xscorpion";
-import { getDryadConfig } from "./spots/dryad";
+import { PingCompensatedCharacter, type CharacterType } from "alclient";
+import { type SpotName } from "../base/constants.js";
+import { PartyController } from "../controller/party_controller.js";
+import logger from "../logger.js";
+import { type Strategy } from "../strategies/character_runner.js";
+import { getArmadilloSpotConfig } from "./spots/armadillo.js";
+import { getBatSpotConfig } from "./spots/bat.js";
+import { getBeeSpotConfig } from "./spots/bee.js";
+import { getBigbirdSpotConfig } from "./spots/bigbird.js";
+import { getBoobooSpotConfig } from "./spots/booboo.js";
+import { getCgooSpotConfig } from "./spots/cgoo.js";
+import { getCrabSpotConfig } from "./spots/crab.js";
+import { getCrabxSpotConfig } from "./spots/crabx.js";
+import { getCrocSpotConfig } from "./spots/croc.js";
+import { getDryadConfig } from "./spots/dryad.js";
+import { getFireroamerSpotConfig } from "./spots/fireroamer.js";
+import { getGooSpotConfig } from "./spots/goo.js";
+import { getIceroamerSpotConfig } from "./spots/iceroamer.js";
+import { getMinimushSpotConfig } from "./spots/minimush.js";
+import { getMoleSpotConfig } from "./spots/mole.js";
+import { getOsnakeSpotConfig } from "./spots/osnake.js";
+import { getPorcupineSpotConfig } from "./spots/porcupine.js";
+import { getRatSpotConfig } from "./spots/rat.js";
+import { getScorpionSpotConfig } from "./spots/scorpion.js";
+import { getSnakeSpotConfig } from "./spots/snake.js";
+import { getSpiderSpotConfig } from "./spots/spider.js";
+import { getSquigSpotConfig } from "./spots/squig.js";
+import { getStonewormSpotConfig } from "./spots/stoneworm.js";
+import { getTortoiseSpotConfig } from "./spots/tortoise.js";
+import { getXscorpionConfig } from "./spots/xscorpion.js";
 
 export type SpotConfig = {
     [T in CharacterType]?: {
@@ -35,11 +35,7 @@ export type SpotConfig = {
         move?: Strategy<PingCompensatedCharacter>;
     };
 };
-export function getSpotConfig(partyController: PartyController, spotName?: SpotName): SpotConfig | undefined {
-    if (!spotName) {
-        spotName = partyController.config.defaultSpot;
-    }
-
+export function getSpotConfig(partyController: PartyController, spotName: SpotName): SpotConfig | undefined {
     switch (spotName) {
         case "cave_first":
             return getBatSpotConfig(partyController);

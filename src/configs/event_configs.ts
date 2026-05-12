@@ -1,20 +1,20 @@
-import { CharacterType, MonsterName, PingCompensatedCharacter } from "alclient";
-import { PartyController } from "../controller/party_controller";
-import logger from "../logger";
-import { Strategy } from "../strategies/character_runner";
-import { getDragoldConfig } from "./events/dragold";
-import { getFrogConfig } from "./events/frog";
-import { getFvampireConfig } from "./events/fvampire";
-import { getGoobrawlConfig } from "./events/goobrawl";
-import { getGreenjrConfig } from "./events/greenjr";
-import { getIcegolemConfig } from "./events/icegolem";
-import { getJrConfig } from "./events/jr";
-import { getMvampireConfig } from "./events/mvampire";
-import { getPhoenixConfig } from "./events/phoenix";
-import { getPinkgooConfig } from "./events/pinkgoo";
-import { getSkeletorConfig } from "./events/skeletor";
-import { getSnowmanConfig } from "./events/snowman";
-import { getWabbitConfig } from "./events/wabbit";
+import { PingCompensatedCharacter, type CharacterType, type MonsterName } from "alclient";
+import { PartyController } from "../controller/party_controller.js";
+import logger from "../logger.js";
+import { type Strategy } from "../strategies/character_runner.js";
+import { getDragoldConfig } from "./events/dragold.js";
+import { getFrogConfig } from "./events/frog.js";
+import { getFvampireConfig } from "./events/fvampire.js";
+import { getGoobrawlConfig } from "./events/goobrawl.js";
+import { getGreenjrConfig } from "./events/greenjr.js";
+import { getIcegolemConfig } from "./events/icegolem.js";
+import { getJrConfig } from "./events/jr.js";
+import { getMvampireConfig } from "./events/mvampire.js";
+import { getPhoenixConfig } from "./events/phoenix.js";
+import { getPinkgooConfig } from "./events/pinkgoo.js";
+import { getSkeletorConfig } from "./events/skeletor.js";
+import { getSnowmanConfig } from "./events/snowman.js";
+import { getWabbitConfig } from "./events/wabbit.js";
 
 export type EventConfig = {
     targets: MonsterName[];

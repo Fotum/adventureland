@@ -1,24 +1,25 @@
 import {
-    ActionData,
-    ActionDataRay,
-    EntitiesData,
     Entity,
-    GItem,
     Game,
     Mage,
-    MonsterName,
     PingCompensatedCharacter,
     Player,
-    SlotType,
     Tools,
-    TradeItemInfo,
-    TradeSlotType
+    type ActionData,
+    type ActionDataRay,
+    type EntitiesData,
+    type GItem,
+    type MonsterName,
+    type SlotType,
+    type TradeItemInfo,
+    type TradeSlotType
 } from "alclient";
 import FastPriorityQueue from "fastpriorityqueue";
-import { filterRunners, ignoreExceptions } from "../../base/functions/general";
-import logger from "../../logger";
-import { PartyController } from "../../controller/party_controller";
-import { BaseAttackConfig, BaseAttackStrategy } from "../base_attack_strategy";
+import { filterRunners } from "../../base/functions/filter.js";
+import { ignoreExceptions } from "../../base/functions/general.js";
+import { PartyController } from "../../controller/party_controller.js";
+import logger from "../../logger.js";
+import { BaseAttackStrategy, type BaseAttackConfig } from "../base_attack_strategy.js";
 
 export type MageAttackConfig = BaseAttackConfig & {
     disableCburst?: boolean;
@@ -33,7 +34,16 @@ export type MageAttackConfig = BaseAttackConfig & {
     };
 };
 
-export const DO_NOT_KILL_STEAL: MonsterName[] = ["kitty1", "kitty2", "kitty3", "kitty4", "puppy1", "puppy2", "puppy3", "puppy4"];
+export const DO_NOT_KILL_STEAL: MonsterName[] = [
+    "kitty1",
+    "kitty2",
+    "kitty3",
+    "kitty4",
+    "puppy1",
+    "puppy2",
+    "puppy3",
+    "puppy4"
+];
 export const DEFAULT_ENERGIZE = {
     onMpRatio: 0.8,
     when: {
@@ -42,7 +52,7 @@ export const DEFAULT_ENERGIZE = {
 };
 
 export class MageAttackStrategy extends BaseAttackStrategy<Mage> {
-    protected config: MageAttackConfig;
+    protected declare config: MageAttackConfig;
     protected stealOnActionCburst: (data: ActionData) => void;
 
     public constructor(partyController: PartyController, options?: MageAttackConfig) {
@@ -68,7 +78,11 @@ export class MageAttackStrategy extends BaseAttackStrategy<Mage> {
                     for (let monster of data.monsters) {
                         if (monster.target) continue;
                         // Check if target is in array of greedyAggro targets
-                        if (Array.isArray(this.config.enableGreedyAggro) && !this.config.enableGreedyAggro.includes(monster.type)) continue;
+                        if (
+                            Array.isArray(this.config.enableGreedyAggro) &&
+                            !this.config.enableGreedyAggro.includes(monster.type)
+                        )
+                            continue;
                         // Check if target is in typeList of monsters we want to farm
                         if (this.config.typeList && !this.config.typeList.includes(monster.type)) continue;
                         if (Game.G.monsters[monster.type].immune) continue;
@@ -84,7 +98,11 @@ export class MageAttackStrategy extends BaseAttackStrategy<Mage> {
                     const cbursts: [string, number][] = [];
                     for (const monster of data.monsters) {
                         if (monster.target) continue;
-                        if (Array.isArray(this.config.enableGreedyAggro) && !this.config.enableGreedyAggro.includes(monster.type)) continue;
+                        if (
+                            Array.isArray(this.config.enableGreedyAggro) &&
+                            !this.config.enableGreedyAggro.includes(monster.type)
+                        )
+                            continue;
                         if (this.config.typeList && !this.config.typeList.includes(monster.type)) continue;
                         if (Tools.distance(bot, monster) > Game.G.skills.cburst.range) continue;
 
@@ -109,7 +127,11 @@ export class MageAttackStrategy extends BaseAttackStrategy<Mage> {
                 if (bot.canUse("attack")) {
                     for (const monster of data.monsters) {
                         if (monster.target) continue;
-                        if (Array.isArray(this.config.enableGreedyAggro) && !this.config.enableGreedyAggro.includes(monster.type)) continue;
+                        if (
+                            Array.isArray(this.config.enableGreedyAggro) &&
+                            !this.config.enableGreedyAggro.includes(monster.type)
+                        )
+                            continue;
                         if (this.config.typeList && !this.config.typeList.includes(monster.type)) continue;
                         if (Tools.distance(bot, monster) > bot.range) continue;
 
@@ -218,7 +240,9 @@ export class MageAttackStrategy extends BaseAttackStrategy<Mage> {
             let entities: Entity[] = bot.getEntities({
                 canDamage: "cburst",
                 hasTarget: false,
-                typeList: Array.isArray(this.config.enableGreedyAggro) ? this.config.enableGreedyAggro : this.config.typeList,
+                typeList: Array.isArray(this.config.enableGreedyAggro)
+                    ? this.config.enableGreedyAggro
+                    : this.config.typeList,
                 withinRange: "cburst"
             });
 
@@ -245,7 +269,8 @@ export class MageAttackStrategy extends BaseAttackStrategy<Mage> {
 
         targets.forEach((entity) => {
             let mpToKill: number =
-                ((entity.hp * 1.1) / Game.G.skills.cburst.ratio) * Tools.damage_multiplier(bot.rpiercing - entity.resistance);
+                ((entity.hp * 1.1) / Game.G.skills.cburst.ratio) *
+                Tools.damage_multiplier(bot.rpiercing - entity.resistance);
             if (mpToKill > mpPool) return;
 
             if (toCburst.has(entity.id)) mpPool += toCburst.get(entity.id);
@@ -287,7 +312,8 @@ export class MageAttackStrategy extends BaseAttackStrategy<Mage> {
 
             if (
                 (this.config.energize.when.mp && friend.mp < this.config.energize.when.mp) ||
-                (this.config.energize.when.mpMissing && friend.max_mp - friend.mp > this.config.energize.when.mpMissing) ||
+                (this.config.energize.when.mpMissing &&
+                    friend.max_mp - friend.mp > this.config.energize.when.mpMissing) ||
                 (this.config.energize.when.mpRatio && friend.mp / friend.max_mp < this.config.energize.when.mpRatio)
             ) {
                 let rechargeAmount: number = friend.max_mp - friend.mp;

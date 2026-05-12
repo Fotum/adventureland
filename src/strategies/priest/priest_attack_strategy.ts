@@ -1,9 +1,9 @@
 import { Entity, Game, PingCompensatedCharacter, Player, Priest, Tools } from "alclient";
 import FastPriorityQueue from "fastpriorityqueue";
-import { ignoreExceptions } from "../../base/functions/general";
-import logger from "../../logger";
-import { PartyController } from "../../controller/party_controller";
-import { BaseAttackConfig, BaseAttackStrategy } from "../base_attack_strategy";
+import { ignoreExceptions } from "../../base/functions/general.js";
+import { PartyController } from "../../controller/party_controller.js";
+import logger from "../../logger.js";
+import { BaseAttackStrategy, type BaseAttackConfig } from "../base_attack_strategy.js";
 
 export type PriestAttackConfig = BaseAttackConfig & {
     startHealingAtRatio: number;
@@ -15,8 +15,8 @@ export type PriestAttackConfig = BaseAttackConfig & {
 };
 
 export class PriestAttackStrategy extends BaseAttackStrategy<Priest> {
-    protected config: PriestAttackConfig;
-    protected healPriority: (a: PingCompensatedCharacter, b: PingCompensatedCharacter) => boolean;
+    protected declare config: PriestAttackConfig;
+    protected healPriority: (a: PingCompensatedCharacter | Player, b: PingCompensatedCharacter | Player) => boolean;
 
     public constructor(partyController: PartyController, options: PriestAttackConfig) {
         super(partyController, options);

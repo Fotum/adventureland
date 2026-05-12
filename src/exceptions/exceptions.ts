@@ -29,3 +29,19 @@ export class RunnerTaskException extends Error {
         Object.setPrototypeOf(this, RunnerTaskException.prototype);
     }
 }
+
+export class BWIException extends Error {
+    public name: string;
+    public message: string;
+    public cause: any;
+
+    public constructor(name: string, message: string, cause?: any) {
+        super();
+
+        this.name = name;
+        this.message = message;
+        this.cause = cause;
+
+        Object.setPrototypeOf(this, BWIException.prototype);
+    }
+}

@@ -1,4 +1,62 @@
-import { BankPackName, ItemName, MonsterName } from "alclient";
+import { type BankPackName, type CharacterType, type ItemName, type MonsterName } from "alclient";
+
+export const PLAYER_MIN_DISTANCE: number = 5;
+export const HEAL_RETREAT_RATIO: number = 0.5;
+
+export const MY_CHARACTERS: Map<string, CharacterType> = new Map<string, CharacterType>([
+    ["Shalfey", "warrior"],
+    ["Flamme", "priest"],
+    ["MagicFotum", "mage"],
+    ["RangeFotum", "ranger"],
+    ["Momental", "merchant"]
+]);
+
+export const KEEP_GOLD: number = 5_000_000;
+export const SEND_GOLD_AT: number = 1.5;
+export const KEEP_ITEMS: Set<ItemName> = new Set<ItemName>([
+    "hpot0",
+    "hpot1",
+    "mpot0",
+    "mpot1",
+    "tracker",
+    "computer",
+    "elixirluck",
+    "pumpkinspice",
+    "luckbooster",
+    "supercomputer",
+    "xpbooster",
+    "xptome"
+]);
+
+export const REPLENISH_RATIO: number = 0.3;
+export const REPLENISHABLES: Map<ItemName, number> = new Map<ItemName, number>([
+    ["elixirluck", 20],
+    ["xptome", 1]
+]);
+
+export const MERCHANT_KEEP_GOLD: number = 500_000_000;
+export const MERCHANT_KEEP_ITEMS: Set<ItemName> = new Set<ItemName>([
+    ...KEEP_ITEMS,
+    "cscroll0",
+    "cscroll1",
+    "cscroll2",
+    "scroll0",
+    "scroll1",
+    "scroll2",
+    "pickaxe",
+    "rod",
+    "offeringp",
+    "offering"
+]);
+export const MERCHANT_REPLENISH_RATIO: number = 0.5;
+export const MERCHANT_REPLENISHABLES: Map<ItemName, number> = new Map<ItemName, number>([
+    ["scroll0", 90],
+    ["scroll1", 50],
+    ["scroll2", 20],
+    ["cscroll0", 50],
+    ["cscroll1", 30],
+    ["cscroll2", 0]
+]);
 
 export const FRIENDLY_CHARACTERS: string[] = [
     "arMAGEdon",
