@@ -21,10 +21,10 @@ wrapLog();
 await Promise.all([Game.loginJSONFile("credentials.json", true), Game.getGData(true, true)]);
 await Pathfinder.prepare(Game.G, { remove_abtesting: true, remove_test: true });
 
-const DEFAULT_COMP: string[] = ["Shalfey", "MagicFotum", "Flamme", "Momental"];
+const ACTIVE_COMP: string[] = ["RangeFotum", "MagicFotum", "Flamme", "Momental"];
 const HOME_SERVER_NAME: ServerRegion = "EU";
 const HOME_SERVER_ID: ServerIdentifier = "II";
-const DEFAULT_SPOT: SpotName = "dryad";
+const DEFAULT_SPOT: SpotName = "crab";
 const MAIN_TANK: string = "Flamme";
 const LOOTER: string = "Flamme";
 
@@ -43,7 +43,7 @@ const PARTY_CONTROLLER: PartyController = new PartyController({
     looter: LOOTER,
 
     doQuests: new Set<CharacterType>(["mage"]),
-    defSPotOverride: new Map<String, SpotName>(),
+    defSpotOverride: new Map<String, SpotName>(),
 
     enableBosses: true,
     enableCyberland: true,
@@ -52,12 +52,12 @@ const PARTY_CONTROLLER: PartyController = new PartyController({
 async function run(): Promise<void> {
     // Start characters
     for (const [name, ctype] of MY_CHARACTERS) {
-        if (!DEFAULT_COMP.includes(name)) continue;
+        if (!ACTIVE_COMP.includes(name)) continue;
         startRunner(name, ctype);
     }
 
     while (
-        PARTY_CONTROLLER.getRunners().length < DEFAULT_COMP.length ||
+        PARTY_CONTROLLER.getRunners().length < ACTIVE_COMP.length ||
         !PARTY_CONTROLLER.getRunners().every((r) => r.isReady())
     ) {
         await sleep(1000);

@@ -42,7 +42,7 @@ export type PartyControllerConfig = {
 
     looter?: string;
     doQuests?: Set<CharacterType>;
-    defSPotOverride?: Map<String, SpotName>;
+    defSpotOverride?: Map<String, SpotName>;
 
     enableBosses?: boolean;
     enableCyberland?: boolean;
@@ -192,7 +192,7 @@ export class PartyController {
                     ) {
                         // Go back to farm
                         let spotName: SpotName =
-                            this.config.defSPotOverride?.get(runner.bot.name) ?? this.config.defaultSpot;
+                            this.config.defSpotOverride?.get(runner.bot.name) ?? this.config.defaultSpot;
                         let strategies: {
                             attack?: Strategy<PingCompensatedCharacter>;
                             move?: Strategy<PingCompensatedCharacter>;

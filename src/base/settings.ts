@@ -10,43 +10,19 @@ export const MY_CHARACTERS: Map<string, CharacterType> = new Map<string, Charact
     ["RangeFotum", "ranger"],
     ["Momental", "merchant"]
 ]);
-
-export const KEEP_GOLD: number = 5_000_000;
-export const SEND_GOLD_AT: number = 1.5;
-export const KEEP_ITEMS: Set<ItemName> = new Set<ItemName>([
-    "hpot0",
-    "hpot1",
-    "mpot0",
-    "mpot1",
-    "tracker",
-    "computer",
-    "elixirluck",
-    "pumpkinspice",
-    "luckbooster",
-    "supercomputer",
-    "xpbooster",
-    "xptome"
-]);
+export const FRIENDLY_CHARACTERS: string[] = [
+    "arMAGEdon",
+    "aRanDonDon",
+    "Archealer",
+    "MerchanDiser",
+    "Warious",
+    "DonWar"
+];
 
 export const REPLENISH_RATIO: number = 0.3;
 export const REPLENISHABLES: Map<ItemName, number> = new Map<ItemName, number>([
     ["elixirluck", 20],
     ["xptome", 1]
-]);
-
-export const MERCHANT_KEEP_GOLD: number = 500_000_000;
-export const MERCHANT_KEEP_ITEMS: Set<ItemName> = new Set<ItemName>([
-    ...KEEP_ITEMS,
-    "cscroll0",
-    "cscroll1",
-    "cscroll2",
-    "scroll0",
-    "scroll1",
-    "scroll2",
-    "pickaxe",
-    "rod",
-    "offeringp",
-    "offering"
 ]);
 export const MERCHANT_REPLENISH_RATIO: number = 0.5;
 export const MERCHANT_REPLENISHABLES: Map<ItemName, number> = new Map<ItemName, number>([
@@ -58,14 +34,44 @@ export const MERCHANT_REPLENISHABLES: Map<ItemName, number> = new Map<ItemName, 
     ["cscroll2", 0]
 ]);
 
-export const FRIENDLY_CHARACTERS: string[] = [
-    "arMAGEdon",
-    "aRanDonDon",
-    "Archealer",
-    "MerchanDiser",
-    "Warious",
-    "DonWar"
+export const SEND_GOLD_AT: number = 1.5;
+export const KEEP_GOLD: Map<string, number> = new Map<string, number>([
+    ["Shalfey", 5_000_000],
+    ["Flamme", 5_000_000],
+    ["MagicFotum", 5_000_000],
+    ["RangeFotum", 5_000_000],
+    ["Momental", 500_000_000]
+]);
+
+const BASE_KEEP_ITEMS: ItemName[] = [
+    "hpot0",
+    "hpot1",
+    "mpot0",
+    "mpot1",
+    "tracker",
+    "computer",
+    "luckbooster",
+    "supercomputer",
+    "xpbooster",
+    "xptome"
 ];
+export const KEEP_ITEMS: Map<string, Set<ItemName>> = new Map<string, Set<ItemName>>([
+    ["Shalfey", new Set<ItemName>([...BASE_KEEP_ITEMS, ...REPLENISHABLES.keys(), "pumpkinspice"])],
+    ["Flamme", new Set<ItemName>([...BASE_KEEP_ITEMS, ...REPLENISHABLES.keys(), "elixirluck"])],
+    ["MagicFotum", new Set<ItemName>([...BASE_KEEP_ITEMS, ...REPLENISHABLES.keys()])],
+    ["RangeFotum", new Set<ItemName>([...BASE_KEEP_ITEMS, ...REPLENISHABLES.keys()])],
+    [
+        "Momental",
+        new Set<ItemName>([
+            ...BASE_KEEP_ITEMS,
+            ...MERCHANT_REPLENISHABLES.keys(),
+            "pickaxe",
+            "rod",
+            "offeringp",
+            "offering"
+        ])
+    ]
+]);
 
 export const SPECIAL_MONSTERS: Map<MonsterName, boolean> = new Map<MonsterName, boolean>([
     ["phoenix", true],

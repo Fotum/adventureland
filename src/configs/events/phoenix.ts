@@ -5,6 +5,7 @@ import type { Strategy } from "../../strategies/character_runner.js";
 import { DEFAULT_ENERGIZE, MageAttackStrategy } from "../../strategies/mage/mage_attack_strategy.js";
 import { SpecialMonsterKiteStrategy } from "../../strategies/move_strategies.js";
 import { PriestAttackStrategy } from "../../strategies/priest/priest_attack_strategy.js";
+import { RangerAttackStrategy } from "../../strategies/ranger/ranger_attack_strategy.js";
 import { WarriorAttackStrategy } from "../../strategies/warrior/warrior_attack_strategy.js";
 import { MAGE_DPS, PRIEST_MF, WARRIOR_DPS } from "../equipment_setups.js";
 import { type EventConfig } from "../event_configs.js";
@@ -66,6 +67,16 @@ export function getPhoenixConfig(partyController: PartyController): EventConfig 
                     startHealingAtRatio: 0.8
                 }) as unknown as Strategy<PingCompensatedCharacter>,
                 move: new PhoenixMoveStrategy({ partyController: partyController, typeList: ["phoenix", "frog"] })
+            },
+            ranger: {
+                attack: new RangerAttackStrategy(partyController, {
+                    type: "phoenix",
+                    disableMultiShot: true
+                }) as unknown as Strategy<PingCompensatedCharacter>,
+                move: new SpecialMonsterKiteStrategy({
+                    partyController: partyController,
+                    typeList: ["phoenix", "frog"]
+                })
             }
         }
     };

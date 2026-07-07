@@ -22,8 +22,6 @@ import {
     EXCHANGE_ITMES,
     KEEP_GOLD,
     KEEP_ITEMS,
-    MERCHANT_KEEP_GOLD,
-    MERCHANT_KEEP_ITEMS,
     MERCHANT_REPLENISHABLES,
     MERCHANT_REPLENISH_RATIO,
     REPLENISHABLES,
@@ -387,16 +385,14 @@ export class BaseInventoryStrategy<T extends PingCompensatedCharacter> implement
         }
 
         // Send gold
-        let sendGoldAmt: number = 0;
-        if (bot.ctype != "merchant" && bot.gold >= KEEP_GOLD * SEND_GOLD_AT) {
-            sendGoldAmt = bot.gold - KEEP_GOLD;
-        } else if (bot.ctype == "merchant" && bot.gold >= MERCHANT_KEEP_GOLD * SEND_GOLD_AT) {
-            sendGoldAmt = bot.gold - MERCHANT_KEEP_GOLD;
+        let sendGoldAmt: number =
+            bot.gold >= KEEP_GOLD.get(bot.id) * SEND_GOLD_AT ? bot.gold - KEEP_GOLD.get(bot.id) : 0;
+        if (sendGoldAmt > 0) {
+            await bot.sendGold(sendToName, bot.gold - KEEP_GOLD.get(bot.id)).catch(ignoreExceptions);
         }
-        if (sendGoldAmt > 0) await bot.sendGold(sendToName, bot.gold - KEEP_GOLD).catch(ignoreExceptions);
 
         // Send items
-        let keepItems: Set<ItemName> = bot.ctype != "merchant" ? KEEP_ITEMS : MERCHANT_KEEP_ITEMS;
+        let keepItems: Set<ItemName> = KEEP_ITEMS.get(bot.id);
         for (const [ix, item] of bot.getItems()) {
             if (item.l) continue;
             if (item.level && item.level > 0) continue;
@@ -423,7 +419,7 @@ export class BaseInventoryStrategy<T extends PingCompensatedCharacter> implement
         if (!this.config.enableSell) return;
         if (bot.map.startsWith("bank")) return;
 
-        let keepItems: Set<ItemName> = bot.ctype != "merchant" ? KEEP_ITEMS : MERCHANT_KEEP_ITEMS;
+        let keepItems: Set<ItemName> = KEEP_ITEMS.get(bot.id);
         for (const [ix, item] of bot.getItems()) {
             if (item.l) continue;
             if (item.level && item.level > 0) continue;
@@ -440,7 +436,7 @@ export class BaseInventoryStrategy<T extends PingCompensatedCharacter> implement
         if (bot.map.startsWith("bank")) return;
         if (bot.esize <= 1) return;
 
-        let keepItems: Set<ItemName> = bot.ctype != "merchant" ? KEEP_ITEMS : MERCHANT_KEEP_ITEMS;
+        let keepItems: Set<ItemName> = KEEP_ITEMS.get(bot.id);
         const itemsToExchange: [number, Item][] = [];
         for (const [ix, item] of bot.getItems()) {
             if (item.l) continue;
@@ -465,7 +461,7 @@ export class BaseInventoryStrategy<T extends PingCompensatedCharacter> implement
         if (!this.config.enableDismantle) return;
         if (bot.map.startsWith("bank")) return;
 
-        let keepItems: Set<ItemName> = bot.ctype != "merchant" ? KEEP_ITEMS : MERCHANT_KEEP_ITEMS;
+        let keepItems: Set<ItemName> = KEEP_ITEMS.get(bot.id);
         for (const [ix, item] of bot.getItems()) {
             if (item.l) continue;
             if (item.level && item.level > 0) continue;

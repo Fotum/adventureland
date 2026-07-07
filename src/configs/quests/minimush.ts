@@ -15,7 +15,7 @@ export function getMinimushQuestConfig(partyController: PartyController): SpotCo
                 maximumTargets: 3,
                 equipmentSet: MAGE_AOE
             }) as unknown as Strategy<PingCompensatedCharacter>,
-            move: new HoldPositionStrategy({ position: { map: "halloween", x: 14, y: 414 } })
+            move: new HoldPositionStrategy({ position: { map: "halloween", x: 14, y: 440 } })
         }
     };
 }

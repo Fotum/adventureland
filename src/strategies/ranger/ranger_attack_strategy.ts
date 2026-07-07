@@ -9,6 +9,7 @@ export type RangerAttackConfig = BaseAttackConfig & {
     disableHuntersMark?: boolean;
     disableMultiShot?: boolean;
     disableSuperShot?: boolean;
+    disablePiercingShot?: boolean;
 };
 
 export class RangerAttackStrategy extends BaseAttackStrategy<Ranger> {
@@ -222,7 +223,7 @@ export class RangerAttackStrategy extends BaseAttackStrategy<Ranger> {
 
         targetingMe = bot.calculateTargets();
 
-        let canUsePiercingShot: boolean = bot.canUse("piercingshot");
+        let canUsePiercingShot: boolean = !this.config.disablePiercingShot && bot.canUse("piercingshot");
         while (targets.size) {
             let entity = targets.poll();
 
