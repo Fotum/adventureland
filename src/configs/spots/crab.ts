@@ -18,7 +18,8 @@ export function getCrabSpotConfig(partyController: PartyController): SpotConfig 
                 maximumTargets: 5,
                 equipmentSet: WARRIOR_AOE,
                 enableEquipForCleave: true,
-                enableEquipForStomp: true
+                enableEquipForStomp: true,
+                disableKillSteal: true
             }) as unknown as Strategy<PingCompensatedCharacter>,
             move: new BaseMoveStrategy(["crab", "phoenix"])
         },
@@ -27,17 +28,19 @@ export function getCrabSpotConfig(partyController: PartyController): SpotConfig 
                 typeList: ["crab", "phoenix"],
                 maximumTargets: 5,
                 equipmentSet: MAGE_AOE,
-                energize: DEFAULT_ENERGIZE
+                energize: DEFAULT_ENERGIZE,
+                disableKillSteal: true
             }) as unknown as Strategy<PingCompensatedCharacter>,
             move: new HoldPositionStrategy({ position: { map: "main", x: -1200, y: -90 } })
         },
         priest: {
             attack: new PriestAttackStrategy(partyController, {
                 typeList: ["crab", "phoenix"],
-                enableGreedyAggro: true,
+                startHealingAtRatio: 0.8,
                 equipmentSet: PRIEST_MF,
                 enableAbsorbToTank: true,
-                startHealingAtRatio: 0.8
+                enableGreedyAggro: true,
+                disableKillSteal: true
             }) as unknown as Strategy<PingCompensatedCharacter>,
             move: new HoldPositionStrategy({ position: { map: "main", x: -1150, y: -55 } })
         },
@@ -46,7 +49,8 @@ export function getCrabSpotConfig(partyController: PartyController): SpotConfig 
                 typeList: ["crab", "phoenix"],
                 maximumTargets: 3,
                 disableHuntersMark: true,
-                disableSuperShot: true
+                disableSuperShot: true,
+                disableKillSteal: true
             }) as unknown as Strategy<PingCompensatedCharacter>,
             move: new HoldPositionStrategy({ position: { map: "main", x: -1200, y: -20 } })
         },
