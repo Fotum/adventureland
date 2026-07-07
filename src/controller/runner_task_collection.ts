@@ -9,7 +9,7 @@ import {
 } from "alclient";
 import { generateRandomId, ignoreExceptions, mssince, sleep, ssince } from "../base/functions/general.js";
 import { type PreparedEvent } from "../base/functions/monsters.js";
-import { KEEP_GOLD, MERCHANT_KEEP_GOLD, SEND_GOLD_AT, SPECIAL_MONSTERS, STORE_ITEMS } from "../base/settings.js";
+import { KEEP_GOLD, SEND_GOLD_AT, SPECIAL_MONSTERS, STORE_ITEMS } from "../base/settings.js";
 import logger from "../logger.js";
 import { NoAttackScareStrategy } from "../strategies/base_attack_strategy.js";
 import { CharacterRunner, type Strategy } from "../strategies/character_runner.js";
@@ -107,22 +107,20 @@ export function getBankStoreTask(runner: CharacterRunner<PingCompensatedCharacte
         }
         if (itemsToStore.length == 0) return;
 
-        let toDepostGold: number = 0;
-        if (runner.bot.ctype == "merchant" && runner.bot.gold >= MERCHANT_KEEP_GOLD * SEND_GOLD_AT) {
-            toDepostGold = runner.bot.gold - MERCHANT_KEEP_GOLD;
-        } else if (runner.bot.ctype != "merchant" && runner.bot.gold >= KEEP_GOLD * SEND_GOLD_AT) {
-            toDepostGold = runner.bot.gold - KEEP_GOLD;
-        }
-
+        let runnerBot: PingCompensatedCharacter = runner.bot;
         // Deposit gold
+        let toDepostGold: number =
+            runnerBot.gold >= KEEP_GOLD.get(runnerBot.id) * SEND_GOLD_AT
+                ? runnerBot.gold - KEEP_GOLD.get(runnerBot.id)
+                : 0;
         if (toDepostGold > 0) {
-            await runner.bot.depositGold(toDepostGold).catch(ignoreExceptions);
+            await runnerBot.depositGold(toDepostGold).catch(ignoreExceptions);
         }
 
         // Deposit items
         for (let toStore of itemsToStore) {
             try {
-                await runner.bot.depositItem(toStore.invIx, toStore.bankTab).catch(ignoreExceptions);
+                await runnerBot.depositItem(toStore.invIx, toStore.bankTab).catch(ignoreExceptions);
             } catch (ex) {
                 logger.error("bank_store", ex);
             }
