@@ -7,7 +7,7 @@ import { BaseMoveStrategy, HoldPositionStrategy } from "../../strategies/move_st
 import { PriestAttackStrategy } from "../../strategies/priest/priest_attack_strategy.js";
 import { RangerAttackStrategy } from "../../strategies/ranger/ranger_attack_strategy.js";
 import { WarriorAttackStrategy } from "../../strategies/warrior/warrior_attack_strategy.js";
-import { MAGE_AOE, PRIEST_MF, WARRIOR_AOE } from "../equipment_setups.js";
+import { MAGE_AOE, PRIEST_MF, RANGER_AOE, WARRIOR_AOE } from "../equipment_setups.js";
 import { type SpotConfig } from "../spot_configs.js";
 
 export function getCrabSpotConfig(partyController: PartyController): SpotConfig {
@@ -48,6 +48,7 @@ export function getCrabSpotConfig(partyController: PartyController): SpotConfig 
             attack: new RangerAttackStrategy(partyController, {
                 typeList: ["crab", "phoenix"],
                 maximumTargets: 3,
+                equipmentSet: RANGER_AOE,
                 disableHuntersMark: true,
                 disableSuperShot: true,
                 disableKillSteal: true

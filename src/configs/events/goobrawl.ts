@@ -6,7 +6,7 @@ import { BaseMoveStrategy, KiteInCircleStrategy } from "../../strategies/move_st
 import { PriestAttackStrategy } from "../../strategies/priest/priest_attack_strategy.js";
 import { RangerAttackStrategy } from "../../strategies/ranger/ranger_attack_strategy.js";
 import { WarriorAttackStrategy } from "../../strategies/warrior/warrior_attack_strategy.js";
-import { MAGE_AOE, PRIEST_GF, WARRIOR_AOE } from "../equipment_setups.js";
+import { MAGE_AOE, PRIEST_GF, RANGER_DPS, WARRIOR_AOE } from "../equipment_setups.js";
 import { type EventConfig } from "../event_configs.js";
 
 export function getGoobrawlConfig(partyController: PartyController): EventConfig {
@@ -62,6 +62,7 @@ export function getGoobrawlConfig(partyController: PartyController): EventConfig
             ranger: {
                 attack: new RangerAttackStrategy(partyController, {
                     typeList: ["pinkgoo", "bgoo", "rgoo"],
+                    equipmentSet: RANGER_DPS,
                     disableSuperShot: true
                 }) as unknown as Strategy<PingCompensatedCharacter>,
                 move: new KiteInCircleStrategy({

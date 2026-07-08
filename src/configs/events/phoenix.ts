@@ -7,7 +7,7 @@ import { SpecialMonsterKiteStrategy } from "../../strategies/move_strategies.js"
 import { PriestAttackStrategy } from "../../strategies/priest/priest_attack_strategy.js";
 import { RangerAttackStrategy } from "../../strategies/ranger/ranger_attack_strategy.js";
 import { WarriorAttackStrategy } from "../../strategies/warrior/warrior_attack_strategy.js";
-import { MAGE_DPS, PRIEST_MF, WARRIOR_DPS } from "../equipment_setups.js";
+import { MAGE_DPS, PRIEST_MF, RANGER_DPS, WARRIOR_DPS } from "../equipment_setups.js";
 import { type EventConfig } from "../event_configs.js";
 
 class PhoenixMoveStrategy<T extends PingCompensatedCharacter> extends SpecialMonsterKiteStrategy<T> {
@@ -71,6 +71,7 @@ export function getPhoenixConfig(partyController: PartyController): EventConfig 
             ranger: {
                 attack: new RangerAttackStrategy(partyController, {
                     type: "phoenix",
+                    equipmentSet: RANGER_DPS,
                     disableMultiShot: true
                 }) as unknown as Strategy<PingCompensatedCharacter>,
                 move: new SpecialMonsterKiteStrategy({

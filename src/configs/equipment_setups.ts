@@ -53,6 +53,16 @@ export const MAGE_AOE: EquipmentSet = {
     offhand: UNEQUIP
 };
 
+export const RANGER_DPS: EquipmentSet = {
+    mainhand: { name: "firebow", filters: FILTER_HIGHEST },
+    orb: { name: "orbofdex", filters: FILTER_HIGHEST }
+};
+
+export const RANGER_AOE: EquipmentSet = {
+    mainhand: { name: "pouchbow", filters: FILTER_HIGHEST },
+    orb: { name: "orbofdex", filters: FILTER_HIGHEST }
+};
+
 export const PRIEST_TANKY_PHYSICAL: EquipmentSet = {
     offhand: { name: "exoarm", filters: FILTER_HIGHEST },
     helmet: { name: "xhelmet", filters: FILTER_HIGHEST },

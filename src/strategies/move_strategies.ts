@@ -177,10 +177,12 @@ export class HoldPositionStrategy<T extends PingCompensatedCharacter> implements
             if (this.config.offset.y) holdPosition.y += this.config.offset.y;
         }
 
-        if (delta > 0 && Tools.distance(bot, holdPosition) > delta) {
-            return bot.smartMove(holdPosition, { useBlink: true, getWithin: delta }).catch(ignoreExceptions);
-        } else {
+        if (delta == 0) {
             return bot.smartMove(holdPosition, { useBlink: true }).catch(ignoreExceptions);
+        }
+
+        if (Tools.distance(bot, holdPosition) > delta) {
+            return bot.smartMove(holdPosition, { useBlink: true, getWithin: delta }).catch(ignoreExceptions);
         }
     }
 }

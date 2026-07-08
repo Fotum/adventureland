@@ -6,7 +6,7 @@ import { BaseMoveStrategy } from "../../strategies/move_strategies.js";
 import { PriestAttackStrategy } from "../../strategies/priest/priest_attack_strategy.js";
 import { RangerAttackStrategy } from "../../strategies/ranger/ranger_attack_strategy.js";
 import { WarriorAttackStrategy } from "../../strategies/warrior/warrior_attack_strategy.js";
-import { MAGE_FAST, PRIEST_MF, WARRIOR_DPS } from "../equipment_setups.js";
+import { MAGE_FAST, PRIEST_MF, RANGER_DPS, WARRIOR_DPS } from "../equipment_setups.js";
 import { type EventConfig } from "../event_configs.js";
 
 export function getSnowmanConfig(partyController: PartyController): EventConfig {
@@ -47,6 +47,7 @@ export function getSnowmanConfig(partyController: PartyController): EventConfig 
             ranger: {
                 attack: new RangerAttackStrategy(partyController, {
                     type: "snowman",
+                    equipmentSet: RANGER_DPS,
                     disableMultiShot: true
                 }) as unknown as Strategy<PingCompensatedCharacter>,
                 move: new BaseMoveStrategy(["snowman"])
